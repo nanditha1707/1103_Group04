@@ -1,4 +1,5 @@
 from google import genai
+import anthropic
 """
 Function to call the gemini API 
 Parameters:
@@ -15,3 +16,15 @@ def call_gemini(
     client = genai.Client(api_key=api_key)
     response = client.models.generate_content(model=model, contents=prompt)
     return response.text
+
+def call_claude(
+    prompt: str, api_key: str, model: str = "claude-sonnet-5", tokens: int = 1024
+    ) -> str:
+        client = anthropic.Anthropic(api_key=api_key)
+        response = client.messages.create(
+        model=model,
+        max_tokens=tokens,
+        messages=[{"role": "user", "content": prompt}],
+    )
+        return response.content[0].text
+        
