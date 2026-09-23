@@ -16,7 +16,11 @@ def call_gemini(
     client = genai.Client(api_key=api_key)
     response = client.models.generate_content(model=model, contents=prompt)
     return response.text
-
+"""
+Function to call the claude API
+Parameters Added On:
+tokens: This parameter specifies the maximum number of tokens that the model is allowed to use to generate its response.
+"""
 def call_claude(
     prompt: str, api_key: str, model: str = "claude-sonnet-5", tokens: int = 1024
     ) -> str:
