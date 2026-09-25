@@ -3,7 +3,7 @@ all_questions = [
     {
         "key":"consent", 
         "question_number":0,
-        "prompt":"Please enter your consent to share your data with the AI pharmacist (Y/N): "
+        "prompt":"Please enter your consent to share your data (Y/N): "
     },
     {
         "key":"name", 
@@ -22,28 +22,63 @@ all_questions = [
     },
     {
         "key":"age",
-        "question_number":3, 
+        "question_number":4, 
         "prompt":"Enter your Age: "
     },
     {
         "key":"phone_number", 
-        "question_number":4,
-        "prompt":"Please enter your phone number"
+        "question_number":5,
+        "prompt":"Please enter your phone number: "
     },
     {
-        "key":"chronic_conditions",
-        "question_number":5, 
-        "prompt":"Do you have any chronic conditions?: "
+        "key":"red_flag_chest_pain",
+        "question_number":6,
+        "prompt":"Do you have chest pain right now? (Y/N): "
     },
     {
-        "key":"current_medications",
-        "question_number":6, 
-        "prompt":"Are you on any medication prescribed by a doctor: "
+        "key":"red_flag_breathing",
+        "question_number":7,
+        "prompt":"Are you severely short of breath right now? (Y/N): "
+    },
+    {
+        "key":"red_flag_stroke",
+        "question_number":8,
+        "prompt":"Do you have sudden weakness or numbness on one side of your body? (Y/N): "
+    },
+    {
+        "key":"self_harm",
+        "question_number":9,
+        "prompt":"Are you having thoughts of harming yourself? (Y/N): "
     },
     {
         "key":"current_symptoms",
-        "question_number":7, 
+        "question_number":10, 
         "prompt":"Please tell us your current symptoms: "
+    },
+    {
+        "key":"symptom_onset",
+        "question_number":11,
+        "prompt":"When did your symptoms start? (e.g. 2 days ago): "
+    },
+    {
+        "key":"chronic_conditions",
+        "question_number":12, 
+        "prompt":"List any long-term medical conditions (e.g. diabetes, high blood pressure), or type 'none': "
+    },
+    {
+        "key":"current_medications",
+        "question_number":13, 
+        "prompt":"List all medicines you take, including supplements and traditional medicine, or type 'none': "
+    },
+    {
+        "key":"drug_allergies",
+        "question_number":14,
+        "prompt":"List any drug allergies, or type 'none': "
+    },
+    {
+        "key":"pregnancy",
+        "question_number":15,
+        "prompt":"Are you currently pregnant? (Y/N): "
     }
 ]
 
@@ -55,7 +90,7 @@ def run_questions():
     
     The output, all_user_responses will be in structured dictionary format.'''
 
-    # initialise state and answers dict to store all responses.
+    # initialise state and answers dict to store all responses
     state = 0
     all_user_responses = {}
 
