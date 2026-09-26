@@ -99,3 +99,22 @@ def clean_hsa_data(hsa_df):
 
     return hsa_df 
 
+#Load the datasets
+def get_cleaned_datasets():
+
+    icd_df = load_icd_data()
+    hsa_df = load_hsa_data()
+
+    if icd_df is None or hsa_df is None:
+        return None, None
+
+    icd_df = clean_icd_data(
+        icd_df
+    )
+
+    hsa_df = clean_hsa_data(
+        hsa_df
+    )
+
+    return icd_df, hsa_df
+
