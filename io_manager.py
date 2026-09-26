@@ -108,9 +108,16 @@ def run_questions():
 
         # increments state by 1 to move onto the next question, till all questions completed
         state += 1
+    #Checks if the program has finished running successfully
+    #Only scenario where the length of responses and questions wont be equal is if user quits program or refuses consent
+    if len(all_user_responses) == len(all_questions):
+        # return the final dictionary with all answers to the questions
+        return all_user_responses
+    else:
+        #User has quit or refused consent
+        print("You have either refused consent or quit.")
+        print("Exiting back to Menu! Have a nice day.")
 
-    # return the final dictionary with all answers to the questions
-    return all_user_responses
 
-run_questions()
+all_user_responses=run_questions()
 
