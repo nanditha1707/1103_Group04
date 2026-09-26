@@ -1,5 +1,5 @@
 # list containing dictionaries to store all questions, used by run_questions()
-all_questions = [
+ALL_QUESTIONS = [
     {
         "key":"consent", 
         "question_number":0,
@@ -82,6 +82,7 @@ all_questions = [
         "prompt":"List any drug allergies, or type 'none': "
     }
 ]
+QUIT_SIGNAL = -99
 
 def run_questions():
     '''Use dictionary approach to move between questions.
@@ -95,11 +96,11 @@ def run_questions():
     state = 0
     all_user_responses = {}
 
-    while state < len(all_questions):
+    while state < len(ALL_QUESTIONS):
 
         # this tells which dictionary to point at
         # intiially, all_questions[0] since state = 0, which refers to the consent dictionary
-        question_index = all_questions[state]
+        question_index = ALL_QUESTIONS[state]
         
         # ask the "prompt" value of the currently selected dictionary
         response = input(f"{question_index["prompt"]}")
@@ -111,7 +112,7 @@ def run_questions():
         state += 1
     #Checks if the program has finished running successfully
     #Only scenario where the length of responses and questions wont be equal is if user quits program or refuses consent
-    if len(all_user_responses) == len(all_questions):
+    if len(all_user_responses) == len(ALL_QUESTIONS):
         # return the final dictionary with all answers to the questions
         return all_user_responses
     else:
