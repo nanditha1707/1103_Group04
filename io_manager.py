@@ -25,16 +25,17 @@ all_questions = [
         "question_number":4, 
         "prompt":"Enter your Age: "
     },
-        {
-        "key":"pregnancy",
-        "question_number":5,
-        "prompt":"Are you currently pregnant? (Y/N): "
-    },
     {
         "key":"phone_number", 
-        "question_number":6,
+        "question_number":5,
         "prompt":"Please enter your phone number: "
     },
+    {
+        "key":"pregnancy",
+        "question_number":6,
+        "prompt":"Are you currently pregnant? (Y/N): "
+    },
+
     {
         "key":"red_flag_chest_pain",
         "question_number":7,
