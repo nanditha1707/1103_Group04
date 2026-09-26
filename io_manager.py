@@ -3,7 +3,7 @@ all_questions = [
     {
         "key":"consent", 
         "question_number":0,
-        "prompt":"Please enter your consent to share your data (Y/N): "
+        "prompt":"Do you consent to sharing your data (Y/N): "
     },
     {
         "key":"name", 
@@ -25,60 +25,60 @@ all_questions = [
         "question_number":4, 
         "prompt":"Enter your Age: "
     },
+        {
+        "key":"pregnancy",
+        "question_number":5,
+        "prompt":"Are you currently pregnant? (Y/N): "
+    },
     {
         "key":"phone_number", 
-        "question_number":5,
+        "question_number":6,
         "prompt":"Please enter your phone number: "
     },
     {
         "key":"red_flag_chest_pain",
-        "question_number":6,
-        "prompt":"Do you have chest pain right now? (Y/N): "
+        "question_number":7,
+        "prompt":"Are you currently experiencing chets pain? (Y/N): "
     },
     {
         "key":"red_flag_breathing",
-        "question_number":7,
+        "question_number":8,
         "prompt":"Are you severely short of breath right now? (Y/N): "
     },
     {
         "key":"red_flag_stroke",
-        "question_number":8,
+        "question_number":9,
         "prompt":"Do you have sudden weakness or numbness on one side of your body? (Y/N): "
     },
     {
         "key":"self_harm",
-        "question_number":9,
+        "question_number":10,
         "prompt":"Are you having thoughts of harming yourself? (Y/N): "
     },
     {
         "key":"current_symptoms",
-        "question_number":10, 
+        "question_number":11, 
         "prompt":"Please tell us your current symptoms: "
     },
     {
         "key":"symptom_onset",
-        "question_number":11,
+        "question_number":12,
         "prompt":"When did your symptoms start? (e.g. 2 days ago): "
     },
     {
         "key":"chronic_conditions",
-        "question_number":12, 
-        "prompt":"List any long-term medical conditions (e.g. diabetes, high blood pressure), or type 'none': "
+        "question_number":13, 
+        "prompt":"Are you suffering from any chronic conditions? (Y/N): "
     },
     {
         "key":"current_medications",
-        "question_number":13, 
-        "prompt":"List all medicines you take, including supplements and traditional medicine, or type 'none': "
+        "question_number":14, 
+        "prompt":"Are you currently on any medication? (Y/N): "
     },
     {
         "key":"drug_allergies",
-        "question_number":14,
-        "prompt":"List any drug allergies, or type 'none': "
-    },
-    {
-        "key":"pregnancy",
         "question_number":15,
-        "prompt":"Are you currently pregnant? (Y/N): "
+        "prompt":"List any drug allergies, or type 'none': "
     }
 ]
 
