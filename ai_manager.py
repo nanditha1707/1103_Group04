@@ -56,10 +56,11 @@ def ai_api_error_handler(
     timeout_seconds: int = 60
 ) -> Dict[str, Any]:
     try:
+        #Execute the API call with a timelimit of 60 seconds 
         with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
             future = executor.submit(api_call_func)
             result_text = future.result(timeout=timeout_seconds)
-
+        #Check for empty response
         if not result_text or not str(result_text).strip():
             error_variable = {
                 "success": False,
@@ -71,7 +72,7 @@ def ai_api_error_handler(
                 "message": "Response was empty or blocked by safety filters."
             }
             return error_variable
-
+        #SUCCESS Path (200)
         return {
             "success": True,
             "data": result_text,
@@ -83,7 +84,7 @@ def ai_api_error_handler(
         }
 
     except concurrent.futures.TimeoutError:
-   
+        #TIMEOUT failure
         error_variable = {
             "success": False,
             "data": None,
@@ -96,10 +97,10 @@ def ai_api_error_handler(
         return error_variable
 
     except APIError as e:
-       
+        #API 4xx / 5xx FAILURE
         status_code = getattr(e, "code", "Unknown")
         raw_msg = getattr(e, "message", str(e))
-
+        #Categorize HTTP error status code
         if isinstance(status_code, int) and 400 <= status_code < 500:
             error_type = f"Error 4xx ({status_code})"
         elif isinstance(status_code, int) and status_code >= 500:
@@ -119,7 +120,7 @@ def ai_api_error_handler(
         return error_variable
 
     except Exception as e:
-      
+        #LOCAL SYSTEM EXCEPTION
         error_variable = {
             "success": False,
             "data": None,
