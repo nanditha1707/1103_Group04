@@ -85,13 +85,22 @@ ALL_QUESTIONS = [
 QUIT_SIGNAL = -99
 
 def validate_consent(input : str, state : int):
- 
+    '''
+    Dedicated function to validate the consent question input
+    Parameters:
+    input(string): "Y" or "N" input.
+    validated_flag(bool): Boolean flag indicating whether or not the file has been validated, main value returned
+    state(int): represents the current step in the questionare, needed for other linked functions and to terminate program
+    Input
+    '''
     if input == "Y":
         validated_flag = True
         return validated_flag, state
     elif input == "N":
+        # Program cannot store data and make AI analysis without user consent
         print("You have not given your consent, as such, we are unable to process you into the system.")
         validated_flag= True
+        # Sets the state to the exit signal to tell program to stop running its current questionare
         state = QUIT_SIGNAL
         return validated_flag, state
     else:
