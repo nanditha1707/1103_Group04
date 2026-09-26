@@ -43,3 +43,59 @@ def load_hsa_data():
     except pd.errors.ParserError:
         return None
 
+# Clean ICD Dataset
+def clean_icd_data(icd_df):
+
+    # Remove the columns that are completely empty
+    icd_df = icd_df.dropna( 
+        axis=1,
+        how="all",
+        # inplace=True
+    ) 
+
+    # Catch all empty strings
+    icd_df = icd_df.replace( 
+        r'^\s*$', 
+        np.nan, 
+        regex=True
+    )
+
+    # Remove all duplicate rows
+    icd_df = icd_df.drop_duplicates()
+
+    return icd_df 
+
+# Clean HSA Dataset
+def clean_hsa_data(hsa_df):
+
+    # Remove the columns that are completely empty
+    hsa_df = hsa_df.dropna(
+        axis=1,
+        how="all",
+        # inplace=True
+    )
+
+    # Catch all empty strings
+    hsa_df = hsa_df.replace( 
+        r'^\s*$', 
+        np.nan, 
+        regex=True
+    )
+
+     # Remove all duplicate rows
+    hsa_df = hsa_df.drop_duplicates()
+
+    # Convert date to date time
+    hsa_df['Approvaldate'] = pd.to_datetime(
+        hsa_df['Approvaldate'],
+        errors='coerce'
+    )
+
+    # Convert date time to YYYY/MM/DD
+    hsa_df["Approvaldate"] = (
+        hsa_df["Approvaldate"]
+        .dt.strftime("%Y/%m/%d")
+    )
+
+    return hsa_df 
+
