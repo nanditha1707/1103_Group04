@@ -130,3 +130,30 @@ def ai_api_error_handler(
             "message": str(e)
         }
         return error_variable
+
+def switch_on_error(models: list[dict], timeout_seconds: int = 60) -> Dict[str, Any]:
+  
+    last_result = None
+
+    for option in models:
+        print(f"[switcher] trying '{option['api_name']}' / '{option['model_name']}'")
+
+        result = ai_api_error_handler(
+            api_call_func=option["call_fn"],
+            api_name=option["api_name"],
+            model_name=option["model_name"],
+            timeout_seconds=timeout_seconds,
+        )
+
+        if result["success"]:
+            return result
+
+        print(
+            f"[switcher] '{option['api_name']}' failed "
+            f"({result['error_type']}, status={result['status_code']}): {result['message']}"
+        )
+        last_result = result
+        continue  # switch to next model
+
+    print("Sorry all APIs are currently down. Please try again later")
+    return last_result
