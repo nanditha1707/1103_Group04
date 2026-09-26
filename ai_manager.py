@@ -1,5 +1,8 @@
 from google import genai
 import anthropic
+import concurrent.futures
+from typing import Any, Callable, Dict
+from google.genai.errors import APIError
 """
 Function to call the gemini API 
 Parameters:
@@ -31,4 +34,93 @@ def call_claude(
         messages=[{"role": "user", "content": prompt}],
     )
         return response.content[0].text
-        
+
+"""
+AI API Error Handler Function (Pure Function - Variable Storage Only)
+    
+Executes an API call function (Gemini or Claude), enforces a timeout limit,
+catches 4xx/5xx HTTP errors, and stores all failure or success details into 
+an in-memory dictionary variable without writing to any file.
+"""
+
+def ai_api_error_handler(
+    api_call_func: Callable[[], str],
+    api_name: str = "AI API 1",
+    model_name: str = "Gemini 3.5 Flash",
+    timeout_seconds: int = 60
+) -> Dict[str, Any]:
+    try:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+            future = executor.submit(api_call_func)
+            result_text = future.result(timeout=timeout_seconds)
+
+        if not result_text or not str(result_text).strip():
+            error_variable = {
+                "success": False,
+                "data": None,
+                "api_name": api_name,
+                "model_name": model_name,
+                "error_type": "EMPTY_RESPONSE",
+                "status_code": None,
+                "message": "Response was empty or blocked by safety filters."
+            }
+            return error_variable
+
+        return {
+            "success": True,
+            "data": result_text,
+            "api_name": api_name,
+            "model_name": model_name,
+            "error_type": None,
+            "status_code": 200,
+            "message": "OK 200"
+        }
+
+    except concurrent.futures.TimeoutError:
+   
+        error_variable = {
+            "success": False,
+            "data": None,
+            "api_name": api_name,
+            "model_name": model_name,
+            "error_type": "TIMEOUT",
+            "status_code": 408,
+            "message": f"Execution exceeded {timeout_seconds}s limit."
+        }
+        return error_variable
+
+    except APIError as e:
+       
+        status_code = getattr(e, "code", "Unknown")
+        raw_msg = getattr(e, "message", str(e))
+
+        if isinstance(status_code, int) and 400 <= status_code < 500:
+            error_type = f"Error 4xx ({status_code})"
+        elif isinstance(status_code, int) and status_code >= 500:
+            error_type = f"Error 5xx ({status_code})"
+        else:
+            error_type = "API Error"
+
+        error_variable = {
+            "success": False,
+            "data": None,
+            "api_name": api_name,
+            "model_name": model_name,
+            "error_type": error_type,
+            "status_code": status_code,
+            "message": raw_msg
+        }
+        return error_variable
+
+    except Exception as e:
+      
+        error_variable = {
+            "success": False,
+            "data": None,
+            "api_name": api_name,
+            "model_name": model_name,
+            "error_type": "SYSTEM_EXCEPTION",
+            "status_code": None,
+            "message": str(e)
+        }
+        return error_variable
