@@ -84,6 +84,21 @@ ALL_QUESTIONS = [
 ]
 QUIT_SIGNAL = -99
 
+def validate_consent(input : str, state : int):
+ 
+    if input == "Y":
+        validated_flag = True
+        return validated_flag, state
+    elif input == "N":
+        print("You have not given your consent, as such, we are unable to process you into the system.")
+        validated_flag= True
+        state = QUIT_SIGNAL
+        return validated_flag, state
+    else:
+        print("This is not a valid response, please only enter Y or N!")
+        validated_flag= False
+        return validated_flag, state
+
 def run_questions():
     '''Use dictionary approach to move between questions.
     all_questions variable stores a list of dictionaries, each dict containing a question.
