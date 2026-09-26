@@ -131,24 +131,36 @@ def ai_api_error_handler(
             "message": str(e)
         }
         return error_variable
-
+"""
+AI API Model Switcher Function
+Parameters Added on:
+models (list[dict]): Priority-ordered list of model options to try.
+    Each entry is a dict with three keys: api_name (str), model_name
+    (str), and call_fn (Callable[[], str]), the zero-arg function that
+    actually calls that model. Order matters: most preferred model
+    first, since the loop stops at the first success.
+timeout_seconds (int): Max time to wait for each individual model's
+    response before it's treated as a timeout. Not used directly here
+    passed straight through to ai_api_error_handler on every attempt, so
+    each model gets the same timeout budget.
+"""
 def switch_on_error(models: list[dict], timeout_seconds: int = 60) -> Dict[str, Any]:
-  
+    #Track the most recent failure in case every model ends up failing
     last_result = None
-
+    #Goes the models in priority order, most preferred first
     for option in models:
         print(f"[switcher] trying '{option['api_name']}' / '{option['model_name']}'")
-
+        #Delegate the actual call to ai_api_error_handler
         result = ai_api_error_handler(
             api_call_func=option["call_fn"],
             api_name=option["api_name"],
             model_name=option["model_name"],
             timeout_seconds=timeout_seconds,
         )
-
+        #if result is successful, it it won't try remaining models
         if result["success"]:
             return result
-
+        #log which model failed and why
         print(
             f"[switcher] '{option['api_name']}' failed "
             f"({result['error_type']}, status={result['status_code']}): {result['message']}"
@@ -157,4 +169,5 @@ def switch_on_error(models: list[dict], timeout_seconds: int = 60) -> Dict[str, 
         continue  # switch to next model
 
     print("Sorry all APIs are currently down. Please try again later")
+    #All models failed, print out message
     return last_result
