@@ -9,6 +9,7 @@ Parameters:
 prompt(string): The text prompt or instructions you want to send to Gemini model 
 api_key: Your personal Google Gemini API key string, required to authenticate and grant permission to access the service.
 model: the model or version of Gemini that you want to use
+Variable:
 client: Initializes the Google GenAI client object by passing in your api_key. This client handles the network connections and request formatting.
 response: Used to Store the full response object received from Google's servers using the command client.models.generate_content(..)
 return: Extracts and return just plain generated text through (response.text) back to wherever the function was called.
@@ -36,11 +37,16 @@ def call_claude(
         return response.content[0].text
 
 """
-AI API Error Handler Function (Pure Function - Variable Storage Only)
-    
-Executes an API call function (Gemini or Claude), enforces a timeout limit,
-catches 4xx/5xx HTTP errors, and stores all failure or success details into 
-an in-memory dictionary variable without writing to any file.
+Function for AI API Error Handler 
+Parameters Added on: 
+api_call_func (Callable[[], str]): This is to target AI API function (e.g., call_gemini or call_claude)
+api_name: This is for the API node being executed
+model_name: This is to specify model name
+timeout_seconds: This is the maximum time limit in seconds to wait for an API response before triggering a timeout error.
+Dictionary Keys:
+success (bool): True if the API call succeeded (200 OK), False if any error occurred
+error_type (str | None): The failure category
+message (str): The error explanation or status description.
 """
 
 def ai_api_error_handler(
