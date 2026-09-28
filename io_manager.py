@@ -109,6 +109,14 @@ def validate_consent(input : str, state : int):
         print("This is not a valid response, please only enter Y or N!")
         validated_flag= False
         return validated_flag, state
+    
+#
+def validate_nric(input : str):
+    # Assigns validated_flag bool value using a regex match expression from the re library
+    # Regular expression checks that input starts with valid nric starting letters, followed by 7 digits and a final letter
+    validated_flag = bool(re.match(r"^[STMFG]\d{7}[A-Z]$", input))
+
+    return validated_flag
 
 def validate_name(input : str):
     """validate name based on regex expression"""
