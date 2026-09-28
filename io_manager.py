@@ -1,3 +1,5 @@
+import re
+
 # list containing dictionaries to store all questions, used by run_questions()
 ALL_QUESTIONS = [
     {
@@ -85,14 +87,14 @@ ALL_QUESTIONS = [
 QUIT_SIGNAL = -99
 
 def validate_consent(input : str, state : int):
-    '''
+    """
     Dedicated function to validate the consent question input
     Parameters:
     input(string): "Y" or "N" input.
     validated_flag(bool): Boolean flag indicating whether or not the file has been validated, main value returned
     state(int): represents the current step in the questionare, needed for other linked functions and to terminate program
     Input
-    '''
+    """
     if input == "Y":
         validated_flag = True
         return validated_flag, state
@@ -108,13 +110,25 @@ def validate_consent(input : str, state : int):
         validated_flag= False
         return validated_flag, state
 
+def validate_name(input : str):
+    """validate name based on regex expression"""
+    # Conditional checks regex and expression
+    # Regex expression checks that input contains only letters for the first character, and all other letters are alphabetical, apostrophes or hyohens
+    if bool(re.match(r"^[A-Z][A-Z'-]*$", input)):
+        validated_flag =  True
+    else:
+        validated_flag = False
+        print("This is not a valid name, only alphabets, spaces, hyphens and apostrophes are allowed!")
+
+    return validated_flag
+
 def run_questions():
-    '''Use dictionary approach to move between questions.
+    """Use dictionary approach to move between questions.
     all_questions variable stores a list of dictionaries, each dict containing a question.
     This function cycles through the list of dictionaries to dynamically access the correct 
     question based on the current state.
     
-    The output, all_user_responses will be in structured dictionary format.'''
+    The output, all_user_responses will be in structured dictionary format."""
 
     # initialise state and answers dict to store all responses
     state = 0
