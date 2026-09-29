@@ -109,8 +109,7 @@ def validate_consent(input : str, state : int):
         print("This is not a valid response, please only enter Y or N!")
         validated_flag= False
         return validated_flag, state
-    
-#
+
 def validate_nric(input : str):
     # Assigns validated_flag bool value using a regex match expression from the re library
     # Regular expression checks that input starts with valid nric starting letters, followed by 7 digits and a final letter
@@ -128,6 +127,24 @@ def validate_name(input : str):
         validated_flag = False
         print("This is not a valid name, only alphabets, spaces, hyphens and apostrophes are allowed!")
 
+    return validated_flag
+
+def validate_gender(input : str) -> str | None:
+    if input == "M" or input == "F":
+        validated_flag = True
+    else:
+        validated_flag = False
+        print("This is not a valid input, please only enter either M or F")
+    return validated_flag
+
+
+def validate_age(input : str) -> str | None:
+    """Validate age based on whether it is a positive integer using is.digit()"""
+    if input.isdigit():
+        validated_flag = True
+    else:
+        validated_flag = False
+        print("This is not a valid input, please only enter positive numbers for age")
     return validated_flag
 
 def run_questions():
