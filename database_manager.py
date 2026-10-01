@@ -46,55 +46,169 @@ def load_hsa_data():
 # Clean ICD Dataset
 def clean_icd_data(icd_df):
 
-    # Remove the columns that are completely empty
-    icd_df = icd_df.dropna( 
-        axis=1,
-        how="all",
-        # inplace=True
-    ) 
+    # Keep only the disease title column
+    icd_df = icd_df[
+        [
+            "Title"
+        ]
+    ].copy()
 
-    # Catch all empty strings
-    icd_df = icd_df.replace( 
-        r'^\s*$', 
-        np.nan, 
+
+    # Rename column to make it clearer
+    icd_df = icd_df.rename(
+        columns={
+            "Title": "DiseaseName"
+        }
+    )
+
+
+    # Replace empty strings with NaN
+    icd_df = icd_df.replace(
+        r"^\s*$",
+        np.nan,
         regex=True
     )
 
-    # Remove all duplicate rows
+
+    # Replace dash values with NaN
+    icd_df = icd_df.replace(
+        r"^\s*[-–—]+\s*$",
+        np.nan,
+        regex=True
+    )
+
+
+    # Remove rows where disease name is missing
+    icd_df = icd_df.dropna(
+        subset=[
+            "DiseaseName"
+        ]
+    )
+
+
+    # Remove duplicate diseases
     icd_df = icd_df.drop_duplicates()
 
-    return icd_df 
+
+    # Remove extra spaces
+    icd_df["DiseaseName"] = (
+        icd_df["DiseaseName"]
+        .astype(str)
+        .str.strip()
+    )
+
+
+    # Reset index
+    icd_df = icd_df.reset_index(
+        drop=True
+    )
+
+
+    return icd_df
 
 # Clean HSA Dataset
 def clean_hsa_data(hsa_df):
 
-    # Remove the columns that are completely empty
-    hsa_df = hsa_df.dropna(
-        axis=1,
-        how="all",
-        # inplace=True
+    # Keep only the required columns
+    hsa_df = hsa_df[
+        [
+            "Productname",
+            "Dosageform",
+            "Strength",
+            "Activeingredients",
+            "ATCCode",
+            "Forensicclassification"
+        ]
+    ].copy()
+
+
+    # Rename columns to clearer names
+    hsa_df = hsa_df.rename(
+        columns={
+            "Productname": "DrugName",
+            "Dosageform": "Dosage",
+            "Strength": "Strength",
+            "Activeingredients": "ActiveIngredients",
+            "ATCCode": "ATCCode",
+            "Forensicclassification": "Classification"
+        }
     )
 
-    # Catch all empty strings
-    hsa_df = hsa_df.replace( 
-        r'^\s*$', 
-        np.nan, 
+
+    # Replace empty strings with NaN
+    hsa_df = hsa_df.replace(
+        r"^\s*$",
+        np.nan,
         regex=True
     )
 
-     # Remove all duplicate rows
-    hsa_df = hsa_df.drop_duplicates()
 
-    # Convert date to date time
-    hsa_df['Approvaldate'] = pd.to_datetime(
-        hsa_df['Approvaldate'],
-        errors='coerce'
+    # Replace -, --, — etc. with NaN
+    hsa_df = hsa_df.replace(
+        r"^\s*[-–—]+\s*$",
+        np.nan,
+        regex=True
     )
 
-    # Convert date time to YYYY/MM/DD
-    hsa_df["Approvaldate"] = (
-        hsa_df["Approvaldate"]
-        .dt.strftime("%Y/%m/%d")
+
+    # Remove rows that are missing important information
+    hsa_df = hsa_df.dropna(
+        subset=[
+            "DrugName",
+            "Dosage",
+            "Strength",
+            "ActiveIngredients",
+            "ATCCode",
+            "Classification"
+        ]
+    )
+
+
+    # Remove duplicate rows
+    hsa_df = hsa_df.drop_duplicates()
+
+
+    # Remove extra spaces
+    hsa_df["DrugName"] = (
+        hsa_df["DrugName"]
+        .astype(str)
+        .str.strip()
+    )
+
+    hsa_df["Dosage"] = (
+        hsa_df["Dosage"]
+        .astype(str)
+        .str.strip()
+    )
+
+    hsa_df["Strength"] = (
+        hsa_df["Strength"]
+        .astype(str)
+        .str.strip()
+    )
+
+    hsa_df["ActiveIngredients"] = (
+        hsa_df["ActiveIngredients"]
+        .astype(str)
+        .str.strip()
+    )
+
+    hsa_df["ATCCode"] = (
+        hsa_df["ATCCode"]
+        .astype(str)
+        .str.strip()
+    )
+
+    hsa_df["Classification"] = (
+        hsa_df["Classification"]
+        .astype(str)
+        .str.strip()
+    )
+
+
+    # Reset index
+    hsa_df = hsa_df.reset_index(
+        drop=True
     )
 
     return hsa_df 
