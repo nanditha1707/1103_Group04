@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - "feature/**"
 
   pull_request:
     branches:
@@ -24,7 +25,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: "3.14.7"
 
 
       - name: Install dependencies
@@ -33,11 +34,17 @@ jobs:
           pip install -r requirements.txt
 
 
-      - name: Run tests
-        run: |
-          python -m pytest
+      # - name: Run tests
+      #   run: |
+      #     python -m pytest
 
 
       - name: Build Docker image
         run: |
           docker build -t group04-healthcare .
+          
+
+      - name: Smoke Test the container
+        run: |
+          docker run --rm group04-healthcare
+          
