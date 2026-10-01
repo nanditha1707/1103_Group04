@@ -3,4 +3,4 @@ numpy
 google-genai
 anthropic
 pytest
-ruff
+pylint
