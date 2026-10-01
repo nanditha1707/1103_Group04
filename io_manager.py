@@ -147,6 +147,31 @@ def validate_age(input : str) -> str | None:
         print("This is not a valid input, please only enter positive numbers for age")
     return validated_flag
 
+def validate_orchestator(input : str,state : int):
+    while True:
+        if input == "QUIT" or input == "BACK" :
+            validated_flag = True
+            break
+        if not input :
+            validated_flag = False
+            print("Your input cannot be blank, please try again!")
+            break
+        if state == 0:
+            validated_flag, state = validate_consent(input, state)
+            break
+        if state == 1:
+            validated_flag = validate_name(input)
+            break
+        if state == 2:
+            validated_flag = validate_nric(input)
+            break
+        if state == 3:
+            validated_flag = validate_gender(input)
+        else:
+            validated_flag = True
+            break
+    return validated_flag, state
+
 def run_questions():
     """Use dictionary approach to move between questions.
     all_questions variable stores a list of dictionaries, each dict containing a question.
