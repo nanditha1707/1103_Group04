@@ -1,0 +1,6 @@
+pandas
+numpy
+google-genai
+anthropic
+pytest
+pylint
