@@ -85,11 +85,6 @@ def clean_icd_data(icd_df):
         ]
     )
 
-
-    # Remove duplicate diseases
-    icd_df = icd_df.drop_duplicates()
-
-
     # Remove extra spaces
     icd_df["DiseaseName"] = (
         icd_df["DiseaseName"]
@@ -97,6 +92,8 @@ def clean_icd_data(icd_df):
         .str.strip()
     )
 
+    # Remove duplicate diseases
+    icd_df = icd_df.drop_duplicates()
 
     # Reset index
     icd_df = icd_df.reset_index(
@@ -142,8 +139,7 @@ def clean_hsa_data(hsa_df):
         regex=True
     )
 
-
-    # Replace -, --, — etc. with NaN
+    # Replace dash values with NaN
     hsa_df = hsa_df.replace(
         r"^\s*[-–—]+\s*$",
         np.nan,
@@ -162,11 +158,6 @@ def clean_hsa_data(hsa_df):
             "Classification"
         ]
     )
-
-
-    # Remove duplicate rows
-    hsa_df = hsa_df.drop_duplicates()
-
 
     # Remove extra spaces
     hsa_df["DrugName"] = (
@@ -205,6 +196,8 @@ def clean_hsa_data(hsa_df):
         .str.strip()
     )
 
+    # Remove duplicate rows
+    hsa_df = hsa_df.drop_duplicates()
 
     # Reset index
     hsa_df = hsa_df.reset_index(
