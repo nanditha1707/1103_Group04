@@ -35,7 +35,7 @@ jobs:
 
       - name: Run Pylint
         run: |
-          pylint *.py --fail-under=5
+          pylint *.py --fail-under=5 --fail-on=E
 
       # - name: Run tests
       #   run: |
@@ -47,7 +47,7 @@ jobs:
           docker build -t group04-healthcare .
           
 
-      - name: Smoke Test the container
+      - name: Run Test the container
         run: |
           docker run --rm group04-healthcare
           
