@@ -47,7 +47,14 @@ jobs:
           docker build -t group04-healthcare .
           
 
-      - name: Run Test the container
+      - name: Run Test the container for test case 1
         run: |
-          docker run --rm group04-healthcare
-          
+          docker run --rm -i group04-healthcare < tests/test_input_male.txt
+      
+      - name: Run Test the container for test case 2 
+        run: |
+          docker run --rm -i group04-healthcare < tests/test_input_male_ai_bypass.txt
+      
+      - name: Run Test the container for test case 3  
+        run: |
+          docker run --rm -i group04-healthcare < tests/test_input_female.txt
