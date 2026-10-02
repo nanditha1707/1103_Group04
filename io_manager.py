@@ -208,6 +208,3 @@ def run_questions():
         print("You have either refused consent or quit.")
         print("Exiting back to Menu! Have a nice day.")
 
-
-all_user_responses=run_questions()
-
