@@ -1,5 +1,7 @@
 import re
 
+QUIT_SIGNAL = -99
+
 # list containing dictionaries to store all questions, used by run_questions()
 ALL_QUESTIONS = [
     {
@@ -84,7 +86,6 @@ ALL_QUESTIONS = [
         "prompt":"List any drug allergies, or type 'none': "
     }
 ]
-QUIT_SIGNAL = -99
 
 def validate_consent(input : str, state : int):
     """
@@ -167,6 +168,7 @@ def validate_orchestator(input : str,state : int):
             break
         if state == 3:
             validated_flag = validate_gender(input)
+            break
         else:
             validated_flag = True
             break
@@ -192,6 +194,23 @@ def run_questions():
         
         # ask the "prompt" value of the currently selected dictionary
         response = input(f"{question_index["prompt"]}")
+
+        # validates the response before storing it
+        validated_flag, state = validate_orchestator(response, state)
+
+        # invalid response, do not store it and ask the same question again
+        if not validated_flag:
+            continue
+
+        # user typed QUIT or refused consent, stop asking questions
+        if response == "QUIT" or state == QUIT_SIGNAL:
+            break
+
+        # user typed BACK, go to the previous question (unless already on the first one)
+        if response == "BACK":
+            if state > 0:
+                state -= 1
+            continue
 
         # stores the answer in the answers dictionary with the corresponding "key"
         all_user_responses[question_index["key"]] = response

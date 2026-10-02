@@ -1,3 +1,5 @@
 .env
 README.md
-pytest_cache
+.pytest_cache
+__pycache__/
+*.pyc
