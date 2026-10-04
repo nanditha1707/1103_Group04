@@ -11,6 +11,11 @@ QUIT_COMMAND = "QUIT"
 BACK_COMMAND = "BACK"
 FILE_PATH = "Put here later" #To Be Updated
 
+# =============================================================================
+# ALL QUESTIONS LIST
+# =============================================================================
+# List containing dictionaries to store all questions to ask the user, used by run_questions()
+# Each question and its related details is stored as a dictionary
 ALL_QUESTIONS = [
     {
         "key": "consent",
