@@ -96,6 +96,13 @@ ALL_QUESTIONS = [
     }
 ]
 
+def validate_boolean(current_user_answer: str) -> str | None:
+    """Multiple questions have either Y or N as possible responses, so this function is used for all of such boolean questions"""
+    if current_user_answer in ["Y", "N"]:
+        return None
+    else:
+        return "Please enter only either 'Y' or 'N'."
+
 def validate_nric(input : str):
     # Assigns validated_flag bool value using a regex match expression from the re library
     # Regular expression checks that input starts with valid nric starting letters, followed by 7 digits and a final letter
