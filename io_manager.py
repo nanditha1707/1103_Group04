@@ -11,93 +11,94 @@ QUIT_COMMAND = "QUIT"
 BACK_COMMAND = "BACK"
 FILE_PATH = "Put here later" #To Be Updated
 
-# list containing dictionaries to store all questions, used by run_questions()
 ALL_QUESTIONS = [
     {
-        "key":"consent", 
-        "question_number":0,
-        "prompt":"Do you consent to sharing your data (Y/N): "
+        "key": "consent",
+        "prompt": "Do you consent to sharing your data? Consent is required to continue with the registration process. (Y/N): ",
+        "validation_function": validate_boolean
     },
     {
-        "key":"name", 
-        "question_number":1,
-        "prompt":"Enter your Name: "
+        "key": "name",
+        "prompt": "Enter your Name: ",
+        "validation_function": validate_name
     },
     {
-        "key":"nric",
-        "question_number":2, 
-        "prompt":"Enter your NRIC: "
+        "key": "nric",
+        "prompt": "Enter your NRIC: ",
+        "validation_function": validate_nric
     },
     {
-        "key":"gender",
-        "question_number":3, 
-        "prompt":"Enter your Gender [M/F]: "
+        "key": "gender",
+        "prompt": "Enter your Gender [M/F]: ",
+        "validation_function": validate_gender
     },
     {
-        "key":"age",
-        "question_number":4, 
-        "prompt":"Enter your Age: "
+        "key": "age",
+        "prompt": "Enter your Age: ",
+        "validation_function": ""
     },
     {
-        "key":"phone_number", 
-        "question_number":5,
-        "prompt":"Please enter your phone number: "
+        "key": "phone_number",
+        "prompt": "Please enter your country code and phone number in the following format (+65 88880000): ",
+        "validation_function": ""
     },
     {
-        "key":"pregnancy",
-        "question_number":6,
-        "prompt":"Are you currently pregnant? (Y/N): "
-    },
-
-    {
-        "key":"red_flag_chest_pain",
-        "question_number":7,
-        "prompt":"Are you currently experiencing chets pain? (Y/N): "
+        "key": "pregnancy",
+        "prompt": "Are you currently pregnant? (Y/N): ",
+        "validation_function": validate_boolean
     },
     {
-        "key":"red_flag_breathing",
-        "question_number":8,
-        "prompt":"Are you severely short of breath right now? (Y/N): "
+        "key": "red_flag_chest_pain",
+        "prompt": "Are you currently experiencing chest pain? (Y/N): ",
+        "validation_function": validate_boolean
     },
     {
-        "key":"red_flag_stroke",
-        "question_number":9,
-        "prompt":"Do you have sudden weakness or numbness on one side of your body? (Y/N): "
+        "key": "red_flag_breathing",
+        "prompt": "Are you severely short of breath right now? (Y/N): ",
+        "validation_function": validate_boolean
     },
     {
-        "key":"self_harm",
-        "question_number":10,
-        "prompt":"Are you having thoughts of harming yourself? (Y/N): "
+        "key": "red_flag_stroke",
+        "prompt": "Do you have sudden weakness or numbness on one side of your body? (Y/N): ",
+        "validation_function": validate_boolean
     },
     {
-        "key":"current_symptoms",
-        "question_number":11, 
-        "prompt":"Please tell us your current symptoms: "
+        "key": "self_harm",
+        "prompt": "Are you having thoughts of harming yourself? (Y/N): ",
+        "validation_function": validate_boolean
     },
     {
-        "key":"symptom_onset",
-        "question_number":12,
-        "prompt":"When did your symptoms start? (e.g. 2 days ago): "
+        "key": "current_symptoms",
+        "prompt": "Please tell us your current symptoms: ",
+        "validation_function": ""
     },
     {
-        "key":"chronic_conditions",
-        "question_number":13, 
-        "prompt":"Are you suffering from any chronic conditions? (Y/N): "
+        "key": "symptom_onset",
+        "prompt": "When did your symptoms start? (e.g. 2 days ago): ",
+        "validation_function": ""
     },
     {
-        "key":"current_medications",
-        "question_number":14, 
-        "prompt":"Are you currently on any medication? (Y/N): "
+        "key": "chronic_conditions",
+        "prompt": "Are you suffering from any chronic conditions? (Y/N): ",
+        "validation_function": validate_boolean
     },
     {
-        "key":"drug_allergies",
-        "question_number":15,
-        "prompt":"List any drug allergies, or type 'none': "
+        "key": "current_medications",
+        "prompt": "Are you currently on any medication? (Y/N): ",
+        "validation_function": validate_boolean
+    },
+    {
+        "key": "drug_allergies",
+        "prompt": "Do you have any drug allergies? (Y/N): ",
+        "validation_function": validate_boolean
     }
 ]
 
 def validate_boolean(current_user_answer: str) -> str | None:
-    """Multiple questions have either Y or N as possible responses, so this function is used for all of such boolean questions"""
+    """
+    Multiple questions have either Y or N as possible responses, 
+    so this function is used for all of such boolean questions
+    """
     if current_user_answer in ["Y", "N"]:
         return None
     else:
