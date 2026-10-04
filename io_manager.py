@@ -1,4 +1,15 @@
+# =============================================================================
+# LIBRARY IMPORTS AND CONSTANTS
+# =============================================================================
+
 import re
+import phonenumbers
+import difflib
+
+QUIT_SIGNAL = -99
+QUIT_COMMAND = "QUIT"
+BACK_COMMAND = "BACK"
+FILE_PATH = "Put here later" #To Be Updated
 
 # list containing dictionaries to store all questions, used by run_questions()
 ALL_QUESTIONS = [
@@ -84,7 +95,7 @@ ALL_QUESTIONS = [
         "prompt":"List any drug allergies, or type 'none': "
     }
 ]
-QUIT_SIGNAL = -99
+
 
 def validate_consent(input : str, state : int):
     """
