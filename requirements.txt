@@ -1,4 +1,5 @@
 pandas
+phonenumbers
 numpy
 google-genai
 anthropic

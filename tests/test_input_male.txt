@@ -1,0 +1,33 @@
+# Test case 1: male patient, no pregnancy, no red flags (normal flow)
+# Do you consent to sharing your data? (Y/N)
+Y
+# Enter your Name
+JOHN
+# Enter your NRIC
+T0000000Z
+# Enter your Gender [M/F]
+M
+# Enter your Age
+21
+# Please enter your country code and phone number (+65 88880000)
++65 88880000
+# Are you currently pregnant? (Y/N)
+N
+# Are you currently experiencing chest pain? (Y/N)
+N
+# Are you severely short of breath right now? (Y/N)
+N
+# Do you have sudden weakness or numbness on one side of your body? (Y/N)
+N
+# Are you having thoughts of harming yourself? (Y/N)
+N
+# Please tell us your current symptoms
+Flu, Cough, fever
+# When did your symptoms start? (e.g. 2 days ago)
+2 days ago
+# Are you suffering from any chronic conditions? (Y/N)
+N
+# Are you currently on any medication? (Y/N)
+N
+# Do you have any drug allergies? (Y/N)
+N
