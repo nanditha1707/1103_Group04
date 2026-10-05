@@ -3,13 +3,83 @@
 # =============================================================================
 
 import re
-import phonenumbers
-import difflib
 
 QUIT_SIGNAL = -99
 QUIT_COMMAND = "QUIT"
 BACK_COMMAND = "BACK"
 FILE_PATH = "Put here later" #To Be Updated
+
+
+
+def validate_boolean(current_user_answer: str) -> str | None:
+    """
+    Multiple questions have either Y or N as possible responses, 
+    so this function is used for all of such boolean questions
+    """
+    if current_user_answer in ["Y", "N"]:
+        return None
+    else:
+        return "Please enter only either 'Y' or 'N'."
+
+def validate_nric(input : str):
+    # Assigns validated_flag bool value using a regex match expression from the re library
+    # Regular expression checks that input starts with valid nric starting letters, followed by 7 digits and a final letter
+    validated_flag = bool(re.match(r"^[STMFG]\d{7}[A-Z]$", input))
+
+    return validated_flag
+
+def validate_name(current_user_answer: str) -> str | None:
+    # Regex expression checks that input contains only letters for the first character, and all other letters are alphabetical, apostrophes or hyphens
+    if bool(re.match(r"^[A-Z][A-Z'\- ]*$", current_user_answer)):
+        return None
+    else:
+        return "This is not a valid name: only alphabets, spaces, hyphens and apostrophes are allowed."
+
+def validate_gender(input : str) -> str | None:
+    if input == "M" or input == "F":
+        validated_flag = True
+    else:
+        validated_flag = False
+        print("This is not a valid input, please only enter either M or F")
+    return validated_flag
+
+
+def validate_age(input : str) -> str | None:
+    """Validate age based on whether it is a positive integer using is.digit()"""
+    if input.isdigit():
+        validated_flag = True
+    else:
+        validated_flag = False
+        print("This is not a valid input, please only enter positive numbers for age")
+    return validated_flag
+
+def run_validation(questions: dict, current_user_answer: str, current_state: int) -> bool:
+    """Selects the correct validation function for the current question and runs it.
+    Returns either True for valid inputs or False for invalid inputs.
+    The True / False return values will be used in the run_questions() function to determine whether to reprompt or move onto next question."""
+
+    # User input cannot be empty for any question. 
+    # If it's empty the validation function isnt needed, immediately return False for invalid input.
+    if not current_user_answer:
+        print("Input cannot be empty. Please enter a valid input.")
+        return False
+
+
+    # selects the validation function for the current question
+    current_question_validator = questions[current_state]["validation_function"]
+
+    # runs the currently selected validation function by passing the current_user_answer into it
+    # stores the resulting output of either none or the error message string in validation_result
+    validation_result = current_question_validator(current_user_answer)
+
+    # if validation_result indicates 'None problems' then return True 
+    if validation_result is None:
+        return True
+
+    # else validation_result returned a error message string. Print it and return False
+    else:
+        print(validation_result)
+        return False
 
 # =============================================================================
 # ALL QUESTIONS LIST
@@ -99,52 +169,6 @@ ALL_QUESTIONS = [
     }
 ]
 
-def validate_boolean(current_user_answer: str) -> str | None:
-    """
-    Multiple questions have either Y or N as possible responses, 
-    so this function is used for all of such boolean questions
-    """
-    if current_user_answer in ["Y", "N"]:
-        return None
-    else:
-        return "Please enter only either 'Y' or 'N'."
-
-def validate_nric(input : str):
-    # Assigns validated_flag bool value using a regex match expression from the re library
-    # Regular expression checks that input starts with valid nric starting letters, followed by 7 digits and a final letter
-    validated_flag = bool(re.match(r"^[STMFG]\d{7}[A-Z]$", input))
-
-    return validated_flag
-
-def validate_name(input : str):
-    """validate name based on regex expression"""
-    # Conditional checks regex and expression
-    # Regex expression checks that input contains only letters for the first character, and all other letters are alphabetical, apostrophes or hyohens
-    if bool(re.match(r"^[A-Z][A-Z'-]*$", input)):
-        validated_flag =  True
-    else:
-        validated_flag = False
-        print("This is not a valid name, only alphabets, spaces, hyphens and apostrophes are allowed!")
-
-    return validated_flag
-
-def validate_gender(input : str) -> str | None:
-    if input == "M" or input == "F":
-        validated_flag = True
-    else:
-        validated_flag = False
-        print("This is not a valid input, please only enter either M or F")
-    return validated_flag
-
-
-def validate_age(input : str) -> str | None:
-    """Validate age based on whether it is a positive integer using is.digit()"""
-    if input.isdigit():
-        validated_flag = True
-    else:
-        validated_flag = False
-        print("This is not a valid input, please only enter positive numbers for age")
-    return validated_flag
 
 def run_questions():
     """Use dictionary approach to move between questions.
@@ -183,5 +207,5 @@ def run_questions():
         print("Exiting back to Menu! Have a nice day.")
 
 
-all_user_responses=run_questions()
+all_answers=run_questions()
 
