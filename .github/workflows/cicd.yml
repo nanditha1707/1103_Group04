@@ -1,4 +1,4 @@
-name: CI Pipeline
+name: CICD Pipeline
 
 on:
   push:
@@ -35,7 +35,7 @@ jobs:
 
       - name: Run Pylint
         run: |
-          pylint *.py --fail-under=5
+          pylint *.py --fail-under=5 --fail-on=E
 
       # - name: Run tests
       #   run: |
@@ -47,7 +47,14 @@ jobs:
           docker build -t group04-healthcare .
           
 
-      - name: Smoke Test the container
+      - name: Run Test the container for test case 1
         run: |
-          docker run --rm group04-healthcare
-          
+          docker run --rm -i group04-healthcare < tests/test_input_male.txt
+      
+      - name: Run Test the container for test case 2 
+        run: |
+          docker run --rm -i group04-healthcare < tests/test_input_male_ai_bypass.txt
+      
+      - name: Run Test the container for test case 3  
+        run: |
+          docker run --rm -i group04-healthcare < tests/test_input_female.txt
