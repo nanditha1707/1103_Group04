@@ -1,18 +1,18 @@
-"""Functions for calling the Gemini and Claude APIs."""
 import json
-
 import anthropic
 import httpx
 from google import genai
 from google.genai import types, errors
-
+# ================================================
+# CALL FUNCTIONS FOR CLAUDE AND GEMINI
+# ================================================
 
 def call_gemini(prompt, api_key, model="gemini-3.5-flash", tokens=1024):
     """
     Function to call the gemini API.
 
     Parameters:
-        prompt (string): The text prompt or instructions you want to send to Gemini model.
+        prompt: The text prompt or instructions you want to send to Gemini model.
         api_key: Your personal Google Gemini API key string, required to authenticate
             and grant permission to access the service.
         model: The model or version of Gemini that you want to use.
@@ -65,8 +65,10 @@ def call_claude(
     )
     return response.content[0].text
 
-
-def claude_classify_error(error):  # pylint: disable=too-many-return-statements
+# ================================================
+# ERROR CLASSIFICATION FUNCTIONS FOR CLAUDE AND GEMINI
+# ================================================
+def claude_classify_error(error): 
     """Returns 1, 2 3, or 4:
     1 = give up  400, 413
     2 = retry the same model 500, 504
@@ -74,29 +76,29 @@ def claude_classify_error(error):  # pylint: disable=too-many-return-statements
     4 = go to gemini 401, 402, 429, 403, 409
     """
 
-    # damn slow or cant connect then retry
+    # if the error is a timeout or connection error, we can retry the same model
     if isinstance(error, (anthropic.APITimeoutError, anthropic.APIConnectionError)):
         return 2
 
-    # if the json crash
+    # if the error is a JSON decode error, we can retry the same model
     if isinstance(error, json.JSONDecodeError):
         return 2
 
-    # the code error
+    # if the error is an API status error, we can check the status code
     if isinstance(error, anthropic.APIStatusError):
         code = error.status_code
 
-        # model not found, overloaded ; link back to notez = switch model (3)
+        # model not found, overloaded = switch model (3)
         if code in (404, 529):
             return 3
-        # api error, time out ; link backz but the timeout error here is diff
-        # w timeout error of 10 secs rules = retry (2)
+        # api error, time out ; link back but the timeout error is handled above
+        # with timeout error of 10 secs rules = retry (2)
         if code in (500, 504):
             return 2
-        # authentication error, billing error, rate limit ; switch to gemini its free
+        # authentication error, billing error, rate limit = switch to gemini
         if code in (401, 402, 429):
             return 4
-        # invalid, permission error, conflict error and req too large ; fail
+        # invalid, permission error, conflict error and request too large = fail
         if code in (400, 403, 409, 413):
             return 1
 
@@ -105,7 +107,7 @@ def claude_classify_error(error):  # pylint: disable=too-many-return-statements
     return None
 
 
-def gemini_classify_error(error):  # pylint: disable=too-many-return-statements
+def gemini_classify_error(error): 
     """Returns 1, 2 or 3:
     1 = give up 400,401,403,429,499
     2 = retry the same model 500
