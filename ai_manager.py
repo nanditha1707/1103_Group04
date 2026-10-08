@@ -66,6 +66,45 @@ def call_claude(
     return response.content[0].text
 
 
+def claude_classify_error(error):  # pylint: disable=too-many-return-statements
+    """Returns 1, 2 3, or 4:
+    1 = give up  400, 413
+    2 = retry the same model 500, 504
+    3 = switch to a different Claude model 404, 529
+    4 = go to gemini 401, 402, 429, 403, 409
+    """
+
+    # damn slow or cant connect then retry
+    if isinstance(error, (anthropic.APITimeoutError, anthropic.APIConnectionError)):
+        return 2
+
+    # if the json crash
+    if isinstance(error, json.JSONDecodeError):
+        return 2
+
+    # the code error
+    if isinstance(error, anthropic.APIStatusError):
+        code = error.status_code
+
+        # model not found, overloaded ; link back to notez = switch model (3)
+        if code in (404, 529):
+            return 3
+        # api error, time out ; link backz but the timeout error here is diff
+        # w timeout error of 10 secs rules = retry (2)
+        if code in (500, 504):
+            return 2
+        # authentication error, billing error, rate limit ; switch to gemini its free
+        if code in (401, 402, 429):
+            return 4
+        # invalid, permission error, conflict error and req too large ; fail
+        if code in (400, 403, 409, 413):
+            return 1
+
+    # if any other else
+    print("unknown error code")
+    return None
+
+
 def gemini_classify_error(error):  # pylint: disable=too-many-return-statements
     """Returns 1, 2 or 3:
     1 = give up 400,401,403,429,499
@@ -80,25 +119,4 @@ def gemini_classify_error(error):  # pylint: disable=too-many-return-statements
     if isinstance(error, json.JSONDecodeError):
         return 2
 
-    # client side error (4xx)
-    if isinstance(error, errors.ClientError):
-        code = getattr(error, "code", None)
-        if code in (400, 401, 403, 429, 499):
-            return 1  # Give up
-        if code == 404:
-            return 3  # 3 -> 1
-        return 1  # Default fallback for other 4xx errors
-
-    # server side error (5xx)
-    if isinstance(error, errors.ServerError):
-        code = getattr(error, "code", None)
-        if code == 500:
-            return 2  # 2
-        if code == 503:
-            return 2  # 2 -> 1
-        if code == 504:
-            return 2  # 2 -> 1
-        return 1  # Default fallback for other 5xx server errors
-
-    print("Unknown error code")  # Error code printed out if none of the above conditions are met
-    return None
+    
