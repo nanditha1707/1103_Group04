@@ -1,0 +1,7 @@
+pandas
+phonenumbers
+numpy
+google-genai
+anthropic
+pytest
+pylint
