@@ -1,7 +1,10 @@
 """Functions for calling the Gemini and Claude APIs."""
+import json
+
 import anthropic
+import httpx
 from google import genai
-from google.genai import types
+from google.genai import types, errors
 
 
 def call_gemini(prompt, api_key, model="gemini-3.5-flash", tokens=1024):
@@ -61,3 +64,41 @@ def call_claude(
         messages=[{"role": "user", "content": prompt}],
     )
     return response.content[0].text
+
+
+def gemini_classify_error(error):  # pylint: disable=too-many-return-statements
+    """Returns 1, 2 or 3:
+    1 = give up 400,401,403,429,499
+    2 = retry the same model 500
+    3 = switch to a different Gemini model 404
+    """
+    # very slow then it will retry
+    if isinstance(error, (httpx.TimeoutException, httpx.TransportError)):
+        return 2
+
+    # json crash handling (just in case model outputs bad JSON string)
+    if isinstance(error, json.JSONDecodeError):
+        return 2
+
+    # client side error (4xx)
+    if isinstance(error, errors.ClientError):
+        code = getattr(error, "code", None)
+        if code in (400, 401, 403, 429, 499):
+            return 1  # Give up
+        if code == 404:
+            return 3  # 3 -> 1
+        return 1  # Default fallback for other 4xx errors
+
+    # server side error (5xx)
+    if isinstance(error, errors.ServerError):
+        code = getattr(error, "code", None)
+        if code == 500:
+            return 2  # 2
+        if code == 503:
+            return 2  # 2 -> 1
+        if code == 504:
+            return 2  # 2 -> 1
+        return 1  # Default fallback for other 5xx server errors
+
+    print("Unknown error code")  # Error code printed out if none of the above conditions are met
+    return None
