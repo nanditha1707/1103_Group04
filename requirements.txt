@@ -1,6 +1,7 @@
 pandas
+phonenumbers
 numpy
 google-genai
 anthropic
 pytest
-ruff
+pylint

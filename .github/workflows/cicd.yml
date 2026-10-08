@@ -1,4 +1,4 @@
-name: CI Pipeline
+name: CICD Pipeline
 
 on:
   push:
@@ -35,11 +35,7 @@ jobs:
 
       - name: Run Pylint
         run: |
-          pylint *.py --fail-under=5
-
-      # - name: Run tests
-      #   run: |
-      #     python -m pytest
+          pylint *.py --fail-under=5 --fail-on=E
 
 
       - name: Build Docker image
@@ -47,7 +43,11 @@ jobs:
           docker build -t group04-healthcare .
           
 
-      - name: Smoke Test the container
+      # Runs the container once per .txt file in tests/
+      - name: Run Docker container with each test input
         run: |
-          docker run --rm group04-healthcare
-          
+          for test_file in tests/*.txt; do
+            echo "::group::$test_file"
+            grep -v '^#' "$test_file" | docker run --rm -i group04-healthcare
+            echo "::endgroup::"
+          done
