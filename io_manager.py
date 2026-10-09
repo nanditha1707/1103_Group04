@@ -59,30 +59,38 @@ def validate_positive_number(current_user_answer: str) -> str | None:
         return "This is not a valid input, please only enter positive numbers."
 
 
-def run_validation(questions: dict, current_user_answer: str, current_state: int) -> bool:
-    """Selects the correct validation function for the current question and runs it.
-    Returns either True for valid inputs or False for invalid inputs.
-    The True / False return values will be used in the run_questions() function to determine whether to reprompt or move onto next question."""
+def run_validation(ALL_QUESTIONS: dict, current_user_answer: str, current_state: int) -> bool:
+    """Selects the correct validation function for the current question
+    and then runs it to check the user input.
 
-    # User input cannot be empty for any question. 
-    # If it's empty the validation function isnt needed, immediately return False for invalid input.
+    Returns either True for valid inputs or False for invalid inputs.
+
+    The True / False return values will be used in the run_questions()
+    function to determine whether to reprompt or move on to the next
+    question."""
+
+    # User input cannot be empty for any question.
+    # If it's empty, no validation check is required,
+    # immediately return False to signal that input is invalid.
     if not current_user_answer:
         print("Input cannot be empty. Please enter a valid input.")
         return False
 
+    # Selects the validation function for the current question.
+    current_question_validator = ALL_QUESTIONS[current_state]["validation_function"]
 
-    # selects the validation function for the current question
-    current_question_validator = questions[current_state]["validation_function"]
-
-    # runs the currently selected validation function by passing the current_user_answer into it
-    # stores the resulting output of either none or the error message string in validation_result
+    # Runs the currently selected validation function
+    # by passing the current_user_answer into it.
+    # Stores the resulting output of either None
+    # or the error message string in validation_result.
     validation_result = current_question_validator(current_user_answer)
 
-    # if validation_result indicates 'None problems' then return True 
-    if validation_result is None:
+    # If validation_result indicates 'No problems', then return True.
+    if validation_result == None:
         return True
 
-    # else validation_result returned a error message string. Print it and return False
+    # Else validation_result returned an error message string. Print it
+    # and return False.
     else:
         print(validation_result)
         return False
