@@ -3,5 +3,8 @@ phonenumbers
 numpy
 google-genai
 anthropic
+httpx
+httpx2
 pytest
 pylint
+python-dotenv
