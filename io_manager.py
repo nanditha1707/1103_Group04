@@ -96,93 +96,105 @@ def run_validation(ALL_QUESTIONS: dict, current_user_answer: str, current_state:
         return False
 
 
-# =============================================================================
+# ======================================================================
 # ALL QUESTIONS LIST
-# =============================================================================
-# List containing dictionaries to store all questions to ask the user, used by run_questions()
-# Each question and its related details is stored as a dictionary
+# ======================================================================
+# List containing dictionaries to store all questions to ask the user.
+# Each question and its related details are stored as a dictionary.
+
 ALL_QUESTIONS = [
     {
         "key": "consent",
-        "prompt": "Do you consent to sharing your data? Consent is required to continue with the registration process. (Y/N): ",
-        "validation_function": validate_boolean
+        "prompt": (
+            "Do you consent to sharing your data? "
+            "Consent is required to continue with the registration process. (Y/N): "
+        ),
+        "validation_function": validate_boolean,
     },
     {
         "key": "name",
         "prompt": "Enter your Name: ",
-        "validation_function": validate_name
+        "validation_function": validate_name,
     },
     {
         "key": "nric",
         "prompt": "Enter your NRIC: ",
-        "validation_function": validate_nric
+        "validation_function": validate_nric,
     },
     {
         "key": "gender",
         "prompt": "Enter your Gender [M/F]: ",
-        "validation_function": validate_gender
+        "validation_function": validate_gender,
     },
     {
         "key": "age",
         "prompt": "Enter your Age: ",
-        "validation_function": ""
+        "validation_function": validate_positive_number,
     },
     {
         "key": "phone_number",
-        "prompt": "Please enter your country code and phone number in the following format (+65 88880000): ",
-        "validation_function": ""
+        "prompt": (
+            "Please enter your country code and phone number "
+            "in the following format (+65 88880000): "
+        ),
+        "validation_function": "",
     },
     {
         "key": "pregnancy",
         "prompt": "Are you currently pregnant? (Y/N): ",
-        "validation_function": validate_boolean
+        "validation_function": validate_boolean,
     },
     {
         "key": "red_flag_chest_pain",
         "prompt": "Are you currently experiencing chest pain? (Y/N): ",
-        "validation_function": validate_boolean
+        "validation_function": validate_boolean,
     },
     {
         "key": "red_flag_breathing",
         "prompt": "Are you severely short of breath right now? (Y/N): ",
-        "validation_function": validate_boolean
+        "validation_function": validate_boolean,
     },
     {
         "key": "red_flag_stroke",
-        "prompt": "Do you have sudden weakness or numbness on one side of your body? (Y/N): ",
-        "validation_function": validate_boolean
+        "prompt": (
+            "Do you have sudden weakness or numbness on one side of your body? (Y/N): "
+        ),
+        "validation_function": validate_boolean,
     },
     {
         "key": "self_harm",
         "prompt": "Are you having thoughts of harming yourself? (Y/N): ",
-        "validation_function": validate_boolean
+        "validation_function": validate_boolean,
     },
     {
         "key": "current_symptoms",
         "prompt": "Please tell us your current symptoms: ",
-        "validation_function": ""
     },
     {
         "key": "symptom_onset",
-        "prompt": "When did your symptoms start? (e.g. 2 days ago): ",
-        "validation_function": ""
+        "prompt": (
+            "How many days ago did your symptoms start? (e.g. 2, or 0 for today): "
+        ),
+        "validation_function": validate_positive_number,
     },
     {
         "key": "chronic_conditions",
         "prompt": "Are you suffering from any chronic conditions? (Y/N): ",
-        "validation_function": validate_boolean
+        "validation_function": validate_boolean,
     },
     {
         "key": "current_medications",
         "prompt": "Are you currently on any medication? (Y/N): ",
-        "validation_function": validate_boolean
+        "validation_function": validate_boolean,
     },
     {
         "key": "drug_allergies",
         "prompt": "Do you have any drug allergies? (Y/N): ",
-        "validation_function": validate_boolean
-    }
+        "validation_function": validate_boolean,
+    },
 ]
+
+
 
 
 def run_questions():
