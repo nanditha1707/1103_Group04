@@ -145,3 +145,46 @@ def get_queue_number(queue_type):
 
     # return generated queue number 
     return queue_number
+
+# final domain 
+def process_result(
+        all_user_responses,
+        ai_output,
+        hsa_df,
+):
+    # where the patient goes
+    route=decide_route(
+        all_user_responses,
+        ai_output,
+        hsa_df
+    )
+
+    # get current date and time
+    now=datetime.now()
+
+    # AI bypass route ( U queue )
+    if all_user_responses.get("ai_bypass") ==True:
+        queue_number =get_queue_number("Bypass")
+
+    # docter route ( D queue )
+    elif route =="Doctor":
+        queue_number =get_queue_number("Doctor")
+
+    # pharmacist route ( P queue )
+    elif route =="Pharmacist":
+        queue_number =get_queue_number("Pharmacist")
+
+    # retail does not get a queue number
+    else:
+        queue_number = None
+
+    # store final results
+    result ={
+        "queue_number": queue_number,
+        "date": now.strftime("%Y-%m-%d"),
+        "time": now.strftime("%H:%M:%S"),
+        "route": route
+    }
+
+    # return final resuly
+    return result
