@@ -4,6 +4,8 @@
 
 import re
 
+import phonenumbers
+
 QUIT_SIGNAL = -99
 QUIT_COMMAND = "QUIT"
 BACK_COMMAND = "BACK"
@@ -57,6 +59,33 @@ def validate_positive_number(current_user_answer: str) -> str | None:
         return None
     else:
         return "This is not a valid input, please only enter positive numbers."
+
+def validate_phone_number(current_user_answer: str) -> str | None:
+    """Uses Google's libphonenumber to parse the number and check it
+    against real possible numbers.
+    Defaults to Singapore if the user leaves out the country code."""
+
+    try:
+        # Parses the entered phone number.
+        # If there is an error in parsing, the number format was wrong,
+        # prompt the user to enter a valid format and try again.
+        # Parsing removes spaces, so +6588880000 will also be valid.
+        parsed_number = phonenumbers.parse(current_user_answer, "SG")
+    except phonenumbers.NumberParseException:
+        return (
+            "This is not a valid phone number format: "
+            "please enter your country code then your number (e.g. +65 88880000)."
+        )
+
+    # If the number is valid then return None.
+    # If not, return an error message.
+    if phonenumbers.is_valid_number(parsed_number):
+        return None
+    else:
+        return (
+            "This phone number is not valid for its country: "
+            "please check the number and country code."
+        )
 
 
 def run_validation(ALL_QUESTIONS: dict, current_user_answer: str, current_state: int) -> bool:
@@ -137,7 +166,7 @@ ALL_QUESTIONS = [
             "Please enter your country code and phone number "
             "in the following format (+65 88880000): "
         ),
-        "validation_function": "",
+        "validation_function": validate_phone_number,
     },
     {
         "key": "pregnancy",
