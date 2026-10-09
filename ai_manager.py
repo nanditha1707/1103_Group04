@@ -16,6 +16,7 @@ SWITCH_MODEL = "Switch models"
 SWITCH_MODEL_PROVIDER = "Switch immediately to a different model provider"
 GEMINI_TIMEOUT_ERRORS = (httpx.TimeoutException, httpx2.TimeoutException)
 GEMINI_CONNECTION_ERRORS = (httpx.ConnectError, httpx2.ConnectError)
+REQUEST_TIMEOUT_SECONDS = 20 
 
 # Reads API key from local .env file.
 load_dotenv()
@@ -24,44 +25,27 @@ load_dotenv()
 # CALL FUNCTIONS FOR CLAUDE AND GEMINI
 # ======================================================================
 
-def call_gemini(prompt, api_key, model="gemini-3.5-flash", tokens=1024):
-    """
-    Function to call the gemini API.
+def call_gemini(model, context, prompt, schema) -> str:
+    """Send a prompt to Gemini and return its JSON reply as text.
 
-    Parameters:
-        prompt: The text prompt or instructions you want to send to Gemini model.
-        api_key: Your personal Google Gemini API key string, required to authenticate
-            and grant permission to access the service.
-        model: The model or version of Gemini that you want to use.
-        tokens: The maximum number of tokens the model is allowed to use to generate
-            its response.
+    Gemini's timeout is in milliseconds, so timeout multiplied by 1000.
 
-    Variables:
-        client: Initializes the Google GenAI client object by passing in your api_key.
-            This client handles the network connections and request formatting.
-        response: Used to store the full response object received from Google's servers
-            using the command client.models.generate_content(..).
-
-    Returns:
-        Extracts and returns just the plain generated text (response.text) back to
-        wherever the function was called.
+    'attempts' is set to 1 (the original request only, no retries)
+    because it is better for the retries to be handled by the pipeline.
     """
     client = genai.Client(
-        api_key=api_key,
-        http_options=types.HttpOptions(
-            timeout=10_000,  # 10s rule done (milliseconds in Gemini)
-            retry_options=types.HttpRetryOptions(attempts=1),
-        ),
-    )
-
+        http_options={
+            "timeout": REQUEST_TIMEOUT_SECONDS * 1000,
+            "retry_options": {"attempts": 1},
+        })
     response = client.models.generate_content(
-        model=model,
-        contents=prompt,
-        config=types.GenerateContentConfig(  # this is necessary for gemini due to different sdk
-            max_output_tokens=tokens,  # added max tokens
-        ),
+        model=model, contents=prompt, config={
+            "system_instruction": context,
+            "response_mime_type": "application/json",
+            "response_json_schema": schema,
+        },
     )
-    return response.text or ""
+    return response.text
 
 
 def call_claude(
