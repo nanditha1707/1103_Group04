@@ -82,3 +82,66 @@ def decide_route(all_user_responses, ai_output, hsa_df):
 
     # otherwise patient can go to retail
     return "Retail"
+
+# generate next queue number based on routing
+def get_queue_number(queue_type):
+
+    # get todays date
+    today=datetime.now().strftime("%Y-%m-%d")
+
+    # all queue counters start at 0
+    doctor_count=0
+    pharmacist_count=0
+    bypass_count=0
+
+    try:
+        # open queue file
+        file =open("queue_number.txt", "r")
+
+        # read saved file
+        data =file.read().strip()
+
+        file.close()
+
+       # split the saved date, and counters
+        saved_date,doctor,pharmacist,bypass=data.split(",")
+
+        # same queue number, if it it still the same day
+        if saved_date==today:
+            doctor_count=int(doctor)
+            pharmacist_count=int(pharmacist)
+            bypass_count=int(bypass)
+
+    # if queue file is not found, start all queues from 0
+    except FileNotFoundError:
+        pass
+
+    # doctor queue
+    if queue_type =="Doctor":
+        doctor_count +=1
+        queue_number = f"D{doctor_count:03d}"
+
+    # pharmacist queue
+    elif queue_type =="Pharmacist":
+        pharmacist_count +=1
+        queue_number =f"P{pharmacist_count:03d}"
+
+    # Urgent AI bypass queue
+    elif queue_type=="Bypass":
+        bypass_count +=1
+        queue_number =f"U{bypass_count:03d}"
+
+    # save updated file
+    file = open("queue_number.txt", "w")
+
+    file.write(
+        today + ","
+        + str(doctor_count) + ","
+        + str(pharmacist_count) + ","
+        + str(bypass_count)
+    )
+
+    file.close()
+
+    # return generated queue number 
+    return queue_number
