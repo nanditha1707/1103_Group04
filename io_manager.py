@@ -1,6 +1,6 @@
-# =============================================================================
+# ======================================================================
 # LIBRARY IMPORTS AND CONSTANTS
-# =============================================================================
+# ======================================================================
 
 import re
 
@@ -8,7 +8,6 @@ QUIT_SIGNAL = -99
 QUIT_COMMAND = "QUIT"
 BACK_COMMAND = "BACK"
 FILE_PATH = "Put here later" #To Be Updated
-
 
 
 def validate_boolean(current_user_answer: str) -> str | None:
@@ -19,6 +18,7 @@ def validate_boolean(current_user_answer: str) -> str | None:
     else:
         return "Please enter only either 'Y' or 'N'."
 
+
 def validate_nric(input : str):
     # Assigns validated_flag bool value using a regex match expression from the re library
     # Regular expression checks that input starts with valid nric starting letters, followed by 7 digits and a final letter
@@ -26,12 +26,20 @@ def validate_nric(input : str):
 
     return validated_flag
 
+
 def validate_name(current_user_answer: str) -> str | None:
-    # Regex expression checks that input contains only letters for the first character, and all other letters are alphabetical, apostrophes or hyphens
+    """Regex expression checks that input contains only letters for the
+    first character, and all other letters are alphabetical, apostrophes
+    or hyphens."""
+    
     if bool(re.match(r"^[A-Z][A-Z'\- ]*$", current_user_answer)):
         return None
     else:
-        return "This is not a valid name: only alphabets, spaces, hyphens and apostrophes are allowed."
+        return (
+            "This is not a valid name:"
+            "only alphabets, spaces, hyphens and apostrophes are allowed."
+        )
+
 
 def validate_gender(input : str) -> str | None:
     if input == "M" or input == "F":
@@ -50,6 +58,7 @@ def validate_age(input : str) -> str | None:
         validated_flag = False
         print("This is not a valid input, please only enter positive numbers for age")
     return validated_flag
+
 
 def run_validation(questions: dict, current_user_answer: str, current_state: int) -> bool:
     """Selects the correct validation function for the current question and runs it.
@@ -78,6 +87,7 @@ def run_validation(questions: dict, current_user_answer: str, current_state: int
     else:
         print(validation_result)
         return False
+
 
 # =============================================================================
 # ALL QUESTIONS LIST
