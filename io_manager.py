@@ -12,10 +12,8 @@ FILE_PATH = "Put here later" #To Be Updated
 
 
 def validate_boolean(current_user_answer: str) -> str | None:
-    """
-    Multiple questions have either Y or N as possible responses, 
-    so this function is used for all of such boolean questions
-    """
+    """Multiple questions have either Y or N as possible responses,
+    so this function is used for all such boolean questions."""
     if current_user_answer in ["Y", "N"]:
         return None
     else:
