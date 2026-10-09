@@ -48,23 +48,24 @@ def call_gemini(model, context, prompt, schema) -> str:
     return response.text
 
 
-def call_claude(
-    prompt: str, api_key: str, model: str = "claude-sonnet-5", tokens: int = 1024
-) -> str:
-    """
-    Function to call the claude API.
+def call_claude(model, context, prompt, schema) -> str:
+    """Send a prompt to Claude and return its JSON reply as text.
 
-    Parameters Added On:
-        tokens: This parameter specifies the maximum number of tokens that the model
-            is allowed to use to generate its response.
+    'max_retries' is set to 0 because it is better for the retries to
+    be handled by the pipeline.
     """
-    client = anthropic.Anthropic(api_key=api_key)
+    client = anthropic.Anthropic(timeout=REQUEST_TIMEOUT_SECONDS, max_retries=0)
     response = client.messages.create(
         model=model,
-        max_tokens=tokens,
+        max_tokens=8000,
+        system=context,
         messages=[{"role": "user", "content": prompt}],
+        output_config={
+            "effort": "high",
+            "format": {"type": "json_schema", "schema": schema},
+        },
     )
-    return response.content[0].text
+    return response.content[-1].text
 
 # ======================================================================
 # ERROR CLASSIFICATION FUNCTIONS FOR CLAUDE AND GEMINI
