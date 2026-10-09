@@ -46,3 +46,39 @@ def get_classification(medicine, hsa_df):
     # return none id medicine is not fouind
     return None
 
+# to decide where the patient should be routed to
+def decide_route(all_user_responses, ai_output, hsa_df):
+
+    # AI bypass always routes the patient to a doctor
+    if all_user_responses.get("ai_bypass")==True:
+        return "Doctor"
+
+    # get all medicines reccomended by AI
+    medicines=get_medicines(ai_output)
+
+    # remember if at least one pharm only medicine is found
+    pharmacist_needed = False
+
+    # check each recommended medicine
+    for medicine in medicines:
+
+        # get the medicine classification from HSA data
+        classification =get_classification(
+            medicine,
+            hsa_df
+        )
+
+        # prescription only medicine requires doctor
+        if classification=="Prescription Only":
+            return "Doctor"
+
+        # pharmacy only medicine requires pharmacist
+        elif classification=="Pharmacy Only":
+            pharmacist_needed=True
+
+    #if no prescription medicine but a pharmacy only medicine was found
+    if pharmacist_needed:
+        return "Pharmacist"
+
+    # otherwise patient can go to retail
+    return "Retail"
