@@ -29,7 +29,7 @@ def get_medicines(ai_output):
 def get_classification(medicine, hsa_df):
 
     # go through every row in the HSA dataset
-    for index, row in hsa_df.iterrows():
+    for _, row in hsa_df.iterrows():
 
         # convert the drug name to lowercase
         drug_name= str(row["DrugName"]).lower() 
@@ -50,7 +50,7 @@ def get_classification(medicine, hsa_df):
 def decide_route(all_user_responses, ai_output, hsa_df):
 
     # AI bypass always routes the patient to a doctor
-    if all_user_responses.get("ai_bypass")==True:
+    if all_user_responses.get("ai_bypass"):
         return "Doctor"
 
     # get all medicines reccomended by AI
@@ -73,7 +73,7 @@ def decide_route(all_user_responses, ai_output, hsa_df):
             return "Doctor"
 
         # pharmacy only medicine requires pharmacist
-        elif classification=="Pharmacy Only":
+        if classification=="Pharmacy Only":
             pharmacist_needed=True
 
     #if no prescription medicine but a pharmacy only medicine was found
@@ -96,12 +96,10 @@ def get_queue_number(queue_type):
 
     try:
         # open queue file
-        file =open("queue_number.txt", "r")
+        with open("queue_number.txt", "r", encoding="utf-8") as file:
 
-        # read saved file
-        data =file.read().strip()
-
-        file.close()
+            # read saved file
+            data =file.read().strip()
 
        # split the saved date, and counters
         saved_date,doctor,pharmacist,bypass=data.split(",")
@@ -115,6 +113,8 @@ def get_queue_number(queue_type):
     # if queue file is not found, start all queues from 0
     except FileNotFoundError:
         pass
+
+    queue_number = None
 
     # doctor queue
     if queue_type =="Doctor":
@@ -132,16 +132,14 @@ def get_queue_number(queue_type):
         queue_number =f"U{bypass_count:03d}"
 
     # save updated file
-    file = open("queue_number.txt", "w")
+    with open("queue_number.txt", "w", encoding="utf-8") as file:
 
-    file.write(
-        today + ","
-        + str(doctor_count) + ","
-        + str(pharmacist_count) + ","
-        + str(bypass_count)
-    )
-
-    file.close()
+        file.write(
+            today + ","
+            + str(doctor_count) + ","
+            + str(pharmacist_count) + ","
+            + str(bypass_count)
+        )
 
     # return generated queue number 
     return queue_number
@@ -152,6 +150,8 @@ def process_result(
         ai_output,
         hsa_df,
 ):
+    """Create the final domain result."""
+
     # where the patient goes
     route=decide_route(
         all_user_responses,
@@ -163,7 +163,7 @@ def process_result(
     now=datetime.now()
 
     # AI bypass route ( U queue )
-    if all_user_responses.get("ai_bypass") ==True:
+    if all_user_responses.get("ai_bypass"):
         queue_number =get_queue_number("Bypass")
 
     # docter route ( D queue )
