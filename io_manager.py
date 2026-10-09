@@ -51,15 +51,12 @@ def validate_gender(current_user_answer: str) -> str | None:
     else:
         return "This is not a valid input, please only enter either M or F"
 
-
-def validate_age(input : str) -> str | None:
-    """Validate age based on whether it is a positive integer using is.digit()"""
-    if input.isdigit():
-        validated_flag = True
+def validate_positive_number(current_user_answer: str) -> str | None:
+    # .isdigit() checks whether the number is a positive integer.
+    if current_user_answer.isdigit():
+        return None
     else:
-        validated_flag = False
-        print("This is not a valid input, please only enter positive numbers for age")
-    return validated_flag
+        return "This is not a valid input, please only enter positive numbers."
 
 
 def run_validation(questions: dict, current_user_answer: str, current_state: int) -> bool:
