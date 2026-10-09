@@ -45,13 +45,11 @@ def validate_name(current_user_answer: str) -> str | None:
         )
 
 
-def validate_gender(input : str) -> str | None:
-    if input == "M" or input == "F":
-        validated_flag = True
+def validate_gender(current_user_answer: str) -> str | None:
+    if current_user_answer in ["M", "F"]:
+        return None
     else:
-        validated_flag = False
-        print("This is not a valid input, please only enter either M or F")
-    return validated_flag
+        return "This is not a valid input, please only enter either M or F"
 
 
 def validate_age(input : str) -> str | None:
