@@ -19,13 +19,17 @@ def validate_boolean(current_user_answer: str) -> str | None:
         return "Please enter only either 'Y' or 'N'."
 
 
-def validate_nric(input : str):
-    # Assigns validated_flag bool value using a regex match expression from the re library
-    # Regular expression checks that input starts with valid nric starting letters, followed by 7 digits and a final letter
-    validated_flag = bool(re.match(r"^[STMFG]\d{7}[A-Z]$", input))
-
-    return validated_flag
-
+def validate_nric(current_user_answer: str) -> str | None:
+    """Regex expression checks that input starts with valid NRIC
+    starting letters, followed by 7 digits and a final letter."""
+    if bool(re.match(r"^[STMFG]\d{7}[A-Z]$", current_user_answer)):
+        return None
+    else:
+        return (
+            "This is not a valid NRIC format: "
+            "ensure it starts with valid nric starting letters, "
+            "followed by 7 digits and a final letter. "
+        )
 
 def validate_name(current_user_answer: str) -> str | None:
     """Regex expression checks that input contains only letters for the
