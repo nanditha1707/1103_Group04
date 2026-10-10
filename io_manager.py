@@ -2,6 +2,7 @@
 # LIBRARY IMPORTS AND CONSTANTS
 # ======================================================================
 
+import difflib
 import re
 
 import phonenumbers
@@ -118,6 +119,41 @@ def symptom_remove(symptom_list:list):
     for symptom in symptom_list:
         if remove_target == symptom.upper():
             symptom_list.remove(symptom)
+
+def symptom_diff() -> str:
+    # Initialises symptoms
+    symptom = input("Please enter your symptom here: ").strip().upper()
+    for val_symptom in SYMPTOMS_DIFFLIB_LIST:
+        if symptom == val_symptom.upper():
+            return val_symptom
+        
+    match_list = difflib.get_close_matches(
+        symptom.upper(), SYMPTOMS_DIFFLIB_LIST, n=1, cutoff=0.6
+    )
+    if match_list:
+        closest_match = match_list[0]
+        confirmation = (
+            input(f"Did you mean '{closest_match}'? (Y/N): ")
+            .strip()
+            .upper()
+        )
+        if confirmation == "Y":
+            return(closest_match)
+    elif not match_list:
+        print(
+            "This symptom is not in our database, "
+            "please enter a valid symptom "
+            "or approach a nurse or clerk for assistance!"
+        )
+    else:
+        # Checks for valid symptoms. Polyclinics and
+        # hospitals have nurses or clerks
+        # to assist with kiosk registration.
+        print(
+            "An unprecedented error has occured! "
+            "Please approach a nurse, "
+            "or administrative clerk for assistance!"
+        )
 
 def run_validation(ALL_QUESTIONS: dict, current_user_answer: str, current_state: int) -> bool:
     """Selects the correct validation function for the current question
