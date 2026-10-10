@@ -313,3 +313,20 @@ def quit_or_back_handler(input: str, state: int, answers_dict: dict) -> int:
                 "If you would like to exit, type 'quit'."
             )
     return state
+
+def answers_appending(answer: str, answers_dict: dict, state: int) -> dict | int:
+    # Checks if the next question is the pregnancy question and if the
+    # user is male.
+    if state == 5 and answers_dict["gender"] == "M":
+        # Appends the answer to the current question and skips the
+        # pregnancy question if the user is male.
+        answers_dict[ALL_QUESTIONS[state]["key"]] = answer
+        # Adds 1 to the state to effectively skip the pregnancy question
+        # and move to the next question.
+        state += 1
+        # Appends None to the answers_dict for the pregnancy question.
+        answers_dict[ALL_QUESTIONS[state]["key"]] = None
+    else:
+        answers_dict[ALL_QUESTIONS[state]["key"]] = answer
+    state += 1
+    return state
