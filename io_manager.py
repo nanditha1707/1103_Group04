@@ -116,9 +116,13 @@ def symptom_remove(symptom_list:list):
     remove_target = (
         input("Please enter the symptom you wish to remove: ").strip().upper()
     )
-    for symptom in symptom_list:
-        if remove_target == symptom.upper():
-            symptom_list.remove(symptom)
+    if not remove_target:
+        print("Input cannot be empty. Please enter a valid input.")
+    elif remove_target:
+        for symptom in symptom_list:
+            if remove_target == symptom.upper():
+                symptom_list.remove(symptom)
+                return
 
 def symptom_diff() -> str:
     # Initialises symptoms
@@ -154,6 +158,70 @@ def symptom_diff() -> str:
             "Please approach a nurse, "
             "or administrative clerk for assistance!"
         )
+        
+def symptom_handler(symptom_list: list) -> list:
+    while True:
+        option = symptom_menu()
+        # If user inputs quit or back, 
+        # reset symptom list and end program.
+        symptom = None
+        if option == QUIT_COMMAND or option == BACK_COMMAND:
+            symptom_list.clear()
+            return option
+        # For options 1 to 3, 
+        # it adds the relevant symptom to the list
+        elif option == "1":
+            symptom = "COUGH"
+
+        elif option == "2":
+            symptom = "FLU"
+
+        elif option == "3":
+            symptom = "HEADACHE"
+        # For options 4, 
+        # it checks if the fever is high or regular, 
+        # and sets symptom to it.
+        elif option == "4":
+            fever_severity = (
+                input("Is your fever above 39.0 degrees celcius?(Y/N): ")
+                .strip()
+                .upper()
+            )
+            if fever_severity == "Y":
+                symptom = "High Fever"
+
+            elif fever_severity == "N":
+                symptom = "Fever"
+
+            elif not fever_severity:
+                print("Input cannot be blank. Please enter Y or N.")
+
+            else:
+                print("This is an invalid input. Only type Y or N.")
+
+        elif option == "5":
+            symptom=symptom_diff()
+
+        elif option == "6":
+            symptom_remove(symptom_list)
+
+        elif option == "7":
+            if not symptom_list:
+                print(
+                    "You have not entered any symptoms, "
+                    "please enter at least one symptom!"
+                )
+            else:
+                return symptom_list
+
+        elif not option:
+            print("You cannot leave this blank, try again!")
+
+        else:
+            print("This is not a valid option number.")
+            
+        if symptom != None:
+            list_dedupe_append(symptom_list, symptom)
 
 def run_validation(ALL_QUESTIONS: dict, current_user_answer: str, current_state: int) -> bool:
     """Selects the correct validation function for the current question
