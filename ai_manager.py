@@ -125,3 +125,14 @@ def classify_error(error):
 
     # Unexpected errors that dont classify
     return FAIL
+
+def next_provider_index(current_model_index, selected_model_provider):
+
+    for next_model_index in range(current_model_index + 1, len(MODELS)):
+        if MODELS[next_model_index]["provider"] != selected_model_provider:
+            # return the index of the next model
+            return next_model_index
+        
+    # return len of models so the while loop in get_ai_response stops when 
+    # theres no other model to switch to
+    return len(MODELS)
