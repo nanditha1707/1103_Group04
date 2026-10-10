@@ -223,8 +223,9 @@ ALL_QUESTIONS = [
     },
 ]
 
-
-
+# ======================================================================
+# CORE FUNCTIONS
+# ======================================================================
 
 def run_questions():
     """Use dictionary approach to move between questions.
@@ -262,3 +263,28 @@ def run_questions():
         print("You have either refused consent or quit.")
         print("Exiting back to Menu! Have a nice day.")
 
+
+def back_to_previous_question(current_state: int, answers: dict) -> int:
+    """Sets current_state to the state of the previous question, which
+    brings the user back to the previous question.
+
+    It also removes the previously entered answer from the answers
+    dictionary so the user can enter it again.
+    """
+
+    if current_state == 0:
+        return current_state
+
+    current_question_key = ALL_QUESTIONS[current_state]["key"]
+    previous_state = current_state - 1
+    previous_question = ALL_QUESTIONS[previous_state]
+    previous_question_key = previous_question["key"]
+    answers.pop(previous_question_key, None)
+
+    if current_question_key == "chest_pain" and answers["gender"] == "M":
+        previous_state = previous_state - 1
+        previous_question = ALL_QUESTIONS[previous_state]
+        previous_question_key = previous_question["key"]
+        answers.pop(previous_question_key, None)
+
+    return previous_state
