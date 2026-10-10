@@ -321,6 +321,13 @@ def quit_or_back_handler(input: str, state: int, answers_dict: dict) -> int:
             )
     return state
 
+def list_dedupe_append(list: list, input: str):
+    for value in list:
+        if value == input:
+            print("This value already exists in the list!")
+            return list
+    list.append(input)
+
 def answers_appending(answer: str, answers_dict: dict, state: int) -> dict | int:
     # Checks if the next question is the pregnancy question and if the
     # user is male.
