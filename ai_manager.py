@@ -2,13 +2,13 @@
 # IMPORT FUNCTIONS AND CONSTANTS
 # ======================================================================
 
+
 import anthropic
 import httpx
 import httpx2
 from dotenv import load_dotenv
 from google import genai
 from google.genai import errors as genai_errors
-from google.genai import types
 
 FAIL = "Fail immediately"
 RETRY_SAME_MODEL = "Retry on the same model"
@@ -17,6 +17,13 @@ SWITCH_MODEL_PROVIDER = "Switch immediately to a different model provider"
 GEMINI_TIMEOUT_ERRORS = (httpx.TimeoutException, httpx2.TimeoutException)
 GEMINI_CONNECTION_ERRORS = (httpx.ConnectError, httpx2.ConnectError)
 REQUEST_TIMEOUT_SECONDS = 20 
+
+MODELS = [
+    {"provider": "claude", "model": "claude-opus-5-5"},
+    {"provider": "claude", "model": "claude-sonnet-5"},
+    {"provider": "gemini", "model": "gemini-3.5-flash-lite"},
+    {"provider": "gemini", "model": "gemini-3.1-flash-lite"},
+]
 
 # Reads API key from local .env file.
 load_dotenv()
