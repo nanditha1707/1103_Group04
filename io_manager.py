@@ -11,6 +11,13 @@ QUIT_COMMAND = "QUIT"
 BACK_COMMAND = "BACK"
 FILE_PATH = "Put here later" #To Be Updated
 
+PRIORITY_KEYLIST = [
+    "chest_pain",
+    "breathing_difficulties",
+    "signs_of_stroke",
+    "self_harm",
+]
+
 
 def validate_boolean(current_user_answer: str) -> str | None:
     """Multiple questions have either Y or N as possible responses,
@@ -174,17 +181,17 @@ ALL_QUESTIONS = [
         "validation_function": validate_boolean,
     },
     {
-        "key": "red_flag_chest_pain",
+        "key": "chest_pain",
         "prompt": "Are you currently experiencing chest pain? (Y/N): ",
         "validation_function": validate_boolean,
     },
     {
-        "key": "red_flag_breathing",
+        "key": "breathing_difficulties",
         "prompt": "Are you severely short of breath right now? (Y/N): ",
         "validation_function": validate_boolean,
     },
     {
-        "key": "red_flag_stroke",
+        "key": "signs_of_stroke",
         "prompt": (
             "Do you have sudden weakness or numbness on one side of your body? (Y/N): "
         ),
@@ -330,3 +337,10 @@ def answers_appending(answer: str, answers_dict: dict, state: int) -> dict | int
         answers_dict[ALL_QUESTIONS[state]["key"]] = answer
     state += 1
     return state
+
+def is_priority(answers_dict: dict) -> dict:
+    answers_dict["priority"] = False
+    for questions, value in answers_dict.items():
+        if questions in PRIORITY_KEYLIST and value == "Y":
+            answers_dict["priority"] = True
+            break
