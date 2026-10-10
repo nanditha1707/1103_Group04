@@ -344,3 +344,18 @@ def is_priority(answers_dict: dict) -> dict:
         if questions in PRIORITY_KEYLIST and value == "Y":
             answers_dict["priority"] = True
             break
+
+def validate_orchestrator(
+    isvalid_answer: bool, user_answer: str, state: int, answers_dict: dict
+) -> bool:
+    if isvalid_answer is None:
+        # Runs the validation function on the current question which
+        # returns True for valid and False for invalid user input.
+        isvalid_answer = run_validation(ALL_QUESTIONS, user_answer, state)
+
+    # If the input is valid.
+    if isvalid_answer == True:
+        # Stores the valid response and moves on to the next step.
+        state = answers_appending(user_answer, answers_dict, state)
+
+    return isvalid_answer, state
