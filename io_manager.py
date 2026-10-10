@@ -110,6 +110,15 @@ def symptom_menu() -> str:
     option = input("Please enter one of the following options: ").strip().upper()
     return option
 
+def symptom_remove(symptom_list:list):
+    print(symptom_list, sep=", ")
+    remove_target = (
+        input("Please enter the symptom you wish to remove: ").strip().upper()
+    )
+    for symptom in symptom_list:
+        if remove_target == symptom.upper():
+            symptom_list.remove(symptom)
+
 def run_validation(ALL_QUESTIONS: dict, current_user_answer: str, current_state: int) -> bool:
     """Selects the correct validation function for the current question
     and then runs it to check the user input.
