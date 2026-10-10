@@ -2,6 +2,7 @@
 # IMPORT FUNCTIONS AND CONSTANTS
 # ======================================================================
 import json
+import time
 
 import anthropic
 import httpx
@@ -16,7 +17,10 @@ SWITCH_MODEL = "Switch models"
 SWITCH_MODEL_PROVIDER = "Switch immediately to a different model provider"
 GEMINI_TIMEOUT_ERRORS = (httpx.TimeoutException, httpx2.TimeoutException)
 GEMINI_CONNECTION_ERRORS = (httpx.ConnectError, httpx2.ConnectError)
-REQUEST_TIMEOUT_SECONDS = 20 
+REQUEST_TIMEOUT_SECONDS = 20
+TOTAL_TIMEOUT_SECONDS = 60
+MAX_RETRIES_PER_MODEL = 2
+CONTACT_SUPPORT_MESSAGE = "Something went wrong. Please try again later or contact support."
 
 MODELS = [
     {"provider": "claude", "model": "claude-opus-5-5"},
@@ -139,3 +143,49 @@ def next_provider_index(current_model_index, selected_model_provider):
 
 def parse_ai_response(text):
     return json.loads(text)
+
+# ======================================================================
+# CORE FUNCTIONS
+# ======================================================================
+def get_ai_response(context, prompt, schema):
+    """Try each model in MODELS until one returns a valid reply, and
+    return it as a dict. Errors are handled using classify_error. If
+    every model fails or the total time runs out, return an error dict.
+    """
+    deadline = time.time() + TOTAL_TIMEOUT_SECONDS
+    model_index = 0
+    retries = 0
+
+    while model_index < len(MODELS) and time.time() < deadline:
+        provider = MODELS[model_index]["provider"]
+        model = MODELS[model_index]["model"]
+
+        try:
+            if provider == "claude":
+                ai_response = call_claude(model, context, prompt, schema)
+            else:
+                ai_response = call_gemini(model, context, prompt, schema)
+            return parse_ai_response(ai_response)
+
+        except Exception as error:
+            action = classify_error(error)
+            print(f"{provider} | {model}: {error} -> {action}")
+
+            if action == FAIL:
+                break
+
+            # Wait longer after each retry. 'continue' skips the reset of
+            # retries below, since it should only reset on a model change.
+            if action == RETRY_SAME_MODEL and retries < MAX_RETRIES_PER_MODEL:
+                retries += 1
+                time.sleep(retries)
+                continue
+
+            if action == SWITCH_MODEL_PROVIDER:
+                model_index = next_provider_index(model_index, provider)
+            else:
+                # SWITCH_MODEL, or RETRY_SAME_MODEL with no retries left
+                model_index += 1
+            retries = 0
+
+    return {"error": CONTACT_SUPPORT_MESSAGE}
