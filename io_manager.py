@@ -288,3 +288,28 @@ def back_to_previous_question(current_state: int, answers: dict) -> int:
         answers.pop(previous_question_key, None)
 
     return previous_state
+
+
+def quit_or_back_handler(input: str, state: int, answers_dict: dict) -> int:
+    """
+    This function handles when the user presses quit or back.
+    """
+    if input == QUIT_COMMAND or (
+        ALL_QUESTIONS[state]["key"] == "consent" and input == "N"
+    ):
+        state = QUIT_SIGNAL
+        print(
+            "You have chosen to exit the registration process. Thank you for your time."
+        )
+        return state
+    elif input == BACK_COMMAND:
+        if state > 0:
+            state = back_to_previous_question(state, answers_dict)
+            return state
+
+        else:
+            print(
+                "There is no further step to go back to. "
+                "If you would like to exit, type 'quit'."
+            )
+    return state
