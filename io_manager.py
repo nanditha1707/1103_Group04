@@ -94,6 +94,21 @@ def validate_phone_number(current_user_answer: str) -> str | None:
             "please check the number and country code."
         )
 
+def symptom_menu() -> str:
+    """
+    Prints out the symptom menu options,
+    accepts the menu option as input and returns it.
+    """
+    print("1. Cough")
+    print("2. Flu")
+    print("3. Headache")
+    print("4. Fever")
+    print("5. Other Symptoms")
+    print("6. Remove a Symptom")
+    print("7. Done")
+    print("You can also input quit or back")
+    option = input("Please enter one of the following options: ").strip().upper()
+    return option
 
 def run_validation(ALL_QUESTIONS: dict, current_user_answer: str, current_state: int) -> bool:
     """Selects the correct validation function for the current question
