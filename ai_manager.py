@@ -1,7 +1,7 @@
 # ======================================================================
 # IMPORT FUNCTIONS AND CONSTANTS
 # ======================================================================
-
+import json
 
 import anthropic
 import httpx
@@ -136,3 +136,6 @@ def next_provider_index(current_model_index, selected_model_provider):
     # return len of models so the while loop in get_ai_response stops when 
     # theres no other model to switch to
     return len(MODELS)
+
+def parse_ai_response(text):
+    return json.loads(text)
