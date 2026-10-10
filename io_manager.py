@@ -359,3 +359,12 @@ def validate_orchestrator(
         state = answers_appending(user_answer, answers_dict, state)
 
     return isvalid_answer, state
+
+def input_handler(state: int) -> list | bool | int:
+    if ALL_QUESTIONS[state]["key"] == "current_symptoms":
+        current_user_answer="symptoms"
+    else:
+        current_question = ALL_QUESTIONS[state]
+        current_user_answer = input(f"{current_question['prompt']}").upper().strip()
+
+    return current_user_answer, None
