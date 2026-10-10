@@ -50,7 +50,7 @@ def get_classification(medicine, hsa_df):
 def decide_route(all_user_responses, ai_output, hsa_df):
 
     # AI bypass always routes the patient to a doctor
-    if all_user_responses.get("ai_bypass"):
+    if all_user_responses.get("priority"):
         return "Doctor"
 
     # get all medicines reccomended by AI
@@ -163,7 +163,7 @@ def process_result(
     now=datetime.now()
 
     # AI bypass route ( U queue )
-    if all_user_responses.get("ai_bypass"):
+    if all_user_responses.get("priority"):
         queue_number =get_queue_number("Bypass")
 
     # docter route ( D queue )
