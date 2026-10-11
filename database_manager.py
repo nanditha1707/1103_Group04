@@ -21,3 +21,23 @@ def export_record(
     }
 
     records =[]
+
+    # check if the file already exists
+    if records_file.exists():
+        try:
+            # open and load existing records
+            with open(records_file, "r") as file:
+                records = json.load(file)
+
+        # if the json file cannot be read properly
+        except json.JSONDecodeError:
+            records = []
+
+    # add the new patient record
+    records.append(patient_record)
+
+    # save everything back into the file
+    with open(records_file, "w") as file:
+        json.dump(records, file, indent=4)
+
+    return True
