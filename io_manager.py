@@ -593,20 +593,31 @@ def validate_orchestrator(
     return isvalid_answer, state
 
 def input_handler(state: int) -> list | bool | int:
+    # If current question is symptoms, 
+    # it returns symptoms as it has separate handling logic.
     if ALL_QUESTIONS[state]["key"] == "current_symptoms":
         current_user_answer="symptoms"
+
+    # For any other key value it prints the prompt of the key,
+    # and sets the user's input as current_user_answer.
     else:
         current_question = ALL_QUESTIONS[state]
         current_user_answer = input(f"{current_question['prompt']}").upper().strip()
-
+    # returns current_user_answer at the end of function
     return current_user_answer, None
 
 def confirm_inputs(answers_dict: dict) -> bool | None:
     header = "Confirmation Screen"
+    # Confirmation should break if user chooses to change consent to N
     while answers_dict["consent"] == "Y":
+        # Initialise lists to store valid editable keys, 
+        # and the menu options to dynamically print menu
         confirmation_menu_options = []
         editable_keys = []
+
+        # Iterates through the list of answers
         for question_number, (key, value) in enumerate(answers_dict.items()):
+            #
             if question_number < len(ALL_QUESTIONS):
                 prompt = ALL_QUESTIONS[question_number]["prompt"]
                 current_entry = f"{question_number + 1:02d}.{prompt}{value}"
