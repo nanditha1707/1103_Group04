@@ -357,7 +357,7 @@ ALL_QUESTIONS = [
         "share_with_ai": True,
     },
     {
-        "key": "symptom_onset",
+        "key": "symptom_onset_days",
         "prompt": (
             "How many days ago did your symptoms start? (e.g. 2, or 0 for today): "
         ),
