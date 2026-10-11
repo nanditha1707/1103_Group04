@@ -20,6 +20,9 @@ SYMPTOM_MENU = ["1. Cough",
                 "6. Remove a Symptom",
                 "7. Done",
                 "You can also input quit or back"]
+MAIN_MENU_OPTIONS = ["1. Patient Registration",
+                     "2. Healthcare Professional Portal",
+                     "3. Exit"]
 REG_EXIT_MESSAGE = "Exiting The Registration Process!"
 MENU_EXIT_MESSAGE = "Admin Password Inputted, Exiting Program Now!"
 FILE_PATH = "Put here later" #To Be Updated
@@ -121,7 +124,8 @@ def symptom_menu() -> str:
     Prints out the symptom menu options,
     accepts the menu option as input and returns it.
     """
-
+    header = "Symptoms"
+    dynamic_menu_print(SYMPTOM_MENU, header)
     option = input("Please enter one of the following options: ").strip().upper()
     return option
 
@@ -621,11 +625,33 @@ def confirm_inputs(answers_dict: dict) -> bool | None:
     # is if user changes consent to N, 
     # or if user types quit
     return None
-            
+
+def dynamic_menu_width(menu_list: list) -> int:
+    """
+    Looks for the longest string in a list,
+    and returns its value as the output.
+    """
+    if menu_list:
+     menu_width=len(max(menu_list, key=len))
+     return menu_width
+
+def dynamic_menu_print(menu_options:list, menu_header:str):
+    """
+    Prints the menu, based off the menu list,
+    with the dynamic width separator.
+    """
+    menu_width=dynamic_menu_width(menu_options)
+    menu_separator=menu_width * "="
+    header_space_width = (menu_width - len(menu_header))//2
+    print(header_space_width*" ",menu_header, sep="")
+    print(menu_separator)
+    for option in menu_options:
+        print(option)
+    print(menu_separator)
+
 def main_menu():
-    print("1. Patient Registration")
-    print("2. Healthcare Professional Portal")
-    print("3. Exit")
+    header = "Main Menu"
+    dynamic_menu_print(MAIN_MENU_OPTIONS, header)
     main_menu_option=input("Please enter one of the above options: ")
     if main_menu_option not in ["1","2","3"]:
         print("This is not a valid option!")
