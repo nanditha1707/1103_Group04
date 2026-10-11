@@ -537,3 +537,66 @@ def input_handler(state: int) -> list | bool | int:
         current_user_answer = input(f"{current_question['prompt']}").upper().strip()
 
     return current_user_answer, None
+
+def confirm_inputs(answers_dict: dict) -> bool | None:
+    while True:
+        editable_keys = []
+        for count, (key, value) in enumerate(answers_dict.items()):
+            if count < len(ALL_QUESTIONS):
+                prompt = ALL_QUESTIONS[count]["prompt"]
+                current_entry = f"{count + 1:02d}.{prompt}{value}"
+                if key not in ["priority", "pregnancy"]:
+                    print(current_entry)
+                    editable_keys.append(key)
+                elif key == "pregnancy" and answers_dict["gender"] == "M":
+                    print(f"{count + 1:02d}.{prompt}Not Applicable")
+                elif key == "pregnancy" and answers_dict["gender"] == "F":
+                    print(current_entry)
+                    editable_keys.append(key)
+        menu_state = (
+            input(
+                "If any of these options are incorrect, enter their number. "
+                "Otherwise, enter 'Y' to confirm: "
+            )
+            .strip()
+            .upper()
+        )
+        if menu_state == "Y":
+            is_priority(answers_dict)
+            if answers_dict["gender"] == "M":
+                answers_dict["pregnancy"] = None
+                return answers_dict
+            if answers_dict["gender"] == "F" and answers_dict["pregnancy"] is None:
+                    print(
+                        "You have not answered the pregnancy question. "
+                        "Please answer it before confirming your inputs."
+                    )
+                    continue
+            else:
+                return answers_dict
+        elif menu_state.isdigit():
+            key_to_edit = int(menu_state) - 1
+        else:
+            print("Invalid input. Please enter a valid number or 'Y' to confirm.")
+            continue
+        if ALL_QUESTIONS[key_to_edit]["key"] in editable_keys:
+            revised_answer, answer_is_valid = input_handler(key_to_edit)
+            if revised_answer=="symptoms":
+                previous_symptoms = answers_dict.get("current_symptoms")
+                revised_answer = symptom_handler(previous_symptoms.copy())
+                if not revised_answer:
+                    revised_answer = previous_symptoms
+                answer_is_valid = True
+            if revised_answer == BACK_COMMAND:
+                print("You cannot go back during the confirmation process. "
+                      "Please enter a valid input.")
+                continue
+            if revised_answer == QUIT_COMMAND:
+                print("You have chosen to exit the registration process. "
+                      "Thank you for your time.")
+                return None
+            answer_is_valid, key_to_edit = validate_orchestrator(
+                answer_is_valid, 
+                revised_answer, 
+                key_to_edit, 
+                answers_dict)
