@@ -50,27 +50,44 @@ AI_OUTPUT_SCHEMA = {
     "additionalProperties": False,
 }
 
-AI_MEDICAL_CONTEXT = """You are a clinical decision support assistant at a primary care clinic in Singapore. The goal is to effectively
-and accurately triage patients based on the patient details that will be provided to you.
-Based on the patient's intake answers, suggest a likely primary and secondary diagnosis using ICD-11 titles and codes,
-and up to two commonly used medicines for each diagnosis. Briefly explain the reasoning behind each diagnosis
-under primary_diagnosis_explanation and secondary_diagnosis_explanation, your reasoning will be shown to 
-mainly patients patients but also doctors, so do not use complex medical terms.
-Your explanation should not be more than 120 characters per field.
-Strictly list your explanations only in the primary_diagnosis_explanation and secondary_diagnosis_explanation 
-fields and not elsewhere.
-If there is no reasonable secondary diagnosis, use an empty string for the secondary diagnosis and medicine fields.
-ai_confidence_score is an integer from 0 to 100 showing how confident you are in the primary diagnosis.
-If you cannot give a valid answer then set "refused" field in the output to True and make all other fields empty.
-If you can give a valid answer set "refused" field to False.
-The difference between 'fever' and 'high fever' as symptoms is that 'high fever' is a fever at or above
-39 degrees celcius while 'fever' is below it.
-If you are deciding between medication with very similar attributes and effects, pick the one that is easier
-to access; prescription -> pharmacy only -> retail in decreasing order of accessibility. The reason is because
-this triaging is meant to divert patients away from overcrowded healthcare facilities, and the routing of patients
-to a doctor / pharmacist / retail store is determined by the type of drug precribed and whether it is prescription
-only, pharmacist only, or available at retail stores.
-Your output is reviewed by a certified medical professional and is not a final diagnosis."""
+AI_MEDICAL_CONTEXT = """
+You are a clinical decision support assistant at a primary care clinic in Singapore.
+Your goal is to effectively and accurately triage patients based on the patient
+details provided to you. Your output is reviewed by a certified medical professional
+and is not a final diagnosis.
+
+Task:
+- Based on the patient's intake answers, suggest 2 diagnosis: 1 likely primary and 
+  1 likely secondary diagnosis using ICD-11 titles and their respective codes.
+- Suggest up to two suitable medicines for each diagnosis.
+
+Explanations:
+- Briefly explain the reasoning behind each diagnosis in
+  primary_diagnosis_explanation and secondary_diagnosis_explanation.
+- Put explanations only in those two fields and nowhere else.
+- Keep each explanation to 120 characters or fewer.
+- Explanations are shown mainly to patients but also to doctors, so avoid complex
+  medical terms.
+
+Confidence and refusal:
+- ai_confidence_score is an integer from 0 to 100 showing how confident you are in
+  the primary diagnosis.
+- If you can give a valid answer, set "refused" to "False".
+- If you cannot give a valid answer to the prompt, set "refused" to "True", set
+  ai_confidence_score to 0, and make all other fields empty strings.
+
+Symptom definitions:
+- 'high fever' means a temperature at or above 39 degrees Celsius.
+- 'fever' means a temperature below 39 degrees Celsius.
+
+Medicine selection:
+- When choosing between medicines with very similar attributes and effects, pick the
+  one that is easier to access.
+- Accessibility from most to least accessible: retail -> pharmacy only ->
+  prescription only.
+- Reason: this triage aims to divert patients away from overcrowded healthcare
+  facilities. Patients are routed to a retail store, pharmacist or doctor based on
+  whether the medicine is available at retail, pharmacy only or prescription only."""
 
 MODELS = [
     {"provider": "claude", "model": "claude-opus-5-5"},
@@ -79,18 +96,24 @@ MODELS = [
     {"provider": "gemini", "model": "gemini-3.5-flash-lite"},
 ]
 
-
 FILE_PATH_ICD11 = "datasets/icd11.csv"
 FILE_PATH_HSA = "datasets/hsa.csv"
-df_icd11 = pd.read_csv(FILE_PATH_ICD11)
-df_hsa = pd.read_csv(FILE_PATH_HSA)
+DF_ICD11 = pd.read_csv(FILE_PATH_ICD11)
+DF_HSA = pd.read_csv(FILE_PATH_HSA)
+DATASET_DIAGNOSIS = DF_ICD11["Title"].str.upper()
+DATASET_CODE = DF_ICD11["Code"].str.upper()
+DATASET_MEDICINE = pd.concat(
+    [DF_HSA["Productname"], DF_HSA["Activeingredients"]]
+).str.upper()
 
 # Reads API key from local .env file.
 load_dotenv()
 
+
 # ======================================================================
 # API CALL FUNCTIONS
 # ======================================================================
+
 
 def call_gemini(model, context, prompt, schema) -> str:
     """Send a prompt to Gemini and return its JSON reply as text.
@@ -134,9 +157,12 @@ def call_claude(model, context, prompt, schema) -> str:
     )
     return response.content[-1].text
 
+
 # ======================================================================
 # ERROR CLASSIFICATION FUNCTIONS
 # ======================================================================
+
+
 def classify_error(error):
     """Unified function to classify all API errors from Claude and
     Gemini. It classifies the error based on either the error code or
@@ -186,6 +212,7 @@ def classify_error(error):
     # Unexpected errors that dont classify
     return FAIL
 
+
 def next_provider_index(current_model_index, selected_model_provider):
     """Return the index of the next model from a different provider."""
 
@@ -198,13 +225,17 @@ def next_provider_index(current_model_index, selected_model_provider):
     # theres no other model to switch to
     return len(MODELS)
 
+
 def parse_ai_response(text):
     """Parse the AI's JSON text output into a Python dictionary."""
     return json.loads(text)
 
+
 # ======================================================================
 # CORE FUNCTIONS
 # ======================================================================
+
+
 def get_ai_response(context, prompt, schema):
     """Try each model in MODELS until one returns a valid JSON reply.
 
@@ -244,26 +275,32 @@ def get_ai_response(context, prompt, schema):
             return ai_output
 
         except Exception as error: 
-            # take an action based on the returned error
+            # Take an action based on the returned error.
             action = classify_error(error)
             print(f"{selected_model_provider} {selected_model_name} {error} -> {action}")
 
-            # if fail then break entire loop
+            # If fail then breaks the entire loop.
             if action == FAIL:
                 break
+
+            # If retry same model and retry limit is not exceeded.
             if action == RETRY_SAME_MODEL and current_retries < MAX_RETRIES_PER_MODEL:
                 current_retries += 1
 
                 # Typical retry logic is that time between retries
                 # should increase as number of retries increase.
-                # .sleep increases delay time between
-                # successive retries.
+                # .sleep increases delay time between successive retries.
                 time.sleep(current_retries)
 
                 # This continue skips current_retries = 0 as we only
-                # want retries to be reset upon changing models
-                # or model providers.
+                # want retries to be reset upon changing models or model providers.
                 continue
+
+            # If switch model provider then set current model index to
+            # the next available model provider.
+            # If no next model provider is available then next_provider_index
+            # returns the length of MODELS, which effectively stops
+            # the main while loop from running as there are no more models to run.
             if action == SWITCH_MODEL_PROVIDER:
                 current_model_index = next_provider_index(
                     current_model_index, selected_model_provider)
@@ -273,15 +310,15 @@ def get_ai_response(context, prompt, schema):
                 current_model_index += 1
 
             else:
-                # unhandled action: fail rather than guess
-                print("An unexpected error has occured")
+                # Handle unexpected errors.
                 break
 
-            # Reset retry count. It should only be reached when
+            # Reset retry count. It will only be reached when
             # action is SWITCH_MODEL or SWITCH_MODEL_PROVIDER.
             current_retries = 0
 
     return {"error": CONTACT_SUPPORT_MESSAGE}
+
 
 def create_ai_prompt(ai_answers: dict) -> str:
     """Build the patient intake prompt from the already filtered answers
@@ -293,19 +330,11 @@ def create_ai_prompt(ai_answers: dict) -> str:
 
     return ai_prompt
 
+
 # ======================================================================
 # AI VALIDATION FUNCTIONS
 # ======================================================================
 
-# Two series with the column names "Title" and "Code" 
-# is pulled from the ICD11 dataset.
-dataset_diagnosis = df_icd11["Title"].str.upper()
-dataset_code = df_icd11["Code"].str.upper()
-
-# The pandas series with the column names "Productname" and
-# "Activeingredients" are pulled from the HSA medicine dataset, as
-# generic medicine names are mostly only listed as active ingredients.
-dataset_medicine = pd.concat([df_hsa["Productname"], df_hsa["Activeingredients"]]).str.upper()
 
 def validate_diagnosis_code(diagnosis: str, code: str, label: str) -> bool:
     """The validate_diagnosis_code() function stores the input of 
@@ -318,23 +347,18 @@ def validate_diagnosis_code(diagnosis: str, code: str, label: str) -> bool:
 
     # False boolean value remains in isvalid_diagnosis_code unless the
     # ai_output diagnosis and code match the "Title" and "Code" columns
-    # on the same row of df_icd11.
+    # on the same row of DF_ICD11.
     isvalid_diagnosis_code = False
 
-    # Go through df_icd11 one row at a time. The row number is used to get
+    # Go through DF_ICD11 one row at a time. The row number is used to get
     # the "Title" and "Code" from that same row.
-    for row in range(len(dataset_diagnosis)):
-        valid_diagnosis = dataset_diagnosis[row]
-        valid_code = dataset_code[row]
+    for row in range(len(DATASET_DIAGNOSIS)):
+        valid_diagnosis = DATASET_DIAGNOSIS[row]
+        valid_code = DATASET_CODE[row]
 
         if diagnosis.upper() == valid_diagnosis and code.upper() == valid_code:
             isvalid_diagnosis_code = True
             break
-
-    if isvalid_diagnosis_code:
-        print(f"The {label} diagnosis: '{diagnosis}' with code: '{code}' is found in the dataset.")
-    else:
-        print(f"The {label} diagnosis: '{diagnosis}' with code: '{code}' is not found in the dataset.")
 
     return isvalid_diagnosis_code
 
@@ -349,15 +373,10 @@ def validate_medicine(medicine: str, label: str) -> bool:
     # If AI output medicine is contained in a dataset entry, e.g.
     # 'Paracetamol' in 'SUNNY PARACETAMOL TABLET 500 mg', then set
     # isvalid_medicine flag to True. Else it stays as False.
-    for valid_medicine in dataset_medicine:
+    for valid_medicine in DATASET_MEDICINE:
         if medicine.upper() in valid_medicine:
             isvalid_medicine = True
             break
-    
-    if isvalid_medicine:
-        print(f"The {label} medicine: '{medicine}' is found in the dataset.")
-    else:
-        print(f"The {label} medcine: '{medicine}'is not found in the dataset.")
 
     return isvalid_medicine
 
