@@ -42,7 +42,7 @@ df2 = pd.read_csv(FILE_PATH_HSA)
 load_dotenv()
 
 # ======================================================================
-# CALL FUNCTIONS FOR CLAUDE AND GEMINI
+# API CALL FUNCTIONS
 # ======================================================================
 
 def call_gemini(model, context, prompt, schema) -> str:
@@ -88,7 +88,7 @@ def call_claude(model, context, prompt, schema) -> str:
     return response.content[-1].text
 
 # ======================================================================
-# ERROR CLASSIFICATION FUNCTIONS FOR CLAUDE AND GEMINI
+# ERROR CLASSIFICATION FUNCTIONS
 # ======================================================================
 def classify_error(error):
     """Unified function to classify all API errors from Claude and
@@ -240,7 +240,7 @@ def create_ai_prompt(ai_answers: dict) -> str:
     return ai_prompt
 
 # ======================================================================
-# VALIDATE DIAGNOSIS, CODE AND MEDICINE
+# AI VALIDATION FUNCTIONS
 # ======================================================================
 
 # Two series with the column names "Title" and "Code" 
