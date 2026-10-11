@@ -1,3 +1,5 @@
+"""AI manager: sends prompts to Claude or Gemini with retries and fallbacks."""
+
 # ======================================================================
 # IMPORT FUNCTIONS AND CONSTANTS
 # ======================================================================
@@ -90,7 +92,7 @@ def classify_error(error):
     # Something wrong with json generation
     if isinstance(error, ValueError):
         return RETRY_SAME_MODEL
-    
+
     # Claude errors
     # APITimeoutError is a subclass of APIConnectionError
     # So it has to be checked BEFORE APIConnectionError
@@ -112,10 +114,10 @@ def classify_error(error):
     # Gemini Errors
     if isinstance(error, GEMINI_TIMEOUT_ERRORS):
         return SWITCH_MODEL
-    
+
     if isinstance(error, GEMINI_CONNECTION_ERRORS):
         return RETRY_SAME_MODEL
-    
+
     if isinstance(error, genai_errors.APIError):
         error_code = error.code
         if error_code in (500, 504):
@@ -131,61 +133,91 @@ def classify_error(error):
     return FAIL
 
 def next_provider_index(current_model_index, selected_model_provider):
+    """Return the index of the next model from a different provider."""
 
     for next_model_index in range(current_model_index + 1, len(MODELS)):
         if MODELS[next_model_index]["provider"] != selected_model_provider:
             # return the index of the next model
             return next_model_index
-        
-    # return len of models so the while loop in get_ai_response stops when 
+
+    # return len of models so the while loop in get_ai_response stops when
     # theres no other model to switch to
     return len(MODELS)
 
 def parse_ai_response(text):
+    """Parse the AI's JSON text output into a Python dictionary."""
     return json.loads(text)
 
 # ======================================================================
 # CORE FUNCTIONS
 # ======================================================================
 def get_ai_response(context, prompt, schema):
-    """Try each model in MODELS until one returns a valid reply, and
-    return it as a dict. Errors are handled using classify_error. If
-    every model fails or the total time runs out, return an error dict.
+    """Try each model in MODELS until one returns a valid JSON reply.
+
+    Errors are classified to decide whether to retry, switch model,
+    switch provider or fail. Returns an error dict if nothing works
+    before the total deadline.
     """
     deadline = time.time() + TOTAL_TIMEOUT_SECONDS
-    model_index = 0
-    retries = 0
+    current_model_index = 0
+    current_retries = 0
 
-    while model_index < len(MODELS) and time.time() < deadline:
-        provider = MODELS[model_index]["provider"]
-        model = MODELS[model_index]["model"]
-
+    while current_model_index < len(MODELS) and time.time() < deadline:
+        selected_model = MODELS[current_model_index]
+        selected_model_provider = selected_model["provider"]
+        selected_model_name = selected_model["model"]
         try:
-            if provider == "claude":
-                ai_response = call_claude(model, context, prompt, schema)
+            if selected_model_provider == "claude":
+                ai_response = call_claude(selected_model_name, context, prompt, schema)
+            elif selected_model_provider == "gemini":
+                ai_response = call_gemini(selected_model_name, context, prompt, schema)
+
+            # unrecognised model name -> go to next model in MODELS
             else:
-                ai_response = call_gemini(model, context, prompt, schema)
-            return parse_ai_response(ai_response)
-
-        except Exception as error:
-            action = classify_error(error)
-            print(f"{provider} | {model}: {error} -> {action}")
-
-            if action == FAIL:
-                break
-
-            # Wait longer after each retry. 'continue' skips the reset of
-            # retries below, since it should only reset on a model change.
-            if action == RETRY_SAME_MODEL and retries < MAX_RETRIES_PER_MODEL:
-                retries += 1
-                time.sleep(retries)
+                print(f"{selected_model_provider} | {selected_model_name} "
+                      f"unknown provider '{selected_model_provider}' -> skipping")
+                current_model_index += 1
                 continue
 
+            # if no problems then return parse ai output and return it
+            return parse_ai_response(ai_response)
+
+        except Exception as error: 
+            # take an action based on the returned error
+            action = classify_error(error)
+            print(f"{selected_model_provider} {selected_model_name} {error} -> {action}")
+
+            # if fail then break entire loop
+            if action == FAIL:
+                break
+            if action == RETRY_SAME_MODEL and current_retries < MAX_RETRIES_PER_MODEL:
+                current_retries += 1
+
+                # Typical retry logic is that time between retries
+                # should increase as number of retries increase.
+                # .sleep increases delay time between
+                # successive retries.
+                time.sleep(current_retries)
+
+                # This continue skips current_retries = 0 as we only
+                # want retries to be reset upon changing models
+                # or model providers.
+                continue
             if action == SWITCH_MODEL_PROVIDER:
-                model_index = next_provider_index(model_index, provider)
+                current_model_index = next_provider_index(
+                    current_model_index, selected_model_provider)
+
+            elif action in (SWITCH_MODEL, RETRY_SAME_MODEL):
+                # RETRY_SAME_MODEL only reaches here once retries are used up
+                current_model_index += 1
+
             else:
-                # SWITCH_MODEL, or RETRY_SAME_MODEL with no retries left
-                model_index += 1
-            retries = 0
+                # unhandled action: fail rather than guess
+                print("An unexpected error has occured")
+                break
+
+            # Reset retry count. It should only be reached when
+            # action is SWITCH_MODEL or SWITCH_MODEL_PROVIDER.
+            current_retries = 0
 
     return {"error": CONTACT_SUPPORT_MESSAGE}
