@@ -221,3 +221,13 @@ def get_ai_response(context, prompt, schema):
             current_retries = 0
 
     return {"error": CONTACT_SUPPORT_MESSAGE}
+
+def create_ai_prompt(ai_answers: dict) -> str:
+    """Build the patient intake prompt from the already filtered answers
+    """
+    ai_prompt = "Presenting patient answers:\n"
+
+    for key, value in ai_answers.items():
+        ai_prompt += f"- {key}: {value}\n"
+
+    return ai_prompt
