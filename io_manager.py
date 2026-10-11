@@ -43,6 +43,30 @@ PRIORITY_KEYLIST = [
     "self_harm",
 ]
 
+# ======================================================================
+# VALIDATION FUNCTIONS
+# ======================================================================
+
+# Each validation function takes answer as the input and
+# validates it based on a set of predefined conditions.
+#
+# Each validation function will output either 1) None, which can be
+# interpreted as 'No problems', or 2) The error message.
+#
+# Some questions have a separate validation function since each question
+# needs to handle inputs differently.
+#
+# If multiple questions have identical validation methods they use the
+# same function to avoid repetition.
+#
+# These validation functions are stored in the individual question
+# dictionaries in the ALL_QUESTIONS list.
+#
+# Storing the validation functions in the dictionary establishes a
+# logical link between the question and the validation function.
+#
+# They are accessed dynamically by the run_validation() function, 
+# excluding the symptom functions, which are handled separately.
 
 def validate_boolean(user_answer: str) -> str | None:
     """Multiple questions have either Y or N as possible responses,
