@@ -30,19 +30,19 @@ PRIORITY_KEYLIST = [
 ]
 
 
-def validate_boolean(current_user_answer: str) -> str | None:
+def validate_boolean(user_answer: str) -> str | None:
     """Multiple questions have either Y or N as possible responses,
     so this function is used for all such boolean questions."""
-    if current_user_answer in ["Y", "N"]:
+    if user_answer in ["Y", "N"]:
         return None
     else:
         return "Please enter only either 'Y' or 'N'."
 
 
-def validate_nric(current_user_answer: str) -> str | None:
+def validate_nric(user_answer: str) -> str | None:
     """Regex expression checks that input starts with valid NRIC
     starting letters, followed by 7 digits and a final letter."""
-    if bool(re.match(r"^[STMFG]\d{7}[A-Z]$", current_user_answer)):
+    if bool(re.match(r"^[STMFG]\d{7}[A-Z]$", user_answer)):
         return None
     else:
         return (
@@ -51,12 +51,12 @@ def validate_nric(current_user_answer: str) -> str | None:
             "followed by 7 digits and a final letter. "
         )
 
-def validate_name(current_user_answer: str) -> str | None:
+def validate_name(user_answer: str) -> str | None:
     """Regex expression checks that input contains only letters for the
     first character, and all other letters are alphabetical, apostrophes
     or hyphens."""
     
-    if bool(re.match(r"^[A-Z][A-Z'\- ]*$", current_user_answer)):
+    if bool(re.match(r"^[A-Z][A-Z'\- ]*$", user_answer)):
         return None
     else:
         return (
@@ -65,20 +65,20 @@ def validate_name(current_user_answer: str) -> str | None:
         )
 
 
-def validate_gender(current_user_answer: str) -> str | None:
-    if current_user_answer in ["M", "F"]:
+def validate_gender(user_answer: str) -> str | None:
+    if user_answer in ["M", "F"]:
         return None
     else:
         return "This is not a valid input, please only enter either M or F"
 
-def validate_positive_number(current_user_answer: str) -> str | None:
+def validate_positive_number(user_answer: str) -> str | None:
     # .isdigit() checks whether the number is a positive integer.
-    if current_user_answer.isdigit():
+    if user_answer.isdigit():
         return None
     else:
         return "This is not a valid input, please only enter positive numbers."
 
-def validate_phone_number(current_user_answer: str) -> str | None:
+def validate_phone_number(user_answer: str) -> str | None:
     """Uses Google's libphonenumber to parse the number and check it
     against real possible numbers.
     Defaults to Singapore if the user leaves out the country code."""
@@ -88,7 +88,7 @@ def validate_phone_number(current_user_answer: str) -> str | None:
         # If there is an error in parsing, the number format was wrong,
         # prompt the user to enter a valid format and try again.
         # Parsing removes spaces, so +6588880000 will also be valid.
-        parsed_number = phonenumbers.parse(current_user_answer, "SG")
+        parsed_number = phonenumbers.parse(user_answer, "SG")
     except phonenumbers.NumberParseException:
         return (
             "This is not a valid phone number format: "
@@ -233,7 +233,7 @@ def symptom_handler(symptom_list: list) -> list:
         if symptom != None:
             list_dedupe_append(symptom_list, symptom)
 
-def run_validation(ALL_QUESTIONS: dict, current_user_answer: str, current_state: int) -> bool:
+def run_validation(ALL_QUESTIONS: dict, user_answer: str, state: int) -> bool:
     """Selects the correct validation function for the current question
     and then runs it to check the user input.
 
@@ -246,18 +246,18 @@ def run_validation(ALL_QUESTIONS: dict, current_user_answer: str, current_state:
     # User input cannot be empty for any question.
     # If it's empty, no validation check is required,
     # immediately return False to signal that input is invalid.
-    if not current_user_answer:
+    if not user_answer:
         print("Input cannot be empty. Please enter a valid input.")
         return False
 
     # Selects the validation function for the current question.
-    current_question_validator = ALL_QUESTIONS[current_state]["validation_function"]
+    current_question_validator = ALL_QUESTIONS[state]["validation_function"]
 
     # Runs the currently selected validation function
     # by passing the current_user_answer into it.
     # Stores the resulting output of either None
     # or the error message string in validation_result.
-    validation_result = current_question_validator(current_user_answer)
+    validation_result = current_question_validator(user_answer)
 
     # If validation_result indicates 'No problems', then return True.
     if validation_result == None:
@@ -414,7 +414,6 @@ def run_questions():
         # skip the rest of the loop and ask the previous question.
         # current_state was already -1 in quit_or_back_handler().
         elif current_user_answer == BACK_COMMAND:
-            print("test") #DEBUGGING
             continue
 
         # Validates the answer and if valid,
@@ -433,45 +432,45 @@ def run_questions():
     return all_user_answers
 
 
-def back_to_previous_question(current_state: int, answers: dict) -> int:
-    """Sets current_state to the state of the previous question, which
+def back_to_previous_question(state: int, answers_dict: dict) -> int:
+    """Sets inputted state to the state of the previous question, which
     brings the user back to the previous question.
 
     It also removes the previously entered answer from the answers
     dictionary so the user can enter it again.
     """
 
-    if current_state == 0:
-        return current_state
+    if state == 0:
+        return state
 
-    current_question_key = ALL_QUESTIONS[current_state]["key"]
-    previous_state = current_state - 1
+    current_question_key = ALL_QUESTIONS[state]["key"]
+    previous_state = state - 1
     previous_question = ALL_QUESTIONS[previous_state]
     previous_question_key = previous_question["key"]
-    answers.pop(previous_question_key, None)
+    answers_dict.pop(previous_question_key, None)
 
-    if current_question_key == "chest_pain" and answers["gender"] == "M":
+    if current_question_key == "chest_pain" and answers_dict["gender"] == "M":
         previous_state = previous_state - 1
         previous_question = ALL_QUESTIONS[previous_state]
         previous_question_key = previous_question["key"]
-        answers.pop(previous_question_key, None)
+        answers_dict.pop(previous_question_key, None)
 
     return previous_state
 
 
-def quit_or_back_handler(input: str, state: int, answers_dict: dict) -> int:
+def quit_or_back_handler(user_answer: str, state: int, answers_dict: dict) -> int:
     """
     This function handles when the user presses quit or back.
     """
-    if input == QUIT_COMMAND or (
-        ALL_QUESTIONS[state]["key"] == "consent" and input == "N"
+    if user_answer == QUIT_COMMAND or (
+        ALL_QUESTIONS[state]["key"] == "consent" and user_answer == "N"
     ):
         state = QUIT_SIGNAL
         print(
             "You have chosen to exit the registration process. Thank you for your time."
         )
         return state
-    elif input == BACK_COMMAND:
+    elif user_answer == BACK_COMMAND:
         if state > 0:
             state = back_to_previous_question(state, answers_dict)
             return state
@@ -483,27 +482,27 @@ def quit_or_back_handler(input: str, state: int, answers_dict: dict) -> int:
             )
     return state
 
-def list_dedupe_append(list: list, input: str):
+def list_dedupe_append(list: list, user_answer: str):
     for value in list:
-        if value == input:
+        if value == user_answer:
             print("This value already exists in the list!")
             return list
-    list.append(input)
+    list.append(user_answer)
 
-def answers_appending(answer: str, answers_dict: dict, state: int) -> dict | int:
+def answers_appending(user_answer: str, answers_dict: dict, state: int) -> dict | int:
     # Checks if the next question is the pregnancy question and if the
     # user is male.
     if state == 5 and answers_dict["gender"] == "M":
         # Appends the answer to the current question and skips the
         # pregnancy question if the user is male.
-        answers_dict[ALL_QUESTIONS[state]["key"]] = answer
+        answers_dict[ALL_QUESTIONS[state]["key"]] = user_answer
         # Adds 1 to the state to effectively skip the pregnancy question
         # and move to the next question.
         state += 1
         # Appends None to the answers_dict for the pregnancy question.
         answers_dict[ALL_QUESTIONS[state]["key"]] = None
     else:
-        answers_dict[ALL_QUESTIONS[state]["key"]] = answer
+        answers_dict[ALL_QUESTIONS[state]["key"]] = user_answer
     state += 1
     return state
 
@@ -541,15 +540,15 @@ def input_handler(state: int) -> list | bool | int:
 def confirm_inputs(answers_dict: dict) -> bool | None:
     while True:
         editable_keys = []
-        for count, (key, value) in enumerate(answers_dict.items()):
-            if count < len(ALL_QUESTIONS):
-                prompt = ALL_QUESTIONS[count]["prompt"]
-                current_entry = f"{count + 1:02d}.{prompt}{value}"
+        for question_number, (key, value) in enumerate(answers_dict.items()):
+            if question_number < len(ALL_QUESTIONS):
+                prompt = ALL_QUESTIONS[question_number]["prompt"]
+                current_entry = f"{question_number + 1:02d}.{prompt}{value}"
                 if key not in ["priority", "pregnancy"]:
                     print(current_entry)
                     editable_keys.append(key)
                 elif key == "pregnancy" and answers_dict["gender"] == "M":
-                    print(f"{count + 1:02d}.{prompt}Not Applicable")
+                    print(f"{question_number + 1:02d}.{prompt}Not Applicable")
                 elif key == "pregnancy" and answers_dict["gender"] == "F":
                     print(current_entry)
                     editable_keys.append(key)
@@ -628,3 +627,4 @@ def main_menu():
             return QUIT_SIGNAL
         else:
             print("This is not the right password!")
+main_menu()
