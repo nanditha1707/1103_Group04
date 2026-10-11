@@ -73,8 +73,8 @@ only, pharmacist only, or available at retail stores.
 Your output is reviewed by a certified medical professional and is not a final diagnosis."""
 
 MODELS = [
-    {"provider": "claudei", "model": "claude-opus-5-5"},
-    {"provider": "claudei", "model": "claude-sonnet-5"},
+    {"provider": "claude", "model": "claude-opus-5-5"},
+    {"provider": "claude", "model": "claude-sonnet-5"},
     {"provider": "gemini", "model": "gemini-3.8-flash"},
     {"provider": "gemini", "model": "gemini-3.5-flash-lite"},
 ]
@@ -82,8 +82,8 @@ MODELS = [
 
 FILE_PATH_ICD11 = "datasets/icd11.csv"
 FILE_PATH_HSA = "datasets/hsa.csv"
-df1 = pd.read_csv(FILE_PATH_ICD11)
-df2 = pd.read_csv(FILE_PATH_HSA)
+df_icd11 = pd.read_csv(FILE_PATH_ICD11)
+df_hsa = pd.read_csv(FILE_PATH_HSA)
 
 # Reads API key from local .env file.
 load_dotenv()
@@ -299,13 +299,13 @@ def create_ai_prompt(ai_answers: dict) -> str:
 
 # Two series with the column names "Title" and "Code" 
 # is pulled from the ICD11 dataset.
-dataset_diagnosis = df1["Title"].str.upper()
-dataset_code = df1["Code"].str.upper()
+dataset_diagnosis = df_icd11["Title"].str.upper()
+dataset_code = df_icd11["Code"].str.upper()
 
 # The pandas series with the column names "Productname" and
 # "Activeingredients" are pulled from the HSA medicine dataset, as
 # generic medicine names are mostly only listed as active ingredients.
-dataset_medicine = pd.concat([df2["Productname"], df2["Activeingredients"]]).str.lower()
+dataset_medicine = pd.concat([df_hsa["Productname"], df_hsa["Activeingredients"]]).str.upper()
 
 def validate_diagnosis_code(diagnosis: str, code: str, label: str) -> bool:
     """The validate_diagnosis_code() function stores the input of 
@@ -318,10 +318,10 @@ def validate_diagnosis_code(diagnosis: str, code: str, label: str) -> bool:
 
     # False boolean value remains in isvalid_diagnosis_code unless the
     # ai_output diagnosis and code match the "Title" and "Code" columns
-    # on the same row of df1.
+    # on the same row of df_icd11.
     isvalid_diagnosis_code = False
 
-    # Go through df1 one row at a time. The row number is used to get
+    # Go through df_icd11 one row at a time. The row number is used to get
     # the "Title" and "Code" from that same row.
     for row in range(len(dataset_diagnosis)):
         valid_diagnosis = dataset_diagnosis[row]
@@ -350,7 +350,7 @@ def validate_medicine(medicine: str, label: str) -> bool:
     # 'Paracetamol' in 'SUNNY PARACETAMOL TABLET 500 mg', then set
     # isvalid_medicine flag to True. Else it stays as False.
     for valid_medicine in dataset_medicine:
-        if medicine.upper() in valid_medicine.upper():
+        if medicine.upper() in valid_medicine:
             isvalid_medicine = True
             break
     
