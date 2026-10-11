@@ -567,6 +567,10 @@ def answers_appending(user_answer: str, answers_dict: dict, state: int) -> dict 
     return state
 
 def is_priority(answers_dict: dict) -> dict:
+    """
+    Creates or sets the value of the dictionary key to True or False as it is a bool, 
+    based off whether the user replied Y to any of the concerning questions.
+    """
     answers_dict["priority"] = False
     for questions, value in answers_dict.items():
         if questions in PRIORITY_KEYLIST and value == "Y":
