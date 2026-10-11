@@ -22,15 +22,11 @@ GEMINI_TIMEOUT_ERRORS = (httpx.TimeoutException, httpx2.TimeoutException)
 GEMINI_CONNECTION_ERRORS = (httpx.ConnectError, httpx2.ConnectError)
 REQUEST_TIMEOUT_SECONDS = 20
 TOTAL_TIMEOUT_SECONDS = 60
-MAX_RETRIES_PER_MODEL = 2
+MAX_RETRIES_PER_MODEL = 3
 CONTACT_SUPPORT_MESSAGE = (
     "Please contact technical staff for assistance. "
     "Either an unexpected error has occured or all AI APIs are currently down. "
 )
-
-REQUEST_TIMEOUT_SECONDS = 20
-TOTAL_TIMEOUT_SECONDS = 60
-MAX_RETRIES_PER_MODEL = 3
 
 AI_OUTPUT_FIELDS = {
     "primary_diagnosis_ICD11_Title": {"type": "string"},
@@ -77,15 +73,15 @@ only, pharmacist only, or available at retail stores.
 Your output is reviewed by a certified medical professional and is not a final diagnosis."""
 
 MODELS = [
-    {"provider": "claude", "model": "claude-opus-5-5"},
-    {"provider": "claude", "model": "claude-sonnet-5"},
+    {"provider": "claudei", "model": "claude-opus-5-5"},
+    {"provider": "claudei", "model": "claude-sonnet-5"},
     {"provider": "gemini", "model": "gemini-3.8-flash"},
     {"provider": "gemini", "model": "gemini-3.5-flash-lite"},
 ]
 
 
-FILE_PATH_ICD11 = "datasets/icd_11.csv"
-FILE_PATH_HSA = "datasets/ListingofRegisteredTherapeuticProducts.csv"
+FILE_PATH_ICD11 = "datasets/icd11.csv"
+FILE_PATH_HSA = "datasets/hsa.csv"
 df1 = pd.read_csv(FILE_PATH_ICD11)
 df2 = pd.read_csv(FILE_PATH_HSA)
 
@@ -147,7 +143,7 @@ def classify_error(error):
     for errors without error codes, the error itself, and returns a
     suitable action to take based on the error message."""
 
-    # Something wrong with json generation
+    # Something wrong with json generation, or AI output failed validation
     if isinstance(error, ValueError):
         return RETRY_SAME_MODEL
 
@@ -237,8 +233,15 @@ def get_ai_response(context, prompt, schema):
                 current_model_index += 1
                 continue
 
-            # if no problems then return parse ai output and return it
-            return parse_ai_response(ai_response)
+            ai_output = parse_ai_response(ai_response)
+
+            # ValueError is classified as RETRY_SAME_MODEL, so invalid output
+            # retries the same model, then switches model / provider once
+            # retries run out, the same as other errors.
+            if not validate_ai_output(ai_output):
+                raise ValueError("AI output not found in the ICD11 / HSA datasets")
+
+            return ai_output
 
         except Exception as error: 
             # take an action based on the returned error
@@ -299,9 +302,10 @@ def create_ai_prompt(ai_answers: dict) -> str:
 dataset_diagnosis = df1["Title"].str.upper()
 dataset_code = df1["Code"].str.upper()
 
-# The pandas series with the column name "Productname" 
-# is pulled from the HSA medicine dataset.
-dataset_medicine = df2["Productname"].str.lower()
+# The pandas series with the column names "Productname" and
+# "Activeingredients" are pulled from the HSA medicine dataset, as
+# generic medicine names are mostly only listed as active ingredients.
+dataset_medicine = pd.concat([df2["Productname"], df2["Activeingredients"]]).str.lower()
 
 def validate_diagnosis_code(diagnosis: str, code: str, label: str) -> bool:
     """The validate_diagnosis_code() function stores the input of 
@@ -309,39 +313,30 @@ def validate_diagnosis_code(diagnosis: str, code: str, label: str) -> bool:
     represent the dictionary(ai_output) value of the diagnosis
     (code) represents the dictionary(ai_output) value of the code 
     (label) represents the level(primary/secondary) of the output 
-    Additionally, the result of which output is in the dataset 
-    and/or which output is not in the dataset is printed."""
+    Returns True only if the diagnosis and code are found together
+    on the same row of the dataset, and prints the result."""
 
-    # False boolean value remains in isvalid_code unless the ai_output 
-    # code value finds a match in the "Code" column of df1.
-    isvalid_code = False
+    # False boolean value remains in isvalid_diagnosis_code unless the
+    # ai_output diagnosis and code match the "Title" and "Code" columns
+    # on the same row of df1.
+    isvalid_diagnosis_code = False
 
-    for valid_code in dataset_code:
-        if code.upper() == valid_code.upper():
-            isvalid_code = True
+    # Go through df1 one row at a time. The row number is used to get
+    # the "Title" and "Code" from that same row.
+    for row in range(len(dataset_diagnosis)):
+        valid_diagnosis = dataset_diagnosis[row]
+        valid_code = dataset_code[row]
+
+        if diagnosis.upper() == valid_diagnosis and code.upper() == valid_code:
+            isvalid_diagnosis_code = True
             break
 
-    # False boolean value remains in isvalid_diagnosis unless the 
-    # ai_output value finds a match in the "Title" column of df1.
-    isvalid_diagnosis = False
-
-    for valid_diagnosis in dataset_diagnosis:
-       if diagnosis.upper() == valid_diagnosis.upper():
-            isvalid_diagnosis = True
-            break
-
-    # Prints the result of a valid match.
-    # Else it will indicate which specific data is not found.
-    if isvalid_code and isvalid_diagnosis:
-        print(f"Both the {label} diagnosis: '{diagnosis}' and the {label} code: '{code}' are found in the dataset.")
-    elif isvalid_diagnosis:
-        print(f"The {label} diagnosis: '{diagnosis}' is found in the dataset but the {label} code: '{code}' is not found.")
-    elif isvalid_code:
-        print(f"The {label} code: '{code}' is found in the dataset but the {label} diagnosis: '{diagnosis}' is not found.")
+    if isvalid_diagnosis_code:
+        print(f"The {label} diagnosis: '{diagnosis}' with code: '{code}' is found in the dataset.")
     else:
-        print(f"Both the {label} diagnosis: '{diagnosis}' and the {label} code: '{code}' are not found in the dataset.")
+        print(f"The {label} diagnosis: '{diagnosis}' with code: '{code}' is not found in the dataset.")
 
-    return isvalid_code, isvalid_diagnosis
+    return isvalid_diagnosis_code
 
 
 def validate_medicine(medicine: str, label: str) -> bool:
@@ -351,10 +346,11 @@ def validate_medicine(medicine: str, label: str) -> bool:
 
     isvalid_medicine = False
 
-    # If AI output medicine is in the dataset then set isvalid_medicine
-    # flag to True. Else it stays as False.
+    # If AI output medicine is contained in a dataset entry, e.g.
+    # 'Paracetamol' in 'SUNNY PARACETAMOL TABLET 500 mg', then set
+    # isvalid_medicine flag to True. Else it stays as False.
     for valid_medicine in dataset_medicine:
-        if medicine.upper() == valid_medicine.upper():
+        if medicine.upper() in valid_medicine.upper():
             isvalid_medicine = True
             break
     
@@ -364,3 +360,31 @@ def validate_medicine(medicine: str, label: str) -> bool:
         print(f"The {label} medcine: '{medicine}'is not found in the dataset.")
 
     return isvalid_medicine
+
+
+def validate_ai_output(ai_output: dict) -> bool:
+    """Return True only if the AI did not refuse, every diagnosis title
+    and code is found together in the ICD11 dataset and every medicine
+    is found in the HSA dataset. Empty secondary diagnosis and medicine
+    fields are skipped, as the AI is allowed to leave them empty."""
+    if ai_output["refused"].upper() == "TRUE":
+        return False
+
+    for label in ("primary", "secondary"):
+        diagnosis = ai_output[f"{label}_diagnosis_ICD11_Title"]
+        code = ai_output[f"{label}_diagnosis_ICD11_Code"]
+
+        # The primary diagnosis must always be checked. The secondary
+        # diagnosis is optional, so it is only checked if the AI gave
+        # a title or code for it.
+        if label == "primary" or diagnosis != "" or code != "":
+            isvalid_diagnosis = validate_diagnosis_code(diagnosis, code, label)
+            if not isvalid_diagnosis:
+                return False
+
+        for medicine in (ai_output[f"{label}_diagnosis_medicine_1"],
+                         ai_output[f"{label}_diagnosis_medicine_2"]):
+            if medicine and not validate_medicine(medicine, label):
+                return False
+
+    return True
