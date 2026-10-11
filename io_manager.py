@@ -86,8 +86,8 @@ def validate_gender(user_answer: str) -> str | None:
         return "This is not a valid input, please only enter either M or F"
 
 def validate_positive_number(user_answer: str) -> str | None:
-    # .isdigit() checks whether the number is a positive integer.
-    if user_answer.isdigit():
+    # .isdecimal() checks whether the number is a positive integer.
+    if user_answer.isdecimal():
         return None
     else:
         return "This is not a valid input, please only enter positive numbers."
@@ -615,7 +615,7 @@ def confirm_inputs(answers_dict: dict) -> bool | None:
                     continue
             else:
                 return answers_dict
-        elif menu_state.isdigit():
+        elif menu_state.isdecimal():
             key_to_edit = int(menu_state) - 1
         else:
             print("Invalid input. Please enter a valid number or 'Y' to confirm.")
