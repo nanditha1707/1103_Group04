@@ -12,6 +12,14 @@ QUIT_SIGNAL = -99
 QUIT_COMMAND = "QUIT"
 BACK_COMMAND = "BACK"
 EXIT_PASSWORD = "Password"
+SYMPTOM_MENU = ["1. Cough",
+                "2. Flu",
+                "3. Headache",
+                "4. Fever",
+                "5. Other Symptoms",
+                "6. Remove a Symptom",
+                "7. Done",
+                "You can also input quit or back"]
 REG_EXIT_MESSAGE = "Exiting The Registration Process!"
 MENU_EXIT_MESSAGE = "Admin Password Inputted, Exiting Program Now!"
 FILE_PATH = "Put here later" #To Be Updated
@@ -113,14 +121,7 @@ def symptom_menu() -> str:
     Prints out the symptom menu options,
     accepts the menu option as input and returns it.
     """
-    print("1. Cough")
-    print("2. Flu")
-    print("3. Headache")
-    print("4. Fever")
-    print("5. Other Symptoms")
-    print("6. Remove a Symptom")
-    print("7. Done")
-    print("You can also input quit or back")
+
     option = input("Please enter one of the following options: ").strip().upper()
     return option
 
@@ -201,10 +202,10 @@ def symptom_handler(symptom_list: list) -> list:
                 .upper()
             )
             if fever_severity == "Y":
-                symptom = "High Fever"
+                symptom = "HIGH FEVER"
 
             elif fever_severity == "N":
-                symptom = "Fever"
+                symptom = "FEVER"
 
             elif not fever_severity:
                 print("Input cannot be blank. Please enter Y or N.")
@@ -649,6 +650,7 @@ def main_menu():
             return QUIT_SIGNAL
         else:
             print("This is not the right password!")
+
 main_menu() #DEBUGGING
 
 def filter_answers(answers_dict: dict) -> dict:
