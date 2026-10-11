@@ -1,5 +1,6 @@
 import csv
 from pathlib import Path
+from datetime import datetime
 
 # folder where this file is located
 base_dir= Path(__file__).parent
@@ -35,7 +36,33 @@ def export_record(
         if not file_exists:
             writer.writeheader()
 
-        # add the new patient record
+        # add patient record
         writer.writerow(patient_record)
 
     return True
+
+# find patient using queue number
+def get_patient_by_queue(queue_number):
+
+    # get current date
+    today =datetime.now().strftime("%Y-%m-%d")
+
+    # return none if there is no records file
+    if not records_file.exists():
+        return None
+
+    # open csv file
+    with open(records_file, "r", newline="") as file:
+
+        reader=csv.DictReader(file)
+
+        # check each patient
+        for patient in reader:
+
+            # match the queue number and current date
+            if (
+                patient["queue_number"]== queue_number
+                and patient["date"]== today
+            ):
+                return patient
+    return None
