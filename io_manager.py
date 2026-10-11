@@ -557,20 +557,26 @@ def input_handler(state: int) -> list | bool | int:
     return current_user_answer, None
 
 def confirm_inputs(answers_dict: dict) -> bool | None:
+    header = "Confirmation Screen"
     while answers_dict["consent"] == "Y":
+        confirmation_menu_options = []
         editable_keys = []
         for question_number, (key, value) in enumerate(answers_dict.items()):
             if question_number < len(ALL_QUESTIONS):
                 prompt = ALL_QUESTIONS[question_number]["prompt"]
                 current_entry = f"{question_number + 1:02d}.{prompt}{value}"
-                if key not in ["priority", "pregnancy"]:
-                    print(current_entry)
-                    editable_keys.append(key)
-                elif key == "pregnancy" and answers_dict["gender"] == "M":
+                # Males cannot be pregnant, 
+                # so the value is overriden with Not Applicable.
+                if key == "pregnancy" and answers_dict["gender"] == "M":
                     print(f"{question_number + 1:02d}.{prompt}Not Applicable")
-                elif key == "pregnancy" and answers_dict["gender"] == "F":
-                    print(current_entry)
+                # Only appends key and prints if key is not priority, 
+                # and the key is not pregnancy or the person is a female, 
+                # as the logic for male and pregnant key has been handled above.
+                elif key != "priority" and (key != "pregnancy" or answers_dict["gender"] == "F"):
                     editable_keys.append(key)
+                confirmation_menu_options.append(current_entry)
+        dynamic_menu_print(confirmation_menu_options, header)
+        
         menu_state = (
             input(
                 "If any of these options are incorrect, enter their number. "
@@ -641,9 +647,10 @@ def dynamic_menu_print(menu_options:list, menu_header:str):
     with the dynamic width separator.
     """
     menu_width=dynamic_menu_width(menu_options)
-    menu_separator=menu_width * "="
-    header_space_width = (menu_width - len(menu_header))//2
-    print(header_space_width*" ",menu_header, sep="")
+    menu_separator=menu_width * "-"
+    header_space_width = (menu_width - (len(menu_header)+2))//2
+    print(menu_separator)
+    print("|",header_space_width*" ",menu_header,header_space_width*" ","|", sep="")
     print(menu_separator)
     for option in menu_options:
         print(option)
@@ -676,8 +683,6 @@ def main_menu():
             return QUIT_SIGNAL
         else:
             print("This is not the right password!")
-
-main_menu() #DEBUGGING
 
 def filter_answers(answers_dict: dict) -> dict:
     """Returns a new dictionary with only the answers whose question is
