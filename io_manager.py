@@ -130,28 +130,39 @@ def symptom_menu() -> str:
     return option
 
 def symptom_remove(symptom_list:list):
+    # Prints the symptom_list
     print(symptom_list, sep=", ")
+    # Initialises remove_target to the input value.
     remove_target = (
         input("Please enter the symptom you wish to remove: ").strip().upper()
     )
     if not remove_target:
         print("Input cannot be empty. Please enter a valid input.")
     elif remove_target:
+        # Iterates over the list. 
+        # If a match is found, it removes the inputted symptom from the list.
         for symptom in symptom_list:
-            if remove_target == symptom.upper():
+            if remove_target == symptom:
                 symptom_list.remove(symptom)
                 return
 
 def symptom_diff() -> str:
-    # Initialises symptoms
+    # Initialises symptoms to input
     symptom = input("Please enter your symptom here: ").strip().upper()
+    # Checks for exact match in valid symptoms list.
+    # Returns valid symptom if matched.
     for val_symptom in SYMPTOMS_DIFFLIB_LIST:
-        if symptom == val_symptom.upper():
+        if symptom == val_symptom:
             return val_symptom
-        
+    
+    # If no exact match exists, 
+    # it checks for a list of similar matches using difflib.    
     match_list = difflib.get_close_matches(
-        symptom.upper(), SYMPTOMS_DIFFLIB_LIST, n=1, cutoff=0.6
+        symptom, SYMPTOMS_DIFFLIB_LIST, n=1, cutoff=0.6
     )
+
+    # if matches exist, it grabs the closest one,
+    # and prompts the user to check if it is right.
     if match_list:
         closest_match = match_list[0]
         confirmation = (
@@ -159,8 +170,12 @@ def symptom_diff() -> str:
             .strip()
             .upper()
         )
+        # if user indicates the match is correct, 
+        # it returns the matched symptom
         if confirmation == "Y":
             return(closest_match)
+    # If there are no matches, 
+    # it prints a message for the user to inform them.
     elif not match_list:
         print(
             "This symptom is not in our database, "
@@ -168,9 +183,6 @@ def symptom_diff() -> str:
             "or approach a nurse or clerk for assistance!"
         )
     else:
-        # Checks for valid symptoms. Polyclinics and
-        # hospitals have nurses or clerks
-        # to assist with kiosk registration.
         print(
             "An unprecedented error has occured! "
             "Please approach a nurse, "
@@ -218,12 +230,16 @@ def symptom_handler(symptom_list: list) -> list:
                 print("This is an invalid input. Only type Y or N.")
 
         elif option == "5":
+            # Runs the difflib symptom function.
             symptom=symptom_diff()
 
         elif option == "6":
+            # removes a symptom from the list.
             symptom_remove(symptom_list)
 
         elif option == "7":
+            # Checks if there is at least one symptom in list,
+            # if there ism't, prints a error message
             if not symptom_list:
                 print(
                     "You have not entered any symptoms, "
@@ -237,7 +253,8 @@ def symptom_handler(symptom_list: list) -> list:
 
         else:
             print("This is not a valid option number.")
-            
+
+        #If symptom is a valid symptom, it appends it to the list.
         if symptom != None:
             list_dedupe_append(symptom_list, symptom)
 
