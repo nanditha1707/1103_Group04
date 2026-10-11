@@ -278,6 +278,7 @@ def run_validation(ALL_QUESTIONS: dict, user_answer: str, state: int) -> bool:
 # ======================================================================
 # List containing dictionaries to store all questions to ask the user.
 # Each question and its related details are stored as a dictionary.
+# Set share_with_ai to True to explicitly send the information to AI.
 
 ALL_QUESTIONS = [
     {
@@ -302,11 +303,13 @@ ALL_QUESTIONS = [
         "key": "gender",
         "prompt": "Enter your Gender [M/F]: ",
         "validation_function": validate_gender,
+        "share_with_ai": True,
     },
     {
         "key": "age",
         "prompt": "Enter your Age: ",
         "validation_function": validate_positive_number,
+        "share_with_ai": True,
     },
     {
         "key": "phone_number",
@@ -320,16 +323,19 @@ ALL_QUESTIONS = [
         "key": "pregnancy",
         "prompt": "Are you currently pregnant? (Y/N): ",
         "validation_function": validate_boolean,
+        "share_with_ai": True,
     },
     {
         "key": "chest_pain",
         "prompt": "Are you currently experiencing chest pain? (Y/N): ",
         "validation_function": validate_boolean,
+        "share_with_ai": True,
     },
     {
         "key": "breathing_difficulties",
         "prompt": "Are you severely short of breath right now? (Y/N): ",
         "validation_function": validate_boolean,
+        "share_with_ai": True,
     },
     {
         "key": "signs_of_stroke",
@@ -337,15 +343,18 @@ ALL_QUESTIONS = [
             "Do you have sudden weakness or numbness on one side of your body? (Y/N): "
         ),
         "validation_function": validate_boolean,
+        "share_with_ai": True,
     },
     {
         "key": "self_harm",
         "prompt": "Are you having thoughts of harming yourself? (Y/N): ",
         "validation_function": validate_boolean,
+        "share_with_ai": True,
     },
     {
         "key": "current_symptoms",
         "prompt": "Please tell us your current symptoms: ",
+        "share_with_ai": True,
     },
     {
         "key": "symptom_onset",
@@ -353,21 +362,25 @@ ALL_QUESTIONS = [
             "How many days ago did your symptoms start? (e.g. 2, or 0 for today): "
         ),
         "validation_function": validate_positive_number,
+        "share_with_ai": True,
     },
     {
         "key": "chronic_conditions",
         "prompt": "Are you suffering from any chronic conditions? (Y/N): ",
         "validation_function": validate_boolean,
+        "share_with_ai": True,
     },
     {
         "key": "current_medications",
         "prompt": "Are you currently on any medication? (Y/N): ",
         "validation_function": validate_boolean,
+        "share_with_ai": True,
     },
     {
         "key": "drug_allergies",
         "prompt": "Do you have any drug allergies? (Y/N): ",
         "validation_function": validate_boolean,
+        "share_with_ai": True,
     },
 ]
 
