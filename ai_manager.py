@@ -23,13 +23,64 @@ GEMINI_CONNECTION_ERRORS = (httpx.ConnectError, httpx2.ConnectError)
 REQUEST_TIMEOUT_SECONDS = 20
 TOTAL_TIMEOUT_SECONDS = 60
 MAX_RETRIES_PER_MODEL = 2
-CONTACT_SUPPORT_MESSAGE = "Something went wrong. Please try again later or contact support."
+CONTACT_SUPPORT_MESSAGE = (
+    "Please contact technical staff for assistance. "
+    "Either an unexpected error has occured or all AI APIs are currently down. "
+)
+
+REQUEST_TIMEOUT_SECONDS = 20
+TOTAL_TIMEOUT_SECONDS = 60
+MAX_RETRIES_PER_MODEL = 3
+
+AI_OUTPUT_FIELDS = {
+    "primary_diagnosis_ICD11_Title": {"type": "string"},
+    "primary_diagnosis_ICD11_Code": {"type": "string"},
+    "primary_diagnosis_explanation": {"type": "string"},
+    "secondary_diagnosis_ICD11_Title": {"type": "string"},
+    "secondary_diagnosis_ICD11_Code": {"type": "string"},
+    "secondary_diagnosis_explanation": {"type": "string"},
+    "primary_diagnosis_medicine_1":{"type": "string"},
+    "primary_diagnosis_medicine_2":{"type": "string"},
+    "secondary_diagnosis_medicine_1":{"type": "string"},
+    "secondary_diagnosis_medicine_2":{"type": "string"},
+    "ai_confidence_score":{"type": "integer"},
+    "refused":{"type":"string"}
+}
+
+AI_OUTPUT_SCHEMA = {
+    "type": "object",
+    "properties": AI_OUTPUT_FIELDS,
+    "required": list(AI_OUTPUT_FIELDS.keys()),
+    "additionalProperties": False,
+}
+
+AI_MEDICAL_CONTEXT = """You are a clinical decision support assistant at a primary care clinic in Singapore. The goal is to effectively
+and accurately triage patients based on the patient details that will be provided to you.
+Based on the patient's intake answers, suggest a likely primary and secondary diagnosis using ICD-11 titles and codes,
+and up to two commonly used medicines for each diagnosis. Briefly explain the reasoning behind each diagnosis
+under primary_diagnosis_explanation and secondary_diagnosis_explanation, your reasoning will be shown to 
+mainly patients patients but also doctors, so do not use complex medical terms.
+Your explanation should not be more than 120 characters per field.
+Strictly list your explanations only in the primary_diagnosis_explanation and secondary_diagnosis_explanation 
+fields and not elsewhere.
+If there is no reasonable secondary diagnosis, use an empty string for the secondary diagnosis and medicine fields.
+ai_confidence_score is an integer from 0 to 100 showing how confident you are in the primary diagnosis.
+If you cannot give a valid answer then set "refused" field in the output to True and make all other fields empty.
+If you can give a valid answer set "refused" field to False.
+The difference between 'fever' and 'high fever' as symptoms is that 'high fever' is a fever at or above
+39 degrees celcius while 'fever' is below it.
+If you are deciding between medication with very similar attributes and effects, pick the one that is easier
+to access; prescription -> pharmacy only -> retail in decreasing order of accessibility. The reason is because
+this triaging is meant to divert patients away from overcrowded healthcare facilities, and the routing of patients
+to a doctor / pharmacist / retail store is determined by the type of drug precribed and whether it is prescription
+only, pharmacist only, or available at retail stores.
+Your output is reviewed by a certified medical professional and is not a final diagnosis."""
 
 MODELS = [
     {"provider": "claude", "model": "claude-opus-5-5"},
     {"provider": "claude", "model": "claude-sonnet-5"},
+    {"provider": "gemini", "model": "gemini-3.8-flash"},
     {"provider": "gemini", "model": "gemini-3.5-flash-lite"},
-    {"provider": "gemini", "model": "gemini-3.1-flash-lite"},
 ]
 
 
@@ -245,8 +296,8 @@ def create_ai_prompt(ai_answers: dict) -> str:
 
 # Two series with the column names "Title" and "Code" 
 # is pulled from the ICD11 dataset.
-dataset_diagnosis = df1["Title"].str.lower()
-dataset_code = df1["Code"].str.lower()
+dataset_diagnosis = df1["Title"].str.upper()
+dataset_code = df1["Code"].str.upper()
 
 # The pandas series with the column name "Productname" 
 # is pulled from the HSA medicine dataset.
@@ -266,7 +317,7 @@ def validate_diagnosis_code(diagnosis: str, code: str, label: str) -> bool:
     isvalid_code = False
 
     for valid_code in dataset_code:
-        if code.lower() == valid_code.lower():
+        if code.upper() == valid_code.upper():
             isvalid_code = True
             break
 
@@ -275,7 +326,7 @@ def validate_diagnosis_code(diagnosis: str, code: str, label: str) -> bool:
     isvalid_diagnosis = False
 
     for valid_diagnosis in dataset_diagnosis:
-       if diagnosis.lower() == valid_diagnosis.lower():
+       if diagnosis.upper() == valid_diagnosis.upper():
             isvalid_diagnosis = True
             break
 
@@ -303,7 +354,7 @@ def validate_medicine(medicine: str, label: str) -> bool:
     # If AI output medicine is in the dataset then set isvalid_medicine
     # flag to True. Else it stays as False.
     for valid_medicine in dataset_medicine:
-        if medicine.lower() == valid_medicine.lower():
+        if medicine.upper() == valid_medicine.upper():
             isvalid_medicine = True
             break
     
