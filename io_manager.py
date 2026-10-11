@@ -363,40 +363,64 @@ ALL_QUESTIONS = [
 # ======================================================================
 
 def run_questions():
-    """Use dictionary approach to move between questions.
-    all_questions variable stores a list of dictionaries, each dict containing a question.
-    This function cycles through the list of dictionaries to dynamically access the correct 
-    question based on the current state.
-    
-    The output, all_user_responses will be in structured dictionary format."""
+    """Uses a dictionary approach to move between questions.
+    all_questions variable stores a list of dictionaries, each one
+    containing a question.
 
-    # initialise state and answers dict to store all responses
-    state = 0
-    all_user_responses = {}
+    This function cycles through the list of dictionaries to dynamically
+    access the correct question based on the current state.
 
-    while state < len(ALL_QUESTIONS):
+    The output, all_user_responses, will be in structured dictionary
+    format."""
 
-        # this tells which dictionary to point at
-        # intiially, all_questions[0] since state = 0, which refers to the consent dictionary
-        question_index = ALL_QUESTIONS[state]
+    # Initialise state and dictionary to store all answers.
+    # Initialise a list for previous symptoms,
+    current_state = 0
+    all_user_answers = {}
+    previous_symptoms=[]
+    # Loop until every question has been answered.
+    while current_state < len(ALL_QUESTIONS):
+        # Returns the current user answer and its validity.
+        current_user_answer, answer_is_valid = input_handler(current_state)
+
+        if current_user_answer=="symptoms":
+            current_user_answer = symptom_handler(previous_symptoms)
+            if type(current_user_answer) == list:
+                previous_symptoms = current_user_answer
+                answer_is_valid = True
+
+        # Returns QUIT_SIGNAL on quit or the previous state on back.
+        # Otherwise the current_state remains unchanged.
+        current_state = quit_or_back_handler(
+            current_user_answer, current_state, all_user_answers
+        )
         
-        # ask the "prompt" value of the currently selected dictionary
-        response = input(f"{question_index["prompt"]}")
 
-        # stores the answer in the answers dictionary with the corresponding "key"
-        all_user_responses[question_index["key"]] = response
+        # If the user types quit or consent is "N", exit the function.
+        if current_state == QUIT_SIGNAL:
+            return
 
-        # increments state by 1 to move onto the next question, till all questions completed
-        state += 1
-    #Checks if the program has finished running successfully
-    #Only scenario where the length of responses and questions wont be equal is if user quits program or refuses consent
-    if len(all_user_responses) == len(ALL_QUESTIONS):
-        # return the final dictionary with all answers to the questions
-        return all_user_responses
-    else:
-        #User has quit or refused consent
-        print("You have either refused consent or quit.")
-        print("Exiting back to Menu! Have a nice day.")
+        # If the user typed 'back',
+        # skip the rest of the loop and ask the previous question.
+        # current_state was already -1 in quit_or_back_handler().
+        elif current_user_answer == BACK_COMMAND:
+            print("test") #DEBUGGING
+            continue
+
+        # Validates the answer and if valid,
+        # stores it and moves to the next question.
+        answer_is_valid, current_state = validate_orchestrator(
+            answer_is_valid, current_user_answer, current_state, all_user_answers
+        )
+        # Invalid input, reprompt the same question.
+        if answer_is_valid != True:
+            continue
+
+    # Adds "ai_bypass":True into the dictionary
+    # if any red flag question was answered Y.
+    is_priority(all_user_answers)
+
+    return all_user_answers
 
 
 def back_to_previous_question(current_state: int, answers: dict) -> int:
