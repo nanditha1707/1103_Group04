@@ -11,6 +11,7 @@ import httpx
 import httpx2
 from dotenv import load_dotenv
 from google import genai
+import pandas as pd
 from google.genai import errors as genai_errors
 
 FAIL = "Fail immediately"
@@ -30,6 +31,12 @@ MODELS = [
     {"provider": "gemini", "model": "gemini-3.5-flash-lite"},
     {"provider": "gemini", "model": "gemini-3.1-flash-lite"},
 ]
+
+
+FILE_PATH_ICD11 = "datasets/icd_11.csv"
+FILE_PATH_HSA = "datasets/ListingofRegisteredTherapeuticProducts.csv"
+df1 = pd.read_csv(FILE_PATH_ICD11)
+df2 = pd.read_csv(FILE_PATH_HSA)
 
 # Reads API key from local .env file.
 load_dotenv()
@@ -231,3 +238,78 @@ def create_ai_prompt(ai_answers: dict) -> str:
         ai_prompt += f"- {key}: {value}\n"
 
     return ai_prompt
+
+# ======================================================================
+# VALIDATE DIAGNOSIS, CODE AND MEDICINE
+# ======================================================================
+
+# Two series with the column names "Title" and "Code" 
+# is pulled from the ICD11 dataset.
+dataset_diagnosis = df1["Title"].str.lower()
+dataset_code = df1["Code"].str.lower()
+
+# The pandas series with the column name "Productname" 
+# is pulled from the HSA medicine dataset.
+dataset_medicine = df2["Productname"].str.lower()
+
+def validate_diagnosis_code(diagnosis: str, code: str, label: str) -> bool:
+    """The validate_diagnosis_code() function stores the input of 
+    three string values named diagnosis, code and label (diagnosis) 
+    represent the dictionary(ai_output) value of the diagnosis
+    (code) represents the dictionary(ai_output) value of the code 
+    (label) represents the level(primary/secondary) of the output 
+    Additionally, the result of which output is in the dataset 
+    and/or which output is not in the dataset is printed."""
+
+    # False boolean value remains in isvalid_code unless the ai_output 
+    # code value finds a match in the "Code" column of df1.
+    isvalid_code = False
+
+    for valid_code in dataset_code:
+        if code.lower() == valid_code.lower():
+            isvalid_code = True
+            break
+
+    # False boolean value remains in isvalid_diagnosis unless the 
+    # ai_output value finds a match in the "Title" column of df1.
+    isvalid_diagnosis = False
+
+    for valid_diagnosis in dataset_diagnosis:
+       if diagnosis.lower() == valid_diagnosis.lower():
+            isvalid_diagnosis = True
+            break
+
+    # Prints the result of a valid match.
+    # Else it will indicate which specific data is not found.
+    if isvalid_code and isvalid_diagnosis:
+        print(f"Both the {label} diagnosis: '{diagnosis}' and the {label} code: '{code}' are found in the dataset.")
+    elif isvalid_diagnosis:
+        print(f"The {label} diagnosis: '{diagnosis}' is found in the dataset but the {label} code: '{code}' is not found.")
+    elif isvalid_code:
+        print(f"The {label} code: '{code}' is found in the dataset but the {label} diagnosis: '{diagnosis}' is not found.")
+    else:
+        print(f"Both the {label} diagnosis: '{diagnosis}' and the {label} code: '{code}' are not found in the dataset.")
+
+    return isvalid_code, isvalid_diagnosis
+
+
+def validate_medicine(medicine: str, label: str) -> bool:
+    """
+    This function has the same concept as validate_diagnosis_code() 
+    function but it is to validate medicine instead of disease."""
+
+    isvalid_medicine = False
+
+    # If AI output medicine is in the dataset then set isvalid_medicine
+    # flag to True. Else it stays as False.
+    for valid_medicine in dataset_medicine:
+        if medicine.lower() == valid_medicine.lower():
+            isvalid_medicine = True
+            break
+    
+    if isvalid_medicine:
+        print(f"The {label} medicine: '{medicine}' is found in the dataset.")
+    else:
+        print(f"The {label} medcine: '{medicine}'is not found in the dataset.")
+
+    return isvalid_medicine
