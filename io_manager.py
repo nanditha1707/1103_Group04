@@ -635,25 +635,26 @@ def confirm_inputs(answers_dict: dict) -> bool | None:
 def dynamic_menu_width(menu_list: list) -> int:
     """
     Looks for the longest string in a list,
-    and returns its value as the output.
+    and returns its value +4 as the output.
+    The +4 is due to needing to account for space for the | and " ".
     """
     if menu_list:
-     menu_width=len(max(menu_list, key=len))
+     menu_width=len(max(menu_list, key=len))+4
      return menu_width
 
 def dynamic_menu_print(menu_options:list, menu_header:str):
     """
     Prints the menu, based off the menu list,
-    with the dynamic width separator.
+    with the dynamic width separator. 
+    Ensures the menu print is properly formatted and centered
     """
     menu_width=dynamic_menu_width(menu_options)
     menu_separator=menu_width * "-"
-    header_space_width = (menu_width - (len(menu_header)+2))//2
     print(menu_separator)
-    print("|",header_space_width*" ",menu_header,header_space_width*" ","|", sep="")
+    print("|" + menu_header.center(menu_width - 2) + "|")
     print(menu_separator)
     for option in menu_options:
-        print(option)
+        print("|" + f" {option}".ljust(menu_width - 2) + "|")
     print(menu_separator)
 
 def main_menu():
@@ -683,6 +684,8 @@ def main_menu():
             return QUIT_SIGNAL
         else:
             print("This is not the right password!")
+
+main_menu() #debugging
 
 def filter_answers(answers_dict: dict) -> dict:
     """Returns a new dictionary with only the answers whose question is
