@@ -600,3 +600,31 @@ def confirm_inputs(answers_dict: dict) -> bool | None:
                 revised_answer, 
                 key_to_edit, 
                 answers_dict)
+            
+def main_menu():
+    print("1. Patient Registration")
+    print("2. Healthcare Professional Portal")
+    print("3. Exit")
+    main_menu_option=input("Please enter one of the above options: ")
+    if main_menu_option not in ["1","2","3"]:
+        print("This is not a valid option!")
+    elif main_menu_option == "1":
+        all_answers = run_questions()
+        if all_answers == None or len(all_answers) < len(ALL_QUESTIONS)+1:
+            return None
+        elif len(all_answers) == len(ALL_QUESTIONS)+1:
+            confirmed = confirm_inputs(all_answers)
+            if confirmed:
+                print("Thank you for confirming your inputs.")
+                return all_answers
+            else:
+                print("You have chosen to exit the program! Have a nice day")
+    elif main_menu_option == "2":
+        #TO BE DONE
+        return
+    elif main_menu_option == "3":
+        inputted_pass=input("Enter the exit code here: ")
+        if inputted_pass == EXIT_PASSWORD:
+            return QUIT_SIGNAL
+        else:
+            print("This is not the right password!")
