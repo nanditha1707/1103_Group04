@@ -12,6 +12,8 @@ QUIT_SIGNAL = -99
 QUIT_COMMAND = "QUIT"
 BACK_COMMAND = "BACK"
 EXIT_PASSWORD = "Password"
+REG_EXIT_MESSAGE = "Exiting The Registration Process!"
+MENU_EXIT_MESSAGE = "Admin Password Inputted, Exiting Program Now!"
 FILE_PATH = "Put here later" #To Be Updated
 SYMPTOMS_CSV_PATH = r"datasets/symptoms_umls.csv"
 
@@ -467,9 +469,7 @@ def quit_or_back_handler(user_answer: str, state: int, answers_dict: dict) -> in
         ALL_QUESTIONS[state]["key"] == "consent" and user_answer == "N"
     ):
         state = QUIT_SIGNAL
-        print(
-            "You have chosen to exit the registration process. Thank you for your time."
-        )
+        print(REG_EXIT_MESSAGE)
         return state
     elif user_answer == BACK_COMMAND:
         if state > 0:
@@ -539,7 +539,7 @@ def input_handler(state: int) -> list | bool | int:
     return current_user_answer, None
 
 def confirm_inputs(answers_dict: dict) -> bool | None:
-    while True:
+    while answers_dict["consent"] == "Y":
         editable_keys = []
         for question_number, (key, value) in enumerate(answers_dict.items()):
             if question_number < len(ALL_QUESTIONS):
@@ -579,6 +579,7 @@ def confirm_inputs(answers_dict: dict) -> bool | None:
         else:
             print("Invalid input. Please enter a valid number or 'Y' to confirm.")
             continue
+
         if ALL_QUESTIONS[key_to_edit]["key"] in editable_keys:
             revised_answer, answer_is_valid = input_handler(key_to_edit)
             if revised_answer=="symptoms":
@@ -587,19 +588,25 @@ def confirm_inputs(answers_dict: dict) -> bool | None:
                 if not revised_answer:
                     revised_answer = previous_symptoms
                 answer_is_valid = True
+
             if revised_answer == BACK_COMMAND:
                 print("You cannot go back during the confirmation process. "
                       "Please enter a valid input.")
                 continue
+
             if revised_answer == QUIT_COMMAND:
-                print("You have chosen to exit the registration process. "
-                      "Thank you for your time.")
-                return None
+                break
+            
             answer_is_valid, key_to_edit = validate_orchestrator(
                 answer_is_valid, 
                 revised_answer, 
                 key_to_edit, 
                 answers_dict)
+            
+    # Only way to break out of the while loop, 
+    # is if user changes consent to N, 
+    # or if user types quit
+    return None
             
 def main_menu():
     print("1. Patient Registration")
@@ -618,14 +625,15 @@ def main_menu():
                 print("Thank you for confirming your inputs.")
                 return all_answers
             else:
-                print("You have chosen to exit the program! Have a nice day")
+                print(REG_EXIT_MESSAGE)
     elif main_menu_option == "2":
         #TO BE DONE
         return
     elif main_menu_option == "3":
         inputted_pass=input("Enter the exit code here: ")
         if inputted_pass == EXIT_PASSWORD:
+            print(MENU_EXIT_MESSAGE)
             return QUIT_SIGNAL
         else:
             print("This is not the right password!")
-main_menu()
+main_menu() #DEBUGGING
