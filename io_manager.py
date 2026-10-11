@@ -650,3 +650,14 @@ def main_menu():
         else:
             print("This is not the right password!")
 main_menu() #DEBUGGING
+
+def filter_answers(answers_dict: dict) -> dict:
+    """Returns a new dictionary with only the answers whose question is
+    marked share_with_ai, so personal information is never sent to AI.
+    """
+    answers_filtered = {}
+    for question in ALL_QUESTIONS:
+        if question.get("share_with_ai", False):
+            key = question["key"]
+            answers_filtered[key] = answers_dict.get(key)
+    return answers_filtered
