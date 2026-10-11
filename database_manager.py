@@ -1,11 +1,11 @@
-import json
+import csv
 from pathlib import Path
 
 # folder where this file is located
 base_dir= Path(__file__).parent
 
-# json file used to store patient records
-records_file= base_dir/"patient_records.json"
+# csv file used to store patient records
+records_file= base_dir/"patient_records.csv"
 
 # save a completed patient record
 def export_record(
@@ -14,30 +14,28 @@ def export_record(
     logic_result
 ):
     # put all the patient information together
-    patient_record = {
-        "user_responses":all_user_responses,
-        "ai_output":ai_output,
-        "logic_result":logic_result
-    }
+    patient_record = {}
 
-    records =[]
+    patient_record.update(all_user_responses)
+    patient_record.update(ai_output)
+    patient_record.update(logic_result)
 
     # check if the file already exists
-    if records_file.exists():
-        try:
-            # open and load existing records
-            with open(records_file, "r") as file:
-                records = json.load(file)
+    file_exists = records_file.exists()
 
-        # if the json file cannot be read properly
-        except json.JSONDecodeError:
-            records = []
+    # open csv file and add the patient record
+    with open(records_file, "a", newline="") as file:
 
-    # add the new patient record
-    records.append(patient_record)
+        writer = csv.DictWriter(
+            file,
+            fieldnames=patient_record.keys()
+        )
 
-    # save everything back into the file
-    with open(records_file, "w") as file:
-        json.dump(records, file, indent=4)
+        # write the column names if the file is newly created
+        if not file_exists:
+            writer.writeheader()
+
+        # add the new patient record
+        writer.writerow(patient_record)
 
     return True
