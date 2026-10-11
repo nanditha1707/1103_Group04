@@ -5,13 +5,23 @@
 import difflib
 import re
 
+import pandas as pd
 import phonenumbers
 
 QUIT_SIGNAL = -99
 QUIT_COMMAND = "QUIT"
 BACK_COMMAND = "BACK"
 FILE_PATH = "Put here later" #To Be Updated
+SYMPTOMS_CSV_PATH = r"datasets/symptoms_umls.csv"
 
+def load_symptoms() -> list:
+    """Reads the symptoms dataset. Returns all symptom names in
+    uppercase since user input is uppercased before matching."""
+    symptoms_dataframe = pd.read_csv(SYMPTOMS_CSV_PATH)
+    symptoms_column = symptoms_dataframe["term"].str.upper()
+    return symptoms_column.tolist()
+
+SYMPTOMS_DIFFLIB_LIST = load_symptoms()
 PRIORITY_KEYLIST = [
     "chest_pain",
     "breathing_difficulties",
