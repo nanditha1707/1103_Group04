@@ -11,6 +11,7 @@ import phonenumbers
 QUIT_SIGNAL = -99
 QUIT_COMMAND = "QUIT"
 BACK_COMMAND = "BACK"
+EXIT_PASSWORD = "Password"
 FILE_PATH = "Put here later" #To Be Updated
 SYMPTOMS_CSV_PATH = r"datasets/symptoms_umls.csv"
 
