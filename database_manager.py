@@ -6,6 +6,13 @@ import os
 
 # csv file used to store patient records
 RECORDS_FILE="patient_records.csv"
+# medicine fields from AI output
+MEDICINE_FIELDS=[
+    "primary_diagnosis_medicine_1",
+    "primary_diagnosis_medicine_2",
+    "secondary_diagnosis_medicine_1",
+    "secondary_diagnosis_medicine_2"
+]
 
 # Load all records,
 # or a empty df if the file doesn't exist yet
@@ -115,23 +122,8 @@ def display_patient(patient):
 
 # get count of a specific medicine issued on a date
 def get_medicine_count(date, medicine):
-
-    try:
-        # open patient records
-        records = pd.read_csv(records_file)
-
-    except FileNotFoundError:
-        return 0
-
+    records = load_records()
     count = 0
-
-    # medicine fields from AI output
-    medicine_fields=[
-        "primary_diagnosis_medicine_1",
-        "primary_diagnosis_medicine_2",
-        "secondary_diagnosis_medicine_1",
-        "secondary_diagnosis_medicine_2"
-    ]
 
     # check each patient
     for index, patient in records.iterrows():
@@ -140,7 +132,7 @@ def get_medicine_count(date, medicine):
         if patient["date"]== date:
 
             # check all medicine fields
-            for field in medicine_fields:
+            for field in MEDICINE_FIELDS:
 
                 if str(patient[field]).lower()== medicine.lower():
                     count += 1
@@ -155,7 +147,7 @@ def get_medicine_breakdown(date):
 
     try:
         # open patient records
-        records = pd.read_csv(records_file)
+        records = pd.read_csv(RECORDS_FILE)
 
     except FileNotFoundError:
         return medicine_counts
@@ -203,7 +195,7 @@ def get_patient_type_breakdown(date):
 
     try:
         # open patient records
-        records = pd.read_csv(records_file)
+        records = pd.read_csv(RECORDS_FILE)
 
     except FileNotFoundError:
         return patient_types
