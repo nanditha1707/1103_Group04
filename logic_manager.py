@@ -111,63 +111,69 @@ def decide_route(answers_dict, ai_output, hsa_df):
 # generate next queue number based on routing
 def get_queue_number(queue_type):
 
+    # Letter at the start of each queue number to differentiate.
+    prefixes = {
+        "Doctor": "D",
+        "Pharmacist": "P",
+        "Urgent": "U"
+    }
+
+    prefix = prefixes.get(queue_type)
+
+    # "Retail" does not get a queue number
+    if prefix is None:
+        return None
+
     # get todays date
     today=datetime.now().strftime("%Y-%m-%d")
 
-    # all queue counters start at 0
-    doctor_count=0
-    pharmacist_count=0
-    bypass_count=0
+    # highest number already given out in this queue today
+    highest_number_today = 0
 
     try:
-        # open queue file
-        with open("queue_number.txt", "r", encoding="utf-8") as file:
+        # read the saved patient records
+        # dtype=str keeps queue numbers like D001 as text
+        # keep_default_na=False turns blank cells into "" instead of NaN
+        records_df = pd.read_csv(
+            PATIENT_RECORDS_CSV_PATH,
+            dtype=str,
+            keep_default_na=False
+        )
 
-            # read saved file
-            data =file.read().strip()
+        # only look at todays patients
+        todays_df = records_df[records_df["date"] == today]
 
-       # split the saved date, and counters
-        saved_date,doctor,pharmacist,bypass=data.split(",")
+        # Checks in patient records for highest queue number today.
+        # Then adds 1 to print new queue number.
+        for existing_queue_number in todays_df["queue_number"]:
 
-        # same queue number, if it it still the same day
-        if saved_date==today:
-            doctor_count=int(doctor)
-            pharmacist_count=int(pharmacist)
-            bypass_count=int(bypass)
+            # Only look at queue numbers in the same queue e.g. D001
+            if existing_queue_number.startswith(prefix):
+                try:
+                    # [1:] drops the letter e.g. "D007" -> "007".
+                    # int() turns "007" into 7.
+                    # max() keeps the highest number seen so far.
+                    highest_number_today = max(
+                        highest_number_today,
+                        int(existing_queue_number[1:])
+                    )
 
-    # if queue file is not found, start all queues from 0
+                # skip queue numbers that are corrupted
+                except ValueError:
+                    pass
+
+    # if there are no saved records yet, the queue starts from 0
     except FileNotFoundError:
         pass
 
-    queue_number = None
+    # if the file is empty, has no date/queue_number column,
+    # or cannot be read, the queue starts from 0
+    except (pd.errors.EmptyDataError, pd.errors.ParserError, KeyError, OSError):
+        pass
 
-    # doctor queue
-    if queue_type =="Doctor":
-        doctor_count +=1
-        queue_number = f"D{doctor_count:03d}"
-
-    # pharmacist queue
-    elif queue_type =="Pharmacist":
-        pharmacist_count +=1
-        queue_number =f"P{pharmacist_count:03d}"
-
-    # Urgent AI bypass queue
-    elif queue_type=="Bypass":
-        bypass_count +=1
-        queue_number =f"U{bypass_count:03d}"
-
-    # save updated file
-    with open("queue_number.txt", "w", encoding="utf-8") as file:
-
-        file.write(
-            today + ","
-            + str(doctor_count) + ","
-            + str(pharmacist_count) + ","
-            + str(bypass_count)
-        )
-
-    # return generated queue number 
-    return queue_number
+    # return the next queue number e.g. D008
+    # :03d sets the minimum width to 3, so instead of D9 it is D009.
+    return f"{prefix}{highest_number_today + 1:03d}"
 
 # final domain 
 def process_result(
