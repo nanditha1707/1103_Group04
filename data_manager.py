@@ -425,7 +425,7 @@ def get_patient_filter(option: str)-> list:
         print("This is not a valid option number.")
     return filter
 
-def get_patient_by_queue(queue_number):
+def get_patient_by_queue(queue_number,filter: list)-> dict:
     """Find today's patient with the given queue number. Return their
     record as a dict, or None if they are not found."""
 
@@ -449,7 +449,7 @@ def get_patient_by_queue(queue_number):
                 patient["queue_number"]== queue_number
                 and patient["date"]== today
             ):
-                return patient.to_dict()
+                return patient[[filter]].to_dict()
     # If there is no such patient, return None.
     return None
 
