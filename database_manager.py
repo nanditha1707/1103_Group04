@@ -192,3 +192,44 @@ def get_medicine_breakdown(date):
                             medicine_counts[medicine]=1
 
     return medicine_counts
+
+# get breakdown of patient types for a date
+def get_patient_type_breakdown(date):
+
+    # start all counts at 0
+    patient_types={
+        "Emergency":0,
+        "Doctor":0,
+        "Pharmacy":0,
+        "Retail":0
+    }
+
+    #return counts if file oes not exist
+    if not records_file.exists():
+        return patient_types
+
+    # open patient records
+    with open(records_file,"r", newline='') as file:
+
+        reader = csv.DictReader(file)
+
+        # check each patient
+        for patient in reader:
+
+            #only check records from selected date
+            if patient["date"]==date:
+
+                # priority patients count as emergency
+                if patient["priority"]=="True":
+                    patient_types["Emergency"]+=1
+
+                elif patient["route"]=="Doctor":
+                     patient_types["Doctor"]+=1
+
+                elif patient["route"]=="Pharmacist":
+                     patient_types["Pharmacist"]+=1
+
+                elif patient["route"]=="Retail":
+                     patient_types["Retail"]+=1
+
+    return patient_types
