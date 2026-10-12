@@ -624,13 +624,16 @@ def confirm_inputs(answers_dict: dict) -> bool | None:
                 # Males cannot be pregnant, 
                 # so the value is overriden with Not Applicable.
                 if key == "pregnancy" and answers_dict["gender"] == "M":
-                    current_entry= f"{question_number + 1:02d}.{prompt}Not Applicable"
+                    current_entry= f"{question_number + 1:02d}. {prompt}Not Applicable"
                 # Only appends key and prints if key is not priority, 
                 # and the key is not pregnancy or the person is a female, 
                 # as the logic for male and pregnant key has been handled above.
                 elif key != "pregnancy" or answers_dict["gender"] == "F":
                     editable_keys.append(key)
                 confirmation_menu_options.append(current_entry)
+        # Appends the option to confirm all inputs to the list of options.
+        confirmation_option = len(confirmation_menu_options)+1
+        confirmation_menu_options.append(f"{confirmation_option:02d}. Confirm All Inputs")
         dynamic_menu_print(confirmation_menu_options, header)
         
         menu_state = (
@@ -641,7 +644,14 @@ def confirm_inputs(answers_dict: dict) -> bool | None:
             .strip()
             .upper()
         )
-        if menu_state == "Y":
+
+        if not menu_state:
+            print("Invalid input. Input cannot be blank!")
+            continue
+        elif not menu_state.isdecimal():
+            print("Invalid input. Please enter a valid number or 'Y' to confirm.")
+            continue
+        elif int(menu_state) == confirmation_option:
             is_priority(answers_dict)
             if answers_dict["gender"] == "M":
                 answers_dict["pregnancy"] = None
@@ -654,15 +664,9 @@ def confirm_inputs(answers_dict: dict) -> bool | None:
                     continue
             else:
                 return True
-        elif not menu_state:
-            print("Invalid input. Input cannot be blank!")
-            continue
-        elif not menu_state.isdecimal():
-            print("Invalid input. Please enter a valid number or 'Y' to confirm.")
-            continue
 
         key_to_edit = int(menu_state) - 1
-        if not 0 < key_to_edit < len(confirmation_menu_options):
+        if not 0 <= key_to_edit < len(confirmation_menu_options):
             print("Invalid input. Please enter a valid menu option!")
             continue
 
