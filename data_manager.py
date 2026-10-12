@@ -402,6 +402,29 @@ def export_record(
 # ======================================================================
 # PATIENT LOOKUP FUNCTIONS
 # ======================================================================
+def get_patient_filter(option: str)-> list:
+    # Initialises filter to None
+    filter= None
+    # Checks if option is a valid digit,
+    # which helps to avoid TypeError.
+    if not option.isdecimal():
+        print("This is not a digit."
+              "Enter a valid option number!")
+    # Checks if option is blank
+    elif not option:
+        print("Option cannot be blank.")
+    elif option == 1:
+        filter=PATIENT_COLUMNS
+    elif option == 2:
+        filter=MEDICAL_COLUMNS
+    elif option == 3:
+        filter=AI_OUTPUT_COLUMN
+    elif option == 4:
+        filter= RECORD_COLUMNS
+    else:
+        print("This is not a valid option number.")
+    return filter
+
 def get_patient_by_queue(queue_number):
     """Find today's patient with the given queue number. Return their
     record as a dict, or None if they are not found."""
