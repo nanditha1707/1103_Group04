@@ -271,7 +271,7 @@ def symptom_handler(symptom_list: list) -> list:
 
         #If symptom is a valid symptom, it appends it to the list.
         if symptom != None:
-            list_dedupe_append(symptom_list, symptom)
+            append_list_if_unique(symptom_list, symptom)
 
 def run_validation(ALL_QUESTIONS: dict, user_answer: str, state: int) -> bool:
     """Selects the correct validation function for the current question
@@ -454,18 +454,17 @@ def run_questions():
 
         # Returns QUIT_SIGNAL on quit or the previous state on back.
         # Otherwise the current_state remains unchanged.
-        current_state = quit_or_back_handler(
+        current_state = process_quit_or_back(
             current_user_answer, current_state, all_user_answers
         )
         
-
         # If the user types quit or consent is "N", exit the function.
         if current_state == QUIT_SIGNAL:
             return
 
         # If the user typed 'back',
         # skip the rest of the loop and ask the previous question.
-        # current_state was already -1 in quit_or_back_handler().
+        # current_state was already set to QUIT_SIGNAL in process_quit_or_back().
         elif current_user_answer == BACK_COMMAND:
             continue
 
@@ -511,7 +510,7 @@ def back_to_previous_question(state: int, answers_dict: dict) -> int:
     return previous_state
 
 
-def quit_or_back_handler(user_answer: str, state: int, answers_dict: dict) -> int:
+def process_quit_or_back(user_answer: str, state: int, answers_dict: dict) -> int:
     """
     This function handles when the user presses quit or back.
     """
@@ -533,7 +532,7 @@ def quit_or_back_handler(user_answer: str, state: int, answers_dict: dict) -> in
             )
     return state
 
-def list_dedupe_append(list: list, user_answer: str):
+def append_list_if_unique(list: list, user_answer: str):
     for value in list:
         if value == user_answer:
             print("This value already exists in the list!")
