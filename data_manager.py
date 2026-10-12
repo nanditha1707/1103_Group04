@@ -1,11 +1,11 @@
 # ======================================================================
 # IMPORT FUNCTIONS AND CONSTANTS
 # ======================================================================
+import os
 from datetime import datetime
 
-import pandas as pd
 import numpy as np
-import os
+import pandas as pd
 
 # File paths.
 ICD_CSV_PATH = "datasets/icd11.csv"
@@ -22,11 +22,11 @@ RECORD_COLUMNS = [
     "date",
     "time",
     "queue_number",
-    "nric",
-    "name",
+    "name", 
+    "nric", 
+    "gender", 
+    "age", 
     "phone_number",
-    "gender",
-    "age",
     "pregnancy",
     "priority",
     "chest_pain",
@@ -51,7 +51,41 @@ RECORD_COLUMNS = [
     "ai_confidence_score",
     "route"
 ]
+PATIENT_COLUMNS=[
+    "name", 
+    "nric", 
+    "gender", 
+    "age", 
+    "phone_number"
+                 ]
+MEDICAL_COLUMNS=[
+    "date",
+    "route",
+    "pregnancy",
+    "chest_pain",
+    "breathing_difficulties",
+    "signs_of_stroke",
+    "self_harm",
+    "current_symptoms",
+    "symptom_onset_days",
+    "chronic_conditions",
+    "current_medications",
+    "drug_allergies"
+        ]
 
+AI_OUTPUT_COLUMN=[
+        "primary_diagnosis_ICD11_Code",
+        "primary_diagnosis_ICD11_Title",
+        "primary_diagnosis_explanation",
+        "primary_diagnosis_medicine_1",
+        "primary_diagnosis_medicine_2",
+        "secondary_diagnosis_ICD11_Code",
+        "secondary_diagnosis_ICD11_Title",
+        "secondary_diagnosis_explanation",
+        "secondary_diagnosis_medicine_1",
+        "secondary_diagnosis_medicine_2",
+        "ai_confidence_score"
+            ]
 # Medicine fields from AI output.
 MEDICINE_FIELDS=[
     "primary_diagnosis_medicine_1",
