@@ -7,7 +7,7 @@ sys.path.append(
     str(Path(__file__).parent.parent)
 )
 
-from database_manager import (
+from data_manager import (
     export_record,
     get_patient_by_queue,
     display_patient,
