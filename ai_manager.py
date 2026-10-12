@@ -354,6 +354,12 @@ def create_ai_prompt(ai_output: dict) -> str:
 
     return ai_prompt
 
+def get_ai_output(answers_filtered: dict) -> dict:
+    """Build the prompt from the filtered patient answers and return the
+    validated AI output, or an error dict if every model failed."""
+    ai_prompt = create_ai_prompt(answers_filtered)
+    return get_ai_response(AI_MEDICAL_CONTEXT, ai_prompt, AI_OUTPUT_SCHEMA)
+
 
 # ======================================================================
 # AI OUTPUT VALIDATION FUNCTIONS
