@@ -2,7 +2,7 @@ from datetime import datetime
 
 # get all the medicine names from the AI output
 def get_medicines(ai_output): 
-    medicines = []
+    ai_medicines = []
 
     # keys where the medicines are stored in the AI output
     medicine_keys =[
@@ -16,60 +16,57 @@ def get_medicines(ai_output):
     for key in medicine_keys:
 
         # get the medicine stored under the key
-        medicine = ai_output.get(key)
+        ai_medicine = ai_output.get(key)
 
         # only add it if there is an medicine
-        if medicine:
-            medicines.append(medicine)
+        if ai_medicine:
+            ai_medicines.append(ai_medicine)
 
     # return the list of medicines
-    return medicines
+    return ai_medicines
 
 # get HSA classification of medicine
-def get_classification(medicine, hsa_df):
+def get_classification(ai_medicine, hsa_df):
 
-    # go through every row in the HSA dataset
-    for _, row in hsa_df.iterrows():
-
-        # convert the drug name to lowercase
-        drug_name= str(row["DrugName"]).lower() 
-
-        # Concert the active ingredient to lowercase
-        ingredient= str(row["ActiveIngredients"]).lower() 
+    # go through the HSA dataset one row at a time. The row number is used
+    # to get the drug name and active ingredient from that same row.
+    for row in range(len(hsa_df)):
+        drug_name = hsa_df["DrugName"][row]
+        ingredient = hsa_df["ActiveIngredients"][row]
 
         # check if the AI medicine matches either field
-        if medicine.lower() in drug_name or medicine.lower() in ingredient:
+        if ai_medicine in drug_name or ai_medicine in ingredient:
 
-            # return the HSA classification
-            return row["Classification"]
+            # return the HSA classification from the same row
+            return hsa_df["Classification"][row]
 
-    # return none id medicine is not fouind
+    # return None if medicine is not found
     return None
 
 # to decide where the patient should be routed to
-def decide_route(all_user_responses, ai_output, hsa_df):
+def decide_route(answers_dict, ai_output, hsa_df):
 
     # AI bypass always routes the patient to a doctor
-    if all_user_responses.get("priority"):
+    if answers_dict.get("priority"):
         return "Doctor"
 
     # get all medicines reccomended by AI
-    medicines=get_medicines(ai_output)
+    ai_medicines=get_medicines(ai_output)
 
     # remember if at least one pharm only medicine is found
     pharmacist_needed = False
 
     # check each recommended medicine
-    for medicine in medicines:
+    for ai_medicine in ai_medicines:
 
         # get the medicine classification from HSA data
         classification =get_classification(
-            medicine,
+            ai_medicine,
             hsa_df
         )
 
         # prescription only medicine requires doctor
-        if classification=="Prescription Only":
+        if classification == "Prescription Only":
             return "Doctor"
 
         # pharmacy only medicine requires pharmacist
@@ -146,7 +143,7 @@ def get_queue_number(queue_type):
 
 # final domain 
 def process_result(
-        all_user_responses,
+        answers_dict,
         ai_output,
         hsa_df,
 ):
@@ -154,7 +151,7 @@ def process_result(
 
     # where the patient goes
     route=decide_route(
-        all_user_responses,
+        answers_dict,
         ai_output,
         hsa_df
     )
@@ -163,7 +160,7 @@ def process_result(
     now=datetime.now()
 
     # AI bypass route ( U queue )
-    if all_user_responses.get("priority"):
+    if answers_dict.get("priority"):
         queue_number =get_queue_number("Bypass")
 
     # docter route ( D queue )
@@ -186,5 +183,5 @@ def process_result(
         "route": route
     }
 
-    # return final resuly
+    # return final result
     return result
