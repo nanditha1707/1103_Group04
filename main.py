@@ -59,7 +59,7 @@ while True:
 
     # 2. AI manager: get a diagnosis and medicines
     ai_output = ai.get_ai_output(answers_filtered)
-    print(ai_output)
+    print(ai_output) #DEBUGGING
 
     # the AI manager returns an "error" key when every AI model failed
     # failed AI output is not routed or saved, the patient sees staff
@@ -71,4 +71,7 @@ while True:
     logic_result = logic.process_result(answers, ai_output, hsa_df)
 
     # 4. Data manager: save the completed record to patient_records.csv
-    data.export_record(answers, ai_output, logic_result)
+    is_export=data.export_record(answers, ai_output, logic_result)
+    if not is_export:
+        print("The program has encountered an error."
+              "Please approach a nurse or clerk for manual registration.")
