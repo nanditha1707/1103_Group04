@@ -1,5 +1,10 @@
 from datetime import datetime
 
+import pandas as pd
+
+# saved patient records, used to work out queue numbers
+PATIENT_RECORDS_CSV_PATH = "datasets/patient_records.csv"
+
 # get all the medicine names from the AI output
 def get_medicines(ai_output): 
     ai_medicines = []
