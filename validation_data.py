@@ -164,6 +164,7 @@ def clean_hsa_data(hsa_df):
         hsa_df["DrugName"]
         .astype(str)
         .str.strip()
+        .str.upper()
     )
 
     hsa_df["Dosage"] = (
@@ -182,6 +183,7 @@ def clean_hsa_data(hsa_df):
         hsa_df["ActiveIngredients"]
         .astype(str)
         .str.strip()
+        .str.upper()
     )
 
     hsa_df["ATCCode"] = (
