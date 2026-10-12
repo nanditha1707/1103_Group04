@@ -64,8 +64,16 @@ def is_emergency(ai_output):
 # to decide where the patient should be routed to
 def decide_route(answers_dict, ai_output, hsa_df):
 
+    # AI flagged an emergency, this overrides every other route
+    if is_emergency(ai_output):
+        return "EMERGENCY"
+
     # AI bypass always routes the patient to a doctor
     if answers_dict.get("priority"):
+        return "Doctor"
+
+    # without HSA data the medicines cannot be checked, so see a doctor
+    if hsa_df is None:
         return "Doctor"
 
     # get all medicines reccomended by AI
@@ -78,10 +86,7 @@ def decide_route(answers_dict, ai_output, hsa_df):
     for ai_medicine in ai_medicines:
 
         # get the medicine classification from HSA data
-        classification =get_classification(
-            ai_medicine,
-            hsa_df
-        )
+        classification = get_classification(ai_medicine, hsa_df)
 
         # prescription only medicine requires doctor
         if classification == "Prescription Only":
@@ -91,7 +96,7 @@ def decide_route(answers_dict, ai_output, hsa_df):
         if classification=="Pharmacy Only":
             pharmacist_needed=True
 
-    #if no prescription medicine but a pharmacy only medicine was found
+    # if no prescription medicine but a pharmacy only medicine was found
     if pharmacist_needed:
         return "Pharmacist"
 
