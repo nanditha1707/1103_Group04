@@ -143,15 +143,6 @@ def validate_phone_number(user_answer: str) -> str | None:
             "please check the number and country code."
         )
 
-def symptom_menu() -> str:
-    """
-    Prints out the symptom menu options,
-    accepts the menu option as input and returns it.
-    """
-    header = "Symptoms"
-    option = dynamic_menu_print(SYMPTOM_MENU, header)
-    return option
-
 def symptom_remove(symptom_list:list):
     # Prints the symptom_list
     print(symptom_list, sep=", ")
@@ -634,8 +625,6 @@ def confirm_inputs(answers_dict: dict) -> bool | None:
         # Appends the option to confirm all inputs to the list of options.
         confirmation_option = len(confirmation_menu_options)+1
         confirmation_menu_options.append(f"{confirmation_option:02d}. Confirm All Inputs")
-        dynamic_menu_print(confirmation_menu_options, header)
-        
         menu_state = dynamic_menu_print(confirmation_menu_options, header)
 
         if not menu_state:
