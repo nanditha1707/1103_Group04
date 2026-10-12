@@ -622,23 +622,38 @@ def confirm_inputs(answers_dict: dict) -> bool | None:
                 elif key != "pregnancy" or answers_dict["gender"] == "F":
                     editable_keys.append(key)
                 confirmation_menu_options.append(current_entry)
-        # Appends the option to confirm all inputs to the list of options.
+        
         confirmation_option = len(confirmation_menu_options)+1
+        # Appends the option to confirm all inputs to the list of options.
         confirmation_menu_options.append(f"{confirmation_option:02d}. Confirm All Inputs")
+        # Prints the menu and gets input as menu_state.
         menu_state = dynamic_menu_print(confirmation_menu_options, header)
 
+        # Checks if input is blank
         if not menu_state:
             print("Invalid input. Input cannot be blank!")
             continue
+
+        # Checks if input is a Base10 Number
         elif not menu_state.isdecimal():
             print("Invalid input. Please enter a valid number or 'Y' to confirm.")
             continue
+
+        # Checks if user is confirming the inputs
         elif int(menu_state) == confirmation_option:
+            # Updates the dictionary of answers with the latest priority status.
             is_priority(answers_dict)
+            # Males cannot be pregnant so it sets pregnancy to None.
             if answers_dict["gender"] == "M":
                 answers_dict["pregnancy"] = None
+                # Returns confirmation status as True
                 return True
+
+            # Checks if user gender is F, 
+            # and checks if they have answered the pregnancy question.
             if answers_dict["gender"] == "F" and answers_dict["pregnancy"] is None:
+                    # Prints a error message if they have not,
+                    # and brings them back to the start of the loop.
                     print(
                         "You have not answered the pregnancy question. "
                         "Please answer it before confirming your inputs."
@@ -646,33 +661,56 @@ def confirm_inputs(answers_dict: dict) -> bool | None:
                     continue
             else:
                 return True
-
+        # Menu options are the keys in the list with one added to them,
+        # so one has to be deducted in order to ensure the right key is edited.
         key_to_edit = int(menu_state) - 1
+
+        # Check if the key to be edited is within the valid range,
+        # and prints a error message if it isnt.
         if not 0 <= key_to_edit < len(confirmation_menu_options):
             print("Invalid input. Please enter a valid menu option!")
             continue
 
+        # Check if the key is a valid editable key.
+        # If it is not, print a error message and loop back to the start.
         if ALL_QUESTIONS[key_to_edit]["key"] not in editable_keys:
             print("That item cannot be edited.")
             continue
-            
+        
         if ALL_QUESTIONS[key_to_edit]["key"] in editable_keys:
+            # Runs the input_handler function to get the user input,
+            # and initialise answer_is_valid.
             revised_answer, answer_is_valid = input_handler(key_to_edit)
+            # If the current question is symptoms, it automatically returns symptoms. 
+            # Therefore to check for symptoms we check if revised answer is symptoms.
             if revised_answer=="symptoms":
+                # Grabs previous symptom input directly from the answers_dict
                 previous_symptoms = answers_dict.get("current_symptoms")
+                # Runs a copy of the list through the symptom handler as lists are mutable objects
+                # That way, the previous symptoms list is maintained so it can be used.
+                #The new symptom list is stored in revised_answer
                 revised_answer = symptom_handler(previous_symptoms.copy())
+                # The only way to return a empty list,is if the user types back or quit. 
+                # In such a scenario, the previous symptoms should be retained.
                 if not revised_answer:
                     revised_answer = previous_symptoms
+                # Sets answer_is_valid to True, as symptom_handler has built in validation.
                 answer_is_valid = True
 
+            # If user inputs back,
+            # it will warn the user that backing out of confirmation isnt possible.
             if revised_answer == BACK_COMMAND:
                 print("You cannot go back during the confirmation process. "
                       "Please enter a valid input.")
                 continue
 
+            # If the user inputs the quit command,
+            # it breaks the loop
             if revised_answer == QUIT_COMMAND:
                 break
-            
+
+            # Runs the user input through the validate orcherstrator function,
+            # which will run the appropriate validation function to check inputs.
             answer_is_valid, key_to_edit = validate_orchestrator(
                 answer_is_valid, 
                 revised_answer, 
