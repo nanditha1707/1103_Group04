@@ -454,51 +454,6 @@ def get_patient_by_queue(queue_number):
     return None
 
 
-def display_patient(patient):
-    """Print a patient's information, AI diagnosis and routing details."""
-
-    if patient is None:
-        print("Patient not found.")
-        return
-
-    print("\nPATIENT INFORMATION")
-    print("-------------------")
-
-    print("Name:",patient["name"])
-    print("Age:", patient["age"])
-    print("Gender:", patient["gender"])
-    print("Chest Pain:", patient["red_flag_chest_pain"])
-    print("Breathing Issue:", patient["red_flag_breathing"])
-    print("Stroke Symptoms:",patient["red_flag_stroke"])
-    print("Self Harm:",patient["self_harm"])
-    print("Symptoms:", patient["current_symptoms"])
-    print("Symptom Onset:", patient["symptom_onset"])
-    print("Chronic Conditions:", patient["chronic_conditions"])
-    print("Current Medications:", patient["current_medications"])
-    print("Drug Allergies:", patient["drug_allergies"])
-
-    print("\nAI DIAGNOSIS")
-    print("------------")
-
-    print( "Primary Diagnosis:", patient["primary_diagnosis_ICD11_Title"])
-    print("Primary Diagnosis Code:", patient["primary_diagnosis_ICD11_Code"])
-    print("Secondary Diagnosis:", patient["secondary_diagnosis_ICD11_Title"])
-    print("Secondary Diagnosis Code:", patient["secondary_diagnosis_ICD11_Code"])
-    print("Primary Medicine 1:", patient["primary_diagnosis_medicine_1"])
-    print("Primary Medicine 2:",patient["primary_diagnosis_medicine_2"])
-    print("Secondary Medicine 1:", patient["secondary_diagnosis_medicine_1"])
-    print("Secondary Medicine 2:", patient["secondary_diagnosis_medicine_2"])
-    print("AI Confidence Score:",patient["ai_confidence_score"])
-
-    print("\nROUTING INFORMATION")
-    print("-------------------")
-
-    print("Queue Number:", patient["queue_number"])
-    print("Route:", patient["route"])
-    print("Date:", patient["date"])
-    print("Time:", patient["time"])
-
-
 # ======================================================================
 # REPORT FUNCTIONS
 # ======================================================================
