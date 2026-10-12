@@ -1,5 +1,3 @@
-"""AI manager: sends prompts to Claude or Gemini with retries and fallbacks."""
-
 # ======================================================================
 # IMPORT FUNCTIONS AND CONSTANTS
 # ======================================================================
@@ -9,24 +7,39 @@ import time
 import anthropic
 import httpx
 import httpx2
+import pandas as pd
 from dotenv import load_dotenv
 from google import genai
-import pandas as pd
 from google.genai import errors as genai_errors
+
+# Timeout for 1 AI API request.
+REQUEST_TIMEOUT_SECONDS = 20
+# Timeout for all API requests to return a valid answer. 
+TOTAL_TIMEOUT_SECONDS = 60
+# Retry number for retrying on same the same model.
+MAX_RETRIES_PER_MODEL = 2
+# Models to use for the AI API, in order of execution.
+MODELS = [
+    {"provider": "claude", "model": "claude-opus-5-5"},
+    {"provider": "claude", "model": "claude-sonnet-5"},
+    {"provider": "gemini", "model": "gemini-3.8-flash"},
+    {"provider": "gemini", "model": "gemini-3.5-flash-lite"},
+]
+
+FILE_PATH_ICD11 = "datasets/icd11.csv"
+FILE_PATH_HSA = "datasets/hsa.csv"
 
 FAIL = "Fail immediately"
 RETRY_SAME_MODEL = "Retry on the same model"
 SWITCH_MODEL = "Switch models"
 SWITCH_MODEL_PROVIDER = "Switch immediately to a different model provider"
-GEMINI_TIMEOUT_ERRORS = (httpx.TimeoutException, httpx2.TimeoutException)
-GEMINI_CONNECTION_ERRORS = (httpx.ConnectError, httpx2.ConnectError)
-REQUEST_TIMEOUT_SECONDS = 20
-TOTAL_TIMEOUT_SECONDS = 60
-MAX_RETRIES_PER_MODEL = 3
 CONTACT_SUPPORT_MESSAGE = (
     "Please contact technical staff for assistance. "
     "Either an unexpected error has occured or all AI APIs are currently down. "
 )
+
+GEMINI_TIMEOUT_ERRORS = (httpx.TimeoutException, httpx2.TimeoutException)
+GEMINI_CONNECTION_ERRORS = (httpx.ConnectError, httpx2.ConnectError)
 
 AI_OUTPUT_FIELDS = {
     "primary_diagnosis_ICD11_Title": {"type": "string"},
@@ -40,7 +53,6 @@ AI_OUTPUT_FIELDS = {
     "secondary_diagnosis_medicine_1":{"type": "string"},
     "secondary_diagnosis_medicine_2":{"type": "string"},
     "ai_confidence_score":{"type": "integer"},
-    "refused":{"type":"string"}
 }
 
 AI_OUTPUT_SCHEMA = {
@@ -72,39 +84,25 @@ Explanations:
 Confidence and refusal:
 - ai_confidence_score is an integer from 0 to 100 showing how confident you are in
   the primary diagnosis.
-- If you can give a valid answer, set "refused" to "False".
-- If you cannot give a valid answer to the prompt, set "refused" to "True", set
-  ai_confidence_score to 0, and make all other fields empty strings.
+- If you cannot give a valid answer to the prompt, set ai_confidence_score to 0, 
+  and make all other fields empty strings.
+
+Emergency:
+- If you believe the patients requires urgent and immediate care, include the word
+"EMERGENCY" in at least one of your explanation fields and set the medicine fields to ' '.
+- Still provide 2 likely diagnoses using ICD-11 titles and its respective codes.
 
 Symptom definitions:
 - 'high fever' means a temperature at or above 39 degrees Celsius.
-- 'fever' means a temperature below 39 degrees Celsius.
+- 'fever' means a temperature below 39 degrees Celsius."""
 
-Medicine selection:
-- When choosing between medicines with very similar attributes and effects, pick the
-  one that is easier to access.
-- Accessibility from most to least accessible: retail -> pharmacy only ->
-  prescription only.
-- Reason: this triage aims to divert patients away from overcrowded healthcare
-  facilities. Patients are routed to a retail store, pharmacist or doctor based on
-  whether the medicine is available at retail, pharmacy only or prescription only."""
-
-MODELS = [
-    {"provider": "claude", "model": "claude-opus-5-5"},
-    {"provider": "claude", "model": "claude-sonnet-5"},
-    {"provider": "gemini", "model": "gemini-3.8-flash"},
-    {"provider": "gemini", "model": "gemini-3.5-flash-lite"},
-]
-
-FILE_PATH_ICD11 = "datasets/icd11.csv"
-FILE_PATH_HSA = "datasets/hsa.csv"
 DF_ICD11 = pd.read_csv(FILE_PATH_ICD11)
 DF_HSA = pd.read_csv(FILE_PATH_HSA)
-DATASET_DIAGNOSIS = DF_ICD11["Title"].str.upper()
-DATASET_CODE = DF_ICD11["Code"].str.upper()
-DATASET_MEDICINE = pd.concat(
+VALID_DIAGNOSES = DF_ICD11["Title"].str.strip().str.upper()
+VALID_CODES = DF_ICD11["Code"].str.strip().str.upper()
+VALID_MEDICINES = pd.concat(
     [DF_HSA["Productname"], DF_HSA["Activeingredients"]]
-).str.upper()
+).str.strip().str.upper()
 
 # Reads API key from local .env file.
 load_dotenv()
@@ -113,9 +111,7 @@ load_dotenv()
 # ======================================================================
 # API CALL FUNCTIONS
 # ======================================================================
-
-
-def call_gemini(model, context, prompt, schema) -> str:
+def call_gemini(model: str, context: str, prompt: str, schema: dict) -> str:
     """Send a prompt to Gemini and return its JSON reply as text.
 
     Gemini's timeout is in milliseconds, so timeout multiplied by 1000.
@@ -138,7 +134,7 @@ def call_gemini(model, context, prompt, schema) -> str:
     return response.text
 
 
-def call_claude(model, context, prompt, schema) -> str:
+def call_claude(model: str, context: str, prompt: str, schema: dict) -> str:
     """Send a prompt to Claude and return its JSON reply as text.
 
     'max_retries' is set to 0 because it is better for the retries to
@@ -155,21 +151,23 @@ def call_claude(model, context, prompt, schema) -> str:
             "format": {"type": "json_schema", "schema": schema},
         },
     )
+    # Slice [-1] to take the last content because Claude outputs its
+    # 'thinking and reasoning' steps as well. The last output is the
+    # JSON schema containing its response. 
     return response.content[-1].text
 
 
 # ======================================================================
 # ERROR CLASSIFICATION FUNCTIONS
 # ======================================================================
-
-
-def classify_error(error):
+def classify_error(error: Exception) -> str:
     """Unified function to classify all API errors from Claude and
     Gemini. It classifies the error based on either the error code or
     for errors without error codes, the error itself, and returns a
     suitable action to take based on the error message."""
 
-    # Something wrong with json generation, or AI output failed validation
+    # If something is wrong with json output, or AI output failed 
+    # validation then retry same model because error is likely transient.
     if isinstance(error, ValueError):
         return RETRY_SAME_MODEL
 
@@ -178,18 +176,20 @@ def classify_error(error):
     # So it has to be checked BEFORE APIConnectionError
     if isinstance(error, anthropic.APITimeoutError):
         return SWITCH_MODEL
+    
     if isinstance(error, anthropic.APIConnectionError):
         return RETRY_SAME_MODEL
+    
     if isinstance(error, anthropic.APIStatusError):
         error_code = error.status_code
         if error_code in (400, 413):
             return FAIL
-        elif error_code in (401, 402, 403, 429):
-            return SWITCH_MODEL_PROVIDER
-        elif error_code in (404, 529):
-            return SWITCH_MODEL
         elif error_code in (409, 500, 504):
             return RETRY_SAME_MODEL
+        elif error_code in (404, 529):
+            return SWITCH_MODEL
+        elif error_code in (401, 402, 403, 429):
+            return SWITCH_MODEL_PROVIDER
 
     # Gemini Errors
     if isinstance(error, GEMINI_TIMEOUT_ERRORS):
@@ -200,20 +200,20 @@ def classify_error(error):
 
     if isinstance(error, genai_errors.APIError):
         error_code = error.code
-        if error_code in (500, 504):
-            return RETRY_SAME_MODEL
-        elif error_code in (400, 413):
+        if error_code in (400, 413):
             return FAIL
-        elif error_code in (401, 403):
-            return SWITCH_MODEL_PROVIDER
+        elif error_code in (500, 504):
+            return RETRY_SAME_MODEL
         elif error_code in (404, 429, 503):
             return SWITCH_MODEL
+        elif error_code in (401, 403):
+            return SWITCH_MODEL_PROVIDER
 
-    # Unexpected errors that dont classify
+    # Unexpected errors that dont classify. In
     return FAIL
 
 
-def next_provider_index(current_model_index, selected_model_provider):
+def next_provider_index(current_model_index: int, selected_model_provider: str) -> int:
     """Return the index of the next model from a different provider."""
 
     for next_model_index in range(current_model_index + 1, len(MODELS)):
@@ -221,12 +221,12 @@ def next_provider_index(current_model_index, selected_model_provider):
             # return the index of the next model
             return next_model_index
 
-    # return len of models so the while loop in get_ai_response stops when
-    # theres no other model to switch to
+    # Return length of models so the while loop in get_ai_response stops 
+    # when theres no other model to switch to.
     return len(MODELS)
 
 
-def parse_ai_response(text):
+def parse_ai_response(text: str) -> dict:
     """Parse the AI's JSON text output into a Python dictionary."""
     return json.loads(text)
 
@@ -234,20 +234,21 @@ def parse_ai_response(text):
 # ======================================================================
 # CORE FUNCTIONS
 # ======================================================================
-
-
-def get_ai_response(context, prompt, schema):
+def get_ai_response(context: str, prompt: str, schema: dict) -> dict:
     """Try each model in MODELS until one returns a valid JSON reply.
 
     Errors are classified to decide whether to retry, switch model,
-    switch provider or fail. Returns an error dict if nothing works
-    before the total deadline.
+    switch provider or fail immediately. Returns an error dict if 
+    nothing works before TOTAL_TIMEOUT_SECONDS runs out.
     """
-    deadline = time.time() + TOTAL_TIMEOUT_SECONDS
+    
+    time_limit = time.time() + TOTAL_TIMEOUT_SECONDS
     current_model_index = 0
     current_retries = 0
 
-    while current_model_index < len(MODELS) and time.time() < deadline:
+    # While there is a model to select and the time limit has not been exceeded.
+    while current_model_index < len(MODELS) and time.time() < time_limit:
+
         selected_model = MODELS[current_model_index]
         selected_model_provider = selected_model["provider"]
         selected_model_name = selected_model["model"]
@@ -257,7 +258,7 @@ def get_ai_response(context, prompt, schema):
             elif selected_model_provider == "gemini":
                 ai_response = call_gemini(selected_model_name, context, prompt, schema)
 
-            # unrecognised model name -> go to next model in MODELS
+            # Unrecognised model name means switch to next model.
             else:
                 print(f"{selected_model_provider} | {selected_model_name} "
                       f"unknown provider '{selected_model_provider}' -> skipping")
@@ -266,9 +267,9 @@ def get_ai_response(context, prompt, schema):
 
             ai_output = parse_ai_response(ai_response)
 
-            # ValueError is classified as RETRY_SAME_MODEL, so invalid output
-            # retries the same model, then switches model / provider once
-            # retries run out, the same as other errors.
+            # ValueError is classified as RETRY_SAME_MODEL, so invalid ai output
+            # fails validation and retries the same model, then switches model / provider
+            # once retries run out, the same as other errors.
             if not validate_ai_output(ai_output):
                 raise ValueError("AI output not found in the ICD11 / HSA datasets")
 
@@ -305,105 +306,152 @@ def get_ai_response(context, prompt, schema):
                 current_model_index = next_provider_index(
                     current_model_index, selected_model_provider)
 
-            elif action in (SWITCH_MODEL, RETRY_SAME_MODEL):
+            elif action == SWITCH_MODEL or action == RETRY_SAME_MODEL:
                 # RETRY_SAME_MODEL only reaches here once retries are used up
                 current_model_index += 1
 
+            # Handle unexpected errors.
             else:
-                # Handle unexpected errors.
                 break
 
             # Reset retry count. It will only be reached when
             # action is SWITCH_MODEL or SWITCH_MODEL_PROVIDER.
             current_retries = 0
 
+    # Unexpected error message
     return {"error": CONTACT_SUPPORT_MESSAGE}
 
 
-def create_ai_prompt(ai_answers: dict) -> str:
+def create_ai_prompt(ai_output: dict) -> str:
     """Build the patient intake prompt from the already filtered answers
     """
     ai_prompt = "Presenting patient answers:\n"
 
-    for key, value in ai_answers.items():
+    for key, value in ai_output.items():
         ai_prompt += f"- {key}: {value}\n"
 
     return ai_prompt
 
 
 # ======================================================================
-# AI VALIDATION FUNCTIONS
+# AI OUTPUT VALIDATION FUNCTIONS
 # ======================================================================
+def validate_diagnosis(ai_diagnosis: str, ai_code: str) -> bool:
+    """
+    Check that an AI diagnosis title and its code are in the ICD11 dataset.
 
+    Returns True only if the title and code are an exact match on the
+    same row, so a real title paired with the wrong code fails.
+    The check ignores case and spaces at the start and end.
+    """
 
-def validate_diagnosis_code(diagnosis: str, code: str, label: str) -> bool:
-    """The validate_diagnosis_code() function stores the input of 
-    three string values named diagnosis, code and label (diagnosis) 
-    represent the dictionary(ai_output) value of the diagnosis
-    (code) represents the dictionary(ai_output) value of the code 
-    (label) represents the level(primary/secondary) of the output 
-    Returns True only if the diagnosis and code are found together
-    on the same row of the dataset, and prints the result."""
-
-    # False boolean value remains in isvalid_diagnosis_code unless the
-    # ai_output diagnosis and code match the "Title" and "Code" columns
-    # on the same row of DF_ICD11.
-    isvalid_diagnosis_code = False
+    # Remove spaces at the start and end, and make them uppercase to match
+    # the uppercase dataset entries.
+    ai_diagnosis = ai_diagnosis.strip().upper()
+    ai_code = ai_code.strip().upper()
 
     # Go through DF_ICD11 one row at a time. The row number is used to get
-    # the "Title" and "Code" from that same row.
-    for row in range(len(DATASET_DIAGNOSIS)):
-        valid_diagnosis = DATASET_DIAGNOSIS[row]
-        valid_code = DATASET_CODE[row]
+    # the "Title" and "Code" from that same row. Return True as soon as the
+    # ai_output diagnosis and code match on the same row.
+    for row in range(len(VALID_DIAGNOSES)):
+        valid_diagnosis = VALID_DIAGNOSES[row]
+        valid_code = VALID_CODES[row]
 
-        if diagnosis.upper() == valid_diagnosis and code.upper() == valid_code:
-            isvalid_diagnosis_code = True
-            break
+        if ai_diagnosis == valid_diagnosis and ai_code == valid_code:
+            return True
 
-    return isvalid_diagnosis_code
+    return False
 
 
-def validate_medicine(medicine: str, label: str) -> bool:
+def validate_medicine(ai_medicine: str) -> bool:
     """
-    This function has the same concept as validate_diagnosis_code() 
-    function but it is to validate medicine instead of disease."""
+    Check that an AI medicine is in the HSA dataset.
 
-    isvalid_medicine = False
+    Returns True if the medicine is found inside any product name or
+    active ingredient, e.g. 'Paracetamol' is found in
+    'SUNNY PARACETAMOL TABLET 500 mg'. Returns False for an empty
+    medicine. The check ignores case and spaces at the start and end.
+    """
 
-    # If AI output medicine is contained in a dataset entry, e.g.
-    # 'Paracetamol' in 'SUNNY PARACETAMOL TABLET 500 mg', then set
-    # isvalid_medicine flag to True. Else it stays as False.
-    for valid_medicine in DATASET_MEDICINE:
-        if medicine.upper() in valid_medicine:
-            isvalid_medicine = True
-            break
+    # Remove spaces at the start and end, and make it uppercase to match
+    # the uppercase dataset entries.
+    ai_medicine = ai_medicine.strip().upper()
 
-    return isvalid_medicine
+    # An empty medicine ('' or ' ') is never valid. This check is needed
+    # because '' is found inside every dataset entry, and ' ' is found
+    # inside any entry with a space, so they would wrongly return True.
+    if ai_medicine == "":
+        return False
+
+    # Return True as soon as the AI output medicine is contained in a
+    # dataset entry, e.g. 'Paracetamol' in 'SUNNY PARACETAMOL TABLET 500 mg'.
+    for medicine in VALID_MEDICINES:
+        if ai_medicine in medicine:
+            return True
+
+    # else if AI output medicine not in the dataset then return False.
+    return False
 
 
 def validate_ai_output(ai_output: dict) -> bool:
-    """Return True only if the AI did not refuse, every diagnosis title
-    and code is found together in the ICD11 dataset and every medicine
-    is found in the HSA dataset. Empty secondary diagnosis and medicine
-    fields are skipped, as the AI is allowed to leave them empty."""
-    if ai_output["refused"].upper() == "TRUE":
+    """
+    Check the AI output against the ICD11 and HSA datasets.
+
+    Validation passes in only 2 cases:
+    1. Normal case: both diagnoses match the ICD-11 dataset AND all 4
+       medicines match the HSA dataset.
+    2. Emergency case: both diagnoses match the ICD11 dataset AND at
+       least one explanation contains the word "EMERGENCY". The
+       medicines are not checked because the AI is instructed to 
+       leave them empty since its better for a doctor to decide in a
+       real emergency as emergencies are complex.
+    Everything else fails validation.
+    """
+
+    # Step 1: Check that both diagnoses and codes match the ICD11 dataset.
+    # They return True if valid and False otherwise.
+    primary_diagnosis_is_valid = validate_diagnosis(
+        ai_output["primary_diagnosis_ICD11_Title"],
+        ai_output["primary_diagnosis_ICD11_Code"],
+    )
+    secondary_diagnosis_is_valid = validate_diagnosis(
+        ai_output["secondary_diagnosis_ICD11_Title"],
+        ai_output["secondary_diagnosis_ICD11_Code"],
+    )
+
+    # Return False if either doesn't match. Only pass validation when
+    # both primary and secondary diagnosis are valid.
+    if not primary_diagnosis_is_valid or not secondary_diagnosis_is_valid:
         return False
 
-    for label in ("primary", "secondary"):
-        diagnosis = ai_output[f"{label}_diagnosis_ICD11_Title"]
-        code = ai_output[f"{label}_diagnosis_ICD11_Code"]
+    # Step 2: Collect the 4 medicine fields into a list so they can be
+    # checked one at a time.
+    medicines = [
+        ai_output["primary_diagnosis_medicine_1"],
+        ai_output["primary_diagnosis_medicine_2"],
+        ai_output["secondary_diagnosis_medicine_1"],
+        ai_output["secondary_diagnosis_medicine_2"],
+    ]
 
-        # The primary diagnosis must always be checked. The secondary
-        # diagnosis is optional, so it is only checked if the AI gave
-        # a title or code for it.
-        if label == "primary" or diagnosis != "" or code != "":
-            isvalid_diagnosis = validate_diagnosis_code(diagnosis, code, label)
-            if not isvalid_diagnosis:
-                return False
+    # Step 3: Count how many medicines match the HSA dataset.
+    valid_medicine_count = 0
 
-        for medicine in (ai_output[f"{label}_diagnosis_medicine_1"],
-                         ai_output[f"{label}_diagnosis_medicine_2"]):
-            if medicine and not validate_medicine(medicine, label):
-                return False
+    for medicine in medicines:
+        if validate_medicine(medicine):
+            valid_medicine_count += 1
 
-    return True
+    # Case 1 (normal): all 4 medicines are valid and the 2 diagnosis match.
+    if valid_medicine_count == 4:
+        return True
+
+    # Step 4: Check if either explanation contains the word "EMERGENCY".
+    primary_explanation = ai_output["primary_diagnosis_explanation"]
+    secondary_explanation = ai_output["secondary_diagnosis_explanation"]
+
+    # Case 2 (emergency): the medicines didn't all match, but it is an
+    # emergency so they are not needed.
+    if "EMERGENCY" in primary_explanation or "EMERGENCY" in secondary_explanation:
+        return True
+
+    # Any other combination fails validation.
+    return False
