@@ -11,7 +11,6 @@ import phonenumbers
 QUIT_SIGNAL = -99
 QUIT_COMMAND = "QUIT"
 BACK_COMMAND = "BACK"
-EXIT_PASSWORD = "Password"
 SYMPTOM_MENU = ["1. Cough",
                 "2. Flu",
                 "3. Headache",
@@ -20,11 +19,7 @@ SYMPTOM_MENU = ["1. Cough",
                 "6. Remove a Symptom",
                 "7. Done",
                 "You can also input quit or back"]
-MAIN_MENU_OPTIONS = ["1. Patient Registration",
-                     "2. Healthcare Professional Portal",
-                     "3. Exit"]
 REG_EXIT_MESSAGE = "Exiting The Registration Process!"
-MENU_EXIT_MESSAGE = "Admin Password Inputted, Exiting Program Now!"
 FILE_PATH = "Put here later" #To Be Updated
 SYMPTOMS_CSV_PATH = r"datasets/symptoms_umls.csv"
 
@@ -748,32 +743,6 @@ def dynamic_menu_print(menu_options:list, menu_header:str):
     option = input("Please enter one of the above options: ").strip().upper()
     return option
 
-def main_menu():
-    header = "Main Menu"
-    main_menu_option= dynamic_menu_print(MAIN_MENU_OPTIONS, header)
-    if main_menu_option not in ["1","2","3"]:
-        print("This is not a valid option!")
-    elif main_menu_option == "1":
-        all_answers = run_questions()
-        if all_answers == None or len(all_answers) < len(ALL_QUESTIONS)+1:
-            return None
-        elif len(all_answers) == len(ALL_QUESTIONS)+1:
-            confirmed = confirm_inputs(all_answers)
-            if confirmed:
-                print("Thank you for confirming your inputs.")
-                return all_answers
-            else:
-                print(REG_EXIT_MESSAGE)
-    elif main_menu_option == "2":
-        #TO BE DONE
-        return
-    elif main_menu_option == "3":
-        inputted_pass=input("Enter the exit code here: ")
-        if inputted_pass == EXIT_PASSWORD:
-            print(MENU_EXIT_MESSAGE)
-            return QUIT_SIGNAL
-        else:
-            print("This is not the right password!")
 
 def filter_answers(answers_dict: dict) -> dict:
     """Returns a new dictionary with only the answers whose question is
