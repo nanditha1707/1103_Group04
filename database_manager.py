@@ -1,14 +1,26 @@
-import pandas as pd
 from datetime import datetime
 
+import pandas as pd
+import os
+
+
 # csv file used to store patient records
-records_file="patient_records.csv"
+RECORDS_FILE="patient_records.csv"
+
+# Load all records,
+# or a empty df if the file doesn't exist yet
+def load_records():
+    try:
+        return pd.read_csv(RECORDS_FILE)
+    except FileNotFoundError:
+        return None
+
 
 # save a completed patient record
 def export_record(
-    all_user_responses,
-    ai_output,
-    logic_result
+    all_user_responses: dict,
+    ai_output: dict,
+    logic_result: dict
 ):
     # put all the patient information together
     patient_record = {}
@@ -22,7 +34,7 @@ def export_record(
 
     try:
         # open existing csv file
-        records = pd.read_csv(records_file)
+        records = pd.read_csv(RECORDS_FILE)
 
         # add the patient record
         records = pd.concat(
@@ -34,7 +46,7 @@ def export_record(
         records = patient_record
 
     # save patient records
-    records.to_csv(records_file, index=False)
+    records.to_csv(RECORDS_FILE, index=False)
 
     return True
 
@@ -46,7 +58,7 @@ def get_patient_by_queue(queue_number):
 
     try:
         # open csv file
-        records = pd.read_csv(records_file)
+        records = pd.read_csv(RECORDS_FILE)
 
     except FileNotFoundError:
         return None
