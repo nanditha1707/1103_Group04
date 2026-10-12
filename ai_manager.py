@@ -231,6 +231,28 @@ def parse_ai_response(text: str) -> dict:
     return json.loads(text)
 
 
+def format_ai_output(ai_output: dict) -> dict:
+    """Strip and uppercase every string field in the AI output except the
+    2 explanations.
+
+    Stripping turns blank emergency medicines (' ') into empty strings.
+    Non string fields like ai_confidence_score are left unchanged.
+    """
+    explanation_fields = [
+        "primary_diagnosis_explanation",
+        "secondary_diagnosis_explanation",
+    ]
+
+    # For each field in AI output.
+    for key, value in ai_output.items():
+        # If the field is not an explanation field and is of type string,
+        # then remove spaces at the start and end and uppercase them.
+        if key not in explanation_fields and isinstance(value, str):
+            ai_output[key] = value.strip().upper()
+
+    return ai_output
+
+
 # ======================================================================
 # CORE FUNCTIONS
 # ======================================================================
@@ -248,7 +270,7 @@ def get_ai_response(context: str, prompt: str, schema: dict) -> dict:
 
     # While there is a model to select and the time limit has not been exceeded.
     while current_model_index < len(MODELS) and time.time() < time_limit:
-
+        # Selects the current model to use and its name and provider.
         selected_model = MODELS[current_model_index]
         selected_model_provider = selected_model["provider"]
         selected_model_name = selected_model["model"]
@@ -265,7 +287,7 @@ def get_ai_response(context: str, prompt: str, schema: dict) -> dict:
                 current_model_index += 1
                 continue
 
-            ai_output = parse_ai_response(ai_response)
+            ai_output = format_ai_output(parse_ai_response(ai_response))
 
             # ValueError is classified as RETRY_SAME_MODEL, so invalid ai output
             # fails validation and retries the same model, then switches model / provider
@@ -342,13 +364,9 @@ def validate_diagnosis(ai_diagnosis: str, ai_code: str) -> bool:
 
     Returns True only if the title and code are an exact match on the
     same row, so a real title paired with the wrong code fails.
-    The check ignores case and spaces at the start and end.
+    Expects the title and code to already be stripped and uppercased by
+    format_ai_output.
     """
-
-    # Remove spaces at the start and end, and make them uppercase to match
-    # the uppercase dataset entries.
-    ai_diagnosis = ai_diagnosis.strip().upper()
-    ai_code = ai_code.strip().upper()
 
     # Go through DF_ICD11 one row at a time. The row number is used to get
     # the "Title" and "Code" from that same row. Return True as soon as the
@@ -370,16 +388,12 @@ def validate_medicine(ai_medicine: str) -> bool:
     Returns True if the medicine is found inside any product name or
     active ingredient, e.g. 'Paracetamol' is found in
     'SUNNY PARACETAMOL TABLET 500 mg'. Returns False for an empty
-    medicine. The check ignores case and spaces at the start and end.
+    medicine. Expects the medicine to already be stripped and uppercased
+    by format_ai_output.
     """
 
-    # Remove spaces at the start and end, and make it uppercase to match
-    # the uppercase dataset entries.
-    ai_medicine = ai_medicine.strip().upper()
-
-    # An empty medicine ('' or ' ') is never valid. This check is needed
-    # because '' is found inside every dataset entry, and ' ' is found
-    # inside any entry with a space, so they would wrongly return True.
+    # An empty medicine is never valid. This check is needed because ''
+    # is found inside every dataset entry, so it would wrongly return True.
     if ai_medicine == "":
         return False
 
