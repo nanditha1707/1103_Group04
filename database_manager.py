@@ -111,3 +111,39 @@ def display_patient(patient):
     print("Route:", patient["route"])
     print("Date:", patient["date"])
     print("Time:", patient["time"])
+
+# get count of a specific medicine issued on a date
+def get_medicine_count(date, medicine):
+
+    # return 0 if records file does not exist
+    if not records_file.exists():
+        return 0
+
+    count = 0
+
+    # medicine fields from AI output
+    medicine_fields=[
+        "primary_diagnosis_medicine_1",
+        "primary_diagnosis_medicine_2",
+        "secondary_diagnosis_medicine_1",
+        "secondary_diagnosis_medicine_2"
+    ]
+
+    # open patient records
+    with open(records_file, "r", newline="") as file:
+
+        reader = csv.DictReader(file)
+
+        # check each patient
+        for patient in reader:
+
+            # only check records from selected date
+            if patient["date"]== date:
+
+                # check all medicine fields
+                for field in medicine_fields:
+
+                    if patient[field].lower()== medicine.lower():
+                        count += 1
+
+    return count
