@@ -21,7 +21,7 @@ MAX_RETRIES_PER_MODEL = 2
 # Models to use for the AI API, in order of execution.
 MODELS = [
     {"provider": "claude", "model": "claude-opus-5-5"},
-    {"provider": "claude", "model": "claude-sonnet-5"},
+    {"provider": "claude", "model": "claude-sonnet-5-5"},
     {"provider": "gemini", "model": "gemini-3.8-flash"},
     {"provider": "gemini", "model": "gemini-3.5-flash-lite"},
 ]
@@ -72,6 +72,56 @@ Task:
 - Based on the patient's intake answers, suggest 2 diagnosis: 1 likely primary and 
   1 likely secondary diagnosis using ICD-11 titles and their respective codes.
 - Suggest up to two suitable medicines for each diagnosis.
+
+Diagnosis rules:
+- Use the ICD-11 title exactly as written by the WHO. Do not shorten or reword titles.
+- The code must be the exact code for that title in ICD-11.
+- Your output is checked word for word against the ICD-11 MMS title list, so a single
+  missing or extra word fails the check.
+- ICD-11 titles often differ from ICD-10 titles. Never use ICD-10 wording. For example,
+  CA07.0 is 'Acute upper respiratory infection, site unspecified', not
+  'Acute upper respiratory infection, unspecified' (that is ICD-10 J06.9).
+- If one of the common titles below fits the patient, copy it and its code exactly.
+  Only use a title outside this list if you are certain of its exact ICD-11 wording.
+  If you are unsure of a more specific title, use a broader parent title you are sure of.
+
+Common primary care ICD-11 titles (code: title):
+- CA07.0: Acute upper respiratory infection, site unspecified
+- CA00: Acute nasopharyngitis
+- CA02: Acute pharyngitis
+- CA03: Acute tonsillitis
+- CA01: Acute sinusitis
+- CA08.0: Allergic rhinitis
+- 1E32: Influenza, virus not identified
+- CA42: Acute bronchitis
+- CA40: Pneumonia
+- CA23: Asthma
+- 1D20: Dengue without warning signs
+- 1D21: Dengue with warning signs
+- 1A40: Gastroenteritis or colitis without specification of infectious agent
+- DA42: Gastritis
+- DA22: Gastro-oesophageal reflux disease
+- MD92: Dyspepsia
+- GC00: Cystitis
+- GC08: Urinary tract infection, site not specified
+- 8A80: Migraine
+- 8A81: Tension-type headache
+- ME84.2: Low back pain
+- 9A60: Conjunctivitis
+- AB00: Acute otitis media
+- EA80: Atopic eczema
+- 1E90: Varicella
+
+Medicine rules:
+- Each medicine field must be exactly one generic active ingredient name, as listed
+  in the Singapore Health Sciences Authority (HSA) register of therapeutic products, or
+  the product name as listed under HSA is also allowed.
+- Use HSA spellings, e.g. 'Paracetamol' (not 'Acetaminophen'), 'Chlorpheniramine'
+  (not 'Chlorphenamine'), 'Salbutamol' (not 'Albuterol').
+- Do not include doses, strengths, salt forms, dosage forms, brand names, brackets,
+  'e.g.', slashes, or conditions such as 'if within flu window'.
+- Do not use drug classes (e.g. 'Antihistamine', 'Decongestant') or non-drug advice
+  (e.g. 'Rest', 'Fluids', 'Supportive care').
 
 Explanations:
 - Briefly explain the reasoning behind each diagnosis in
@@ -293,6 +343,10 @@ def get_ai_response(context: str, prompt: str, schema: dict) -> dict:
             # fails validation and retries the same model, then switches model / provider
             # once retries run out, the same as other errors.
             if not validate_ai_output(ai_output):
+                # TEMP DEBUG: show the rejected output. Remove once validation is fixed.
+                print(f"REJECTED AI OUTPUT ({selected_model_name}):")
+                for key, value in ai_output.items():
+                    print(f"  {key}: {value!r}")
                 raise ValueError("AI output not found in the ICD11 / HSA datasets")
 
             return ai_output
