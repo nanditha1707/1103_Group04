@@ -227,7 +227,7 @@ def get_patient_type_breakdown(date):
                      patient_types["Doctor"]+=1
 
                 elif patient["route"]=="Pharmacist":
-                     patient_types["Pharmacist"]+=1
+                     patient_types["Pharmacy"]+=1
 
                 elif patient["route"]=="Retail":
                      patient_types["Retail"]+=1
