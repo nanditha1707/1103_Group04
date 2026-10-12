@@ -9,7 +9,7 @@ RECORDS_FILE="patient_records.csv"
 
 # Load all records,
 # or a empty df if the file doesn't exist yet
-def load_records():
+def load_records() -> pd.DataFrame:
     try:
         return pd.read_csv(RECORDS_FILE)
     except FileNotFoundError:
@@ -32,36 +32,21 @@ def export_record(
     # change patient record into dataframe
     patient_record = pd.DataFrame([patient_record])
 
-    try:
-        # open existing csv file
-        records = pd.read_csv(RECORDS_FILE)
-
-        # add the patient record
-        records = pd.concat(
-            [records, patient_record],
-            ignore_index=True
-        )
-
-    except FileNotFoundError:
-        records = patient_record
-
-    # save patient records
-    records.to_csv(RECORDS_FILE, index=False)
-
-    return True
+    # Appends the df to the csv, 
+    # only write the header if the file is new.
+    patient_record.to_csv(
+        RECORDS_FILE,
+        mode="a",
+        header=not os.path.exists(RECORDS_FILE),
+        index=False,
+    )
 
 # find patient using queue number
 def get_patient_by_queue(queue_number):
 
     # get current date
-    today =datetime.now().strftime("%Y-%m-%d")
-
-    try:
-        # open csv file
-        records = pd.read_csv(RECORDS_FILE)
-
-    except FileNotFoundError:
-        return None
+    today = datetime.now().strftime("%Y-%m-%d")
+    load_records()
 
     # check each patient
     for index, patient in records.iterrows():
