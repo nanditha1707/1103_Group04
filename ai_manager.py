@@ -31,15 +31,18 @@ FILE_PATH_HSA = "datasets/hsa.csv"
 
 FAIL = "Fail immediately"
 RETRY_SAME_MODEL = "Retry on the same model"
-SWITCH_MODEL = "Switch models"
-SWITCH_MODEL_PROVIDER = "Switch immediately to a different model provider"
+SWITCH_MODEL = "Switch to next model in MODELS"
+SWITCH_MODEL_PROVIDER = "Switch immediately to the next model provider"
 CONTACT_SUPPORT_MESSAGE = (
     "Please alert a nurse and proceed with manual regristration. "
     "Either an unexpected error has occured or all AI APIs are currently down. "
 )
 
 GEMINI_TIMEOUT_ERRORS = (httpx.TimeoutException, httpx2.TimeoutException)
-GEMINI_CONNECTION_ERRORS = (httpx.ConnectError, httpx2.ConnectError)
+GEMINI_CONNECTION_ERRORS = (httpx.TransportError, httpx2.TransportError)
+# Error message raised when the AI returns no text. classify_error checks
+# for this exact message to tell it apart from other ValueErrors.
+NO_TEXT_ERROR_MESSAGE = "AI returned no text"
 
 AI_OUTPUT_FIELDS = {
     "primary_diagnosis_ICD11_Title": {"type": "string"},
@@ -181,6 +184,14 @@ def call_gemini(model: str, context: str, prompt: str, schema: dict) -> str:
             "response_json_schema": schema,
         },
     )
+    # response.text is None when Gemini returns no text, such as when a
+    # safety filter blocks the reply. Raise ValueError with
+    # NO_TEXT_ERROR_MESSAGE so the error is classified as SWITCH_MODEL.
+    # The same prompt sent to the same model is likely to be blocked
+    # again, so retrying would waste time.
+    if not response.text:
+        raise ValueError(NO_TEXT_ERROR_MESSAGE)
+
     return response.text
 
 
@@ -201,9 +212,22 @@ def call_claude(model: str, context: str, prompt: str, schema: dict) -> str:
             "format": {"type": "json_schema", "schema": schema},
         },
     )
+    # If Claude refuses, or the reply is cut off by max_tokens, there is
+    # no complete JSON reply. The last content may still be partial text,
+    # so stop_reason is checked as well as the content type. Raise
+    # ValueError with NO_TEXT_ERROR_MESSAGE so the error is classified
+    # as SWITCH_MODEL. The same prompt sent to the same model is likely
+    # to fail the same way, so retrying would waste time.
+    if (
+        response.stop_reason in ("refusal", "max_tokens")
+        or not response.content
+        or response.content[-1].type != "text"
+    ):
+        raise ValueError(NO_TEXT_ERROR_MESSAGE)
+
     # Slice [-1] to take the last content because Claude outputs its
     # 'thinking and reasoning' steps as well. The last output is the
-    # JSON schema containing its response. 
+    # JSON schema containing its response.
     return response.content[-1].text
 
 
@@ -214,52 +238,123 @@ def classify_error(error: Exception) -> str:
     """Unified function to classify all API errors from Claude and
     Gemini. It classifies the error based on either the error code or
     for errors without error codes, the error itself, and returns a
-    suitable action to take based on the error message."""
+    suitable ACTION (a constant) to take based on the error message.
 
-    # If something is wrong with json output, or AI output failed 
-    # validation then retry same model because error is likely transient.
+    Claude error codes:
+        413 (FAIL): Request is too large. Resending the same request
+            will hit the same size limit.
+        409 (RETRY_SAME_MODEL): Conflict on Anthropic's side. It is
+            transient and usually succeeds on retry.
+        500 (RETRY_SAME_MODEL): Unexpected internal error on
+            Anthropic's side. It is transient and usually succeeds
+            on retry.
+        502 (RETRY_SAME_MODEL): Bad gateway, a server between us and
+            Anthropic failed. It is transient and usually succeeds
+            on retry.
+        503 (RETRY_SAME_MODEL): Service temporarily unavailable. It
+            is transient and usually succeeds on retry.
+        404 (SWITCH_MODEL): Model not found, e.g. the model ID is
+            wrong or deprecated. That model will never work, but
+            other Claude models may.
+        504 (SWITCH_MODEL): Request timed out while being processed,
+            the model needed more time than REQUEST_TIMEOUT_SECONDS
+            allows. Retrying with the same timeout will likely time out
+            again, so it is handled the same as a client side timeout.
+        429 (SWITCH_MODEL): Rate limit reached. Anthropic rate limits
+            are set separately for each model, so another Claude model
+            may still have capacity.
+        529 (SWITCH_MODEL): API is overloaded, switch to a different
+            model API.
+        400 (SWITCH_MODEL_PROVIDER): Invalid request format or
+            content. Every Claude model gets the same request format, 
+            so they would all reject it, but other models request format
+            is built differently and may still work.
+        401 (SWITCH_MODEL_PROVIDER): Invalid API key. Every Claude
+            model uses the same key, so switch models.
+        402 (SWITCH_MODEL_PROVIDER): Billing problem, e.g. out of
+            credits. This applies to every Claude model.
+        403 (SWITCH_MODEL_PROVIDER): API key lacks permission. This
+            applies to every Claude model.
+
+    Gemini error codes:
+        413 (FAIL): Request is too large. Resending the same request
+            will hit the same size limit.
+        500 (RETRY_SAME_MODEL): Unexpected internal error on Google's
+            side. It is transient and usually succeeds on retry.
+        502 (RETRY_SAME_MODEL): Bad gateway, a server between us and
+            Google failed. It is transient and usually succeeds on
+            retry.
+        404 (SWITCH_MODEL): Model not found, e.g. the model ID is
+            wrong or deprecated. That model will never work, but
+            other Gemini models may.
+        504 (SWITCH_MODEL): Deadline exceeded, the model needed more
+            time than REQUEST_TIMEOUT_SECONDS allows. Retrying with
+            the same timeout will likely time out again, so it is
+            handled the same as a client side timeout.
+        429 (SWITCH_MODEL): Quota or rate limit exhausted. Gemini
+            quotas are per model, so another Gemini model may still
+            have quota left.
+        503 (SWITCH_MODEL): Service unavailable or overloaded.
+            Another model may not be overloaded.
+        400 (SWITCH_MODEL_PROVIDER): Invalid argument or malformed
+            request. Every Gemini model gets the same request, so
+            they would all reject it, but other model requests are built
+            differently and may still work.
+        401 (SWITCH_MODEL_PROVIDER): Invalid API key. Every Gemini
+            model uses the same key, so switch models.
+        403 (SWITCH_MODEL_PROVIDER): API key lacks permission. This
+            applies to every Gemini model.
+    """
+
+    # If the AI returned no text then switch model because the same
+    # model is likely to fail the same way again. This must be checked
+    # before the general ValueError check below.
+    if isinstance(error, ValueError) and str(error) == NO_TEXT_ERROR_MESSAGE:
+        return SWITCH_MODEL
+
+    # If something is wrong with json output or the AI output failed
+    # validation then retry same model because the error is likely
+    # transient.
     if isinstance(error, ValueError):
         return RETRY_SAME_MODEL
 
     # Claude errors
-    # APITimeoutError is a subclass of APIConnectionError
-    # So it has to be checked BEFORE APIConnectionError
     if isinstance(error, anthropic.APITimeoutError):
         return SWITCH_MODEL
-    
-    if isinstance(error, anthropic.APIConnectionError):
+
+    elif isinstance(error, anthropic.APIConnectionError):
         return RETRY_SAME_MODEL
-    
-    if isinstance(error, anthropic.APIStatusError):
+
+    elif isinstance(error, anthropic.APIStatusError):
         error_code = error.status_code
-        if error_code in (400, 413):
+        if error_code == 413:
             return FAIL
-        elif error_code in (409, 500, 504):
+        elif error_code in (409, 500, 502, 503):
             return RETRY_SAME_MODEL
-        elif error_code in (404, 529):
+        elif error_code in (404, 429, 504, 529):
             return SWITCH_MODEL
-        elif error_code in (401, 402, 403, 429):
+        elif error_code in (400, 401, 402, 403):
             return SWITCH_MODEL_PROVIDER
 
     # Gemini Errors
     if isinstance(error, GEMINI_TIMEOUT_ERRORS):
         return SWITCH_MODEL
 
-    if isinstance(error, GEMINI_CONNECTION_ERRORS):
+    elif isinstance(error, GEMINI_CONNECTION_ERRORS):
         return RETRY_SAME_MODEL
 
-    if isinstance(error, genai_errors.APIError):
+    elif isinstance(error, genai_errors.APIError):
         error_code = error.code
-        if error_code in (400, 413):
+        if error_code == 413:
             return FAIL
-        elif error_code in (500, 504):
+        elif error_code in (500, 502):
             return RETRY_SAME_MODEL
-        elif error_code in (404, 429, 503):
+        elif error_code in (404, 429, 503, 504):
             return SWITCH_MODEL
-        elif error_code in (401, 403):
+        elif error_code in (400, 401, 403):
             return SWITCH_MODEL_PROVIDER
 
-    # Unexpected errors that dont classify. In
+    # Unexpected errors that dont classify.
     return FAIL
 
 
