@@ -59,12 +59,12 @@ while True:
 
     # 2. AI manager: get a diagnosis and medicines
     ai_output = ai.get_ai_output(answers_filtered)
-    print(ai_output) #DEBUGGING
 
-    # the AI manager returns an "error" key when every AI model failed
-    # failed AI output is not routed or saved, the patient sees staff
+    # get_ai_output returns a dictionary when every AI model failed.
+    # The key is "error". The value of the key is the message telling 
+    # patients to seek assistance.
     if "error" in ai_output:
-        io.print_ai_error()
+        io.print_text(ai_output["error"])
         continue
 
     # 3. Logic manager: decide and print the route and queue number

@@ -755,10 +755,8 @@ def filter_answers(answers_dict: dict) -> dict:
             answers_filtered[key] = answers_dict.get(key)
     return answers_filtered
 
-def print_ai_error() -> None:
-    """Tells the patient the AI could not assess them. Their answers are
-    not routed or saved, so they need to see a staff member instead."""
-    print(
-        "Sorry, we are unable to complete your registration right now. "
-        "Please approach a nurse or administrative clerk for assistance!"
-    )
+
+
+def print_text(text: str) -> None:
+    """Prints a message to the patient, such as the AI error message."""
+    print(text)

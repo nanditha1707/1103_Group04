@@ -34,7 +34,7 @@ RETRY_SAME_MODEL = "Retry on the same model"
 SWITCH_MODEL = "Switch models"
 SWITCH_MODEL_PROVIDER = "Switch immediately to a different model provider"
 CONTACT_SUPPORT_MESSAGE = (
-    "Please contact technical staff for assistance. "
+    "Please alert a nurse and proceed with manual regristration. "
     "Either an unexpected error has occured or all AI APIs are currently down. "
 )
 
@@ -332,8 +332,6 @@ def get_ai_response(context: str, prompt: str, schema: dict) -> dict:
 
             # Unrecognised model name means switch to next model.
             else:
-                print(f"{selected_model_provider} | {selected_model_name} "
-                      f"unknown provider '{selected_model_provider}' -> skipping")
                 current_model_index += 1
                 continue
 
@@ -343,10 +341,6 @@ def get_ai_response(context: str, prompt: str, schema: dict) -> dict:
             # fails validation and retries the same model, then switches model / provider
             # once retries run out, the same as other errors.
             if not validate_ai_output(ai_output):
-                # TEMP DEBUG: show the rejected output. Remove once validation is fixed.
-                print(f"REJECTED AI OUTPUT ({selected_model_name}):")
-                for key, value in ai_output.items():
-                    print(f"  {key}: {value!r}")
                 raise ValueError("AI output not found in the ICD11 / HSA datasets")
 
             return ai_output
@@ -354,7 +348,6 @@ def get_ai_response(context: str, prompt: str, schema: dict) -> dict:
         except Exception as error: 
             # Take an action based on the returned error.
             action = classify_error(error)
-            print(f"{selected_model_provider} {selected_model_name} {error} -> {action}")
 
             # If fail then breaks the entire loop.
             if action == FAIL:
