@@ -1,14 +1,33 @@
-import pandas as pd
 from datetime import datetime
 
+import pandas as pd
+import os
+
+
 # csv file used to store patient records
-records_file="patient_records.csv"
+RECORDS_FILE="patient_records.csv"
+# medicine fields from AI output
+MEDICINE_FIELDS=[
+    "primary_diagnosis_medicine_1",
+    "primary_diagnosis_medicine_2",
+    "secondary_diagnosis_medicine_1",
+    "secondary_diagnosis_medicine_2"
+]
+
+# Load all records,
+# or a empty df if the file doesn't exist yet
+def load_records() -> pd.DataFrame:
+    try:
+        return pd.read_csv(RECORDS_FILE)
+    except FileNotFoundError:
+        return None
+
 
 # save a completed patient record
 def export_record(
-    all_user_responses,
-    ai_output,
-    logic_result
+    all_user_responses: dict,
+    ai_output: dict,
+    logic_result: dict
 ):
     # put all the patient information together
     patient_record = {}
@@ -20,47 +39,40 @@ def export_record(
     # change patient record into dataframe
     patient_record = pd.DataFrame([patient_record])
 
-    try:
-        # open existing csv file
-        records = pd.read_csv(records_file)
-
-        # add the patient record
-        records = pd.concat(
-            [records, patient_record],
-            ignore_index=True
-        )
-
-    except FileNotFoundError:
-        records = patient_record
-
-    # save patient records
-    records.to_csv(records_file, index=False)
-
-    return True
+    # Appends the df to the csv, 
+    # only write the header if the file is new.
+    patient_record.to_csv(
+        RECORDS_FILE,
+        mode="a",
+        header=not os.path.exists(RECORDS_FILE),
+        index=False,
+    )
 
 # find patient using queue number
 def get_patient_by_queue(queue_number):
 
-    # get current date
-    today =datetime.now().strftime("%Y-%m-%d")
+    # Sets today to the current date
+    today = datetime.now().strftime("%Y-%m-%d")
+    #Loads the existing records. 
+    # If the records do not exist, 
+    # the function returns None.
+    records = load_records()
 
-    try:
-        # open csv file
-        records = pd.read_csv(records_file)
+    # Checks if records exist, if it does, 
+    # continues with the block
+    if records != None:
+        # Iterates through the dataframes rows
+        for _, patient in records.iterrows():
 
-    except FileNotFoundError:
-        return None
-
-    # check each patient
-    for index, patient in records.iterrows():
-
-        # match the queue number and current date
-        if (
-            patient["queue_number"]== queue_number
-            and patient["date"]== today
-        ):
-            return patient.to_dict()
-
+            # Searches for entry with a matching date and queue number.
+            # Returns the first match, as Queue number is unique,
+            # based on a day by day basis.
+            if (
+                patient["queue_number"]== queue_number
+                and patient["date"]== today
+            ):
+                return patient.to_dict()
+    # If there is no such patient, return None
     return None
 
 
@@ -110,23 +122,8 @@ def display_patient(patient):
 
 # get count of a specific medicine issued on a date
 def get_medicine_count(date, medicine):
-
-    try:
-        # open patient records
-        records = pd.read_csv(records_file)
-
-    except FileNotFoundError:
-        return 0
-
+    records = load_records()
     count = 0
-
-    # medicine fields from AI output
-    medicine_fields=[
-        "primary_diagnosis_medicine_1",
-        "primary_diagnosis_medicine_2",
-        "secondary_diagnosis_medicine_1",
-        "secondary_diagnosis_medicine_2"
-    ]
 
     # check each patient
     for index, patient in records.iterrows():
@@ -135,7 +132,7 @@ def get_medicine_count(date, medicine):
         if patient["date"]== date:
 
             # check all medicine fields
-            for field in medicine_fields:
+            for field in MEDICINE_FIELDS:
 
                 if str(patient[field]).lower()== medicine.lower():
                     count += 1
@@ -150,7 +147,7 @@ def get_medicine_breakdown(date):
 
     try:
         # open patient records
-        records = pd.read_csv(records_file)
+        records = pd.read_csv(RECORDS_FILE)
 
     except FileNotFoundError:
         return medicine_counts
@@ -198,7 +195,7 @@ def get_patient_type_breakdown(date):
 
     try:
         # open patient records
-        records = pd.read_csv(records_file)
+        records = pd.read_csv(RECORDS_FILE)
 
     except FileNotFoundError:
         return patient_types
