@@ -20,7 +20,8 @@ def main_menu():
     header = "Main Menu"
     main_menu_option= io.dynamic_menu_print(MAIN_MENU_OPTIONS, header)
     if main_menu_option not in ["1","2","3"]:
-        print("This is not a valid option!")
+        error = "This is not a valid option!"
+        io.print_text(error)
     elif main_menu_option == "1":
         all_answers = io.run_questions()
         if all_answers == None or len(all_answers) < len(io.ALL_QUESTIONS)+1:
@@ -28,20 +29,21 @@ def main_menu():
         elif len(all_answers) == len(io.ALL_QUESTIONS)+1:
             confirmed = io.confirm_inputs(all_answers)
             if confirmed:
-                print("Thank you for confirming your inputs.")
+                confirm_message = "Thank you for confirming your inputs."
+                print(confirm_message)
                 return all_answers
             else:
-                print(io.REG_EXIT_MESSAGE)
+                error = io.REG_EXIT_MESSAGE
+                io.print_text(error)
     elif main_menu_option == "2":
-        #TO BE DONE
-        return
+        # WIP
     elif main_menu_option == "3":
         inputted_pass=input("Enter the exit code here: ")
         if inputted_pass == ADMIN_PASSWORD:
-            print(MENU_EXIT_MESSAGE)
+            io.print_text(MENU_EXIT_MESSAGE)
             return io.QUIT_SIGNAL
         else:
-            print("This is not the right password!")
+            error="This is not the right password!"
 
 # load the ICD and HSA datasets once, when the program starts
 icd_df, hsa_df = data.get_cleaned_datasets()
@@ -73,5 +75,6 @@ while True:
     # 4. Data manager: save the completed record to patient_records.csv
     is_export=data.export_record(answers, ai_output, logic_result)
     if not is_export:
-        print("The program has encountered an error."
+        error=("The program has encountered an error."
               "Please approach a nurse or clerk for manual registration.")
+        io.print_text(error)
