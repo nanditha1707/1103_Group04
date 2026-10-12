@@ -43,6 +43,24 @@ def get_classification(ai_medicine, hsa_df):
     # return None if medicine is not found
     return None
 
+# check if the AI flagged the patient as an emergency
+def is_emergency(ai_output):
+
+    # keys where the AI explains each diagnosis
+    explanation_keys = [
+        "primary_diagnosis_explanation",
+        "secondary_diagnosis_explanation"
+    ]
+
+    # go through each explanation
+    for key in explanation_keys:
+
+        # emergency if the explanation contains the word EMERGENCY
+        if "EMERGENCY" in str(ai_output.get(key, "")):
+            return True
+
+    return False
+
 # to decide where the patient should be routed to
 def decide_route(answers_dict, ai_output, hsa_df):
 
