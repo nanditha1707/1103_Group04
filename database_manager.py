@@ -147,3 +147,48 @@ def get_medicine_count(date, medicine):
                         count += 1
 
     return count
+
+# get breakdown of medicines issued on a date
+def get_medicine_breakdown(date):
+
+    # dictionary to store medicine and count
+    medicine_counts={}
+
+    # return empty dictionary if file does not exist
+    if not records_file.exists():
+        return medicine_counts
+
+    # medicine fields from AI output
+    medicine_fields =[
+        "primary_diagnosis_medicine_1",
+        "primary_diagnosis_medicine_2",
+        "secondary_diagnosis_medicine_1",
+        "secondary_diagnosis_medicine_2"
+    ]
+
+    # open patient records
+    with open(records_file,"r",newline="") as file:
+
+        reader=csv.DictReader(file)
+
+        # check each patient
+        for patient in reader:
+
+            # only check records from selected date
+            if patient["date"]==date:
+
+                # check all medicine fields
+                for field in medicine_fields:
+
+                    medicine =patient[field]
+
+                    # only count if medicine is not empty
+                    if medicine:
+
+                        if medicine in medicine_counts:
+                            medicine_counts[medicine]+=1
+
+                        else:
+                            medicine_counts[medicine]=1
+
+    return medicine_counts
