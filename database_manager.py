@@ -44,20 +44,28 @@ def export_record(
 # find patient using queue number
 def get_patient_by_queue(queue_number):
 
-    # get current date
+    # Sets today to the current date
     today = datetime.now().strftime("%Y-%m-%d")
-    load_records()
+    #Loads the existing records. 
+    # If the records do not exist, 
+    # the function returns None.
+    records = load_records()
 
-    # check each patient
-    for index, patient in records.iterrows():
+    # Checks if records exist, if it does, 
+    # continues with the block
+    if records != None:
+        # Iterates through the dataframes rows
+        for _, patient in records.iterrows():
 
-        # match the queue number and current date
-        if (
-            patient["queue_number"]== queue_number
-            and patient["date"]== today
-        ):
-            return patient.to_dict()
-
+            # Searches for entry with a matching date and queue number.
+            # Returns the first match, as Queue number is unique,
+            # based on a day by day basis.
+            if (
+                patient["queue_number"]== queue_number
+                and patient["date"]== today
+            ):
+                return patient.to_dict()
+    # If there is no such patient, return None
     return None
 
 
