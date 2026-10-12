@@ -774,7 +774,6 @@ def main_menu():
             return QUIT_SIGNAL
         else:
             print("This is not the right password!")
-main_menu() #debugging
 
 def filter_answers(answers_dict: dict) -> dict:
     """Returns a new dictionary with only the answers whose question is
@@ -786,3 +785,11 @@ def filter_answers(answers_dict: dict) -> dict:
             key = question["key"]
             answers_filtered[key] = answers_dict.get(key)
     return answers_filtered
+
+def print_ai_error() -> None:
+    """Tells the patient the AI could not assess them. Their answers are
+    not routed or saved, so they need to see a staff member instead."""
+    print(
+        "Sorry, we are unable to complete your registration right now. "
+        "Please approach a nurse or administrative clerk for assistance!"
+    )
