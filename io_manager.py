@@ -149,8 +149,7 @@ def symptom_menu() -> str:
     accepts the menu option as input and returns it.
     """
     header = "Symptoms"
-    dynamic_menu_print(SYMPTOM_MENU, header)
-    option = input("Please enter one of the following options: ").strip().upper()
+    option = dynamic_menu_print(SYMPTOM_MENU, header)
     return option
 
 def symptom_remove(symptom_list:list):
@@ -215,7 +214,8 @@ def symptom_diff() -> str:
         
 def symptom_handler(symptom_list: list) -> list:
     while True:
-        option = symptom_menu()
+        header = "Symptoms"
+        option = dynamic_menu_print(SYMPTOM_MENU, header)
         # If user inputs quit or back, 
         # reset symptom list and end program.
         symptom = None
@@ -636,14 +636,7 @@ def confirm_inputs(answers_dict: dict) -> bool | None:
         confirmation_menu_options.append(f"{confirmation_option:02d}. Confirm All Inputs")
         dynamic_menu_print(confirmation_menu_options, header)
         
-        menu_state = (
-            input(
-                "If any of these options are incorrect, enter their number. "
-                "Otherwise, enter 'Y' to confirm: "
-            )
-            .strip()
-            .upper()
-        )
+        menu_state = dynamic_menu_print(confirmation_menu_options, header)
 
         if not menu_state:
             print("Invalid input. Input cannot be blank!")
@@ -726,11 +719,12 @@ def dynamic_menu_print(menu_options:list, menu_header:str):
     for option in menu_options:
         print("|" + f" {option}".ljust(menu_width - 2) + "|")
     print(menu_separator)
+    option = input("Please enter one of the above options: ").strip().upper()
+    return option
 
 def main_menu():
     header = "Main Menu"
-    dynamic_menu_print(MAIN_MENU_OPTIONS, header)
-    main_menu_option=input("Please enter one of the above options: ")
+    main_menu_option= dynamic_menu_print(MAIN_MENU_OPTIONS, header)
     if main_menu_option not in ["1","2","3"]:
         print("This is not a valid option!")
     elif main_menu_option == "1":
