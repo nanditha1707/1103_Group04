@@ -29,28 +29,40 @@ FILTER_OPTIONS =[
 # ======================================================================
 def option_handler(option:str):
     error_message = io.validate_option(option)
-    if error_message:
-        io.print_text(error_message)
-        return False
-    else:
-        return True
-    
-def healthcare_portal_routing(option:str):
-    option = int(option)
-    today = data.get_current_date()
-    if option == 1:
-        filter_option= io.dynamic_menu_print(FILTER_OPTIONS)
-        is_valid = option_handler(filter_option)
-        if is_valid:
-            filter= data.get_patient_filter(filter_option)
+    return error_message
+
+def patient_query_handler(date) ->str:
+    filter_option= io.dynamic_menu_print(FILTER_OPTIONS)
+    is_valid = option_handler(filter_option)
+    if is_valid:
+        filter= data.get_patient_filter(filter_option)
+        if filter is None:
+            error = "This is not a valid option number!"
+        else:  
             queue = input("Enter the Patient's Queue Number here.")
-            query_response= data.get_patient_by_queue(queue, filter, today)
+            query_response= data.get_patient_by_queue(queue, filter, date)
             if not query_response.empty:
                 io.print_df(query_response)
             else:
                 error ="There is no such patient, please enter a valid queue number!"
-                io.print_text(error)
-        
+    else:
+        error = is_valid
+    return error
+    
+def healthcare_portal_routing(option:str):
+    option = int(option)
+    error = None
+    today = data.get_current_date()
+    if option == 1:
+        error_message = patient_query_handler(today)
+    if option == 2:
+        date = input("Enter the Date here. (YYYY-MM-DD)")
+
+    if error:
+        io.print_text(error_message)
+
+
+
 
 def main_menu():
     header = "Main Menu"
@@ -120,4 +132,3 @@ while True:
         error=("The program has encountered an error."
               "Please approach a nurse or clerk for manual registration.")
         io.print_text(error)
-    print(previous_records_df) #DEBUGGING
