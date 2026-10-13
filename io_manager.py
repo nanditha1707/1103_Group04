@@ -597,10 +597,14 @@ def is_priority(answers_dict: dict) -> dict:
     based off whether the user replied Y to any of the concerning questions.
     """
     answers_dict["priority"] = False
+    
     for questions, value in answers_dict.items():
         if questions in PRIORITY_KEYLIST and value == "Y":
             answers_dict["priority"] = True
-            break
+
+    # For edge cases like an underage girl being pregnant
+    if answers_dict.get("gender") == "F" and int(answers_dict["age"]) < 16:
+        answers_dict["priority"] = True
 
 def validate_orchestrator(
     isvalid_answer: bool, user_answer: str, state: int, answers_dict: dict
