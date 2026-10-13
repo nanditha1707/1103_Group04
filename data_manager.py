@@ -29,10 +29,6 @@ RECORD_COLUMNS = [
     "age", 
     "phone_number",
     "pregnancy",
-    "chest_pain",
-    "breathing_difficulties",
-    "signs_of_stroke",
-    "self_harm",
     "current_symptoms",
     "symptom_onset_days",
     "chronic_conditions",
@@ -62,10 +58,11 @@ MEDICAL_COLUMNS=[
     "date",
     "route",
     "pregnancy",
-    "chest_pain",
-    "breathing_difficulties",
-    "signs_of_stroke",
-    "self_harm",
+    "current_symptoms",
+    "symptom_onset_days",
+    "chronic_conditions",
+    "current_medications",
+    "drug_allergies",
         ]
 
 AI_OUTPUT_COLUMN=[
@@ -406,46 +403,43 @@ def get_patient_filter(option: str)-> list:
     # Initialises filter to None,
     # and makes option a int
     option = int(option)
-    filter_list= None
+    filter_columns= None
     if option == 1:
-        filter_list=PATIENT_COLUMNS
+        filter_columns=PATIENT_COLUMNS
     elif option == 2:
-        filter_list=MEDICAL_COLUMNS
+        filter_columns=MEDICAL_COLUMNS
     elif option == 3:
-        filter_list=AI_OUTPUT_COLUMN
+        filter_columns=AI_OUTPUT_COLUMN
     elif option == 4:
-        filter_list= RECORD_COLUMNS
-    return filter_list
+        filter_columns= RECORD_COLUMNS
+    return filter_columns
 
 def get_current_date()-> datetime:
     # grabs the current date
     today = datetime.now().strftime("%Y-%m-%d")
     return today
 
-def get_patient_by_queue(queue_number,filter: list, today:datetime)-> pd.DataFrame:
+def get_patient_by_queue(records:pd.DataFrame, queue_number,filter_columns: list, today: str)-> pd.DataFrame:
     """Find today's patient with the given queue number. Return their
     record as a dict, or None if they are not found."""
-    
-    # Loads the existing records.
-    # If the records do not exist,
-    # the function returns None.
-    records = load_records()
 
     # Checks if records exist. If they do,
     # continues with the block.
     if not records.empty:
         patient=records.query("queue_number == @queue_number and date == @today")
-        return patient[filter]
+        return patient[filter_columns]
     # If there is no such patient, return None.
     return None
 
-def print_or_export(filter:list):
-    len_needed= len(filter)*10
-    terminal_length=shutil.get_terminal_size()
-    if terminal_length > len_needed:
-        return "export"
+def print_or_export(filter_columns:list):
+    width_needed= len(filter_columns)*10
+    header_width_needed = total = sum(len(item) for item in filter_columns)
+    width_needed = max(width_needed, header_width_needed)
+    terminal_width=shutil.get_terminal_size().columns
+    if terminal_width > width_needed:
+        return "print"
     else:
-        return: "print"
+        return "export"
 
 def export_query(query_df: pd.DataFrame) -> bool:
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -456,8 +450,7 @@ def export_query(query_df: pd.DataFrame) -> bool:
         # 'a' append mode in pandas creates a new csv file if none exists.
         query_df.to_csv(
             query_csv_path,
-            mode="a",
-
+            mode="w",
             index=False,
             encoding="utf-8"
         )
