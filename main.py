@@ -37,6 +37,7 @@ def main_menu():
                 io.print_text(error)
     elif main_menu_option == "2":
         # WIP
+        pass
     elif main_menu_option == "3":
         inputted_pass=input("Enter the exit code here: ")
         if inputted_pass == ADMIN_PASSWORD:
