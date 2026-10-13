@@ -147,6 +147,16 @@ def validate_blank(user_answer: str) -> str | None:
     else:
         return ("Invalid Input ")
 
+def validate_option(option:str):
+    is_number = validate_positive_number(option)
+    is_blank = validate_blank(option)
+    if is_blank:
+        error = is_blank
+    elif is_number:
+        error = is_number
+    else:
+        error = None
+    return error
 
 def symptom_remove(symptom_list:list):
     # Prints the symptom_list
@@ -700,16 +710,13 @@ def confirm_inputs(answers_dict: dict) -> bool | None:
         # Prints the menu and gets input as menu_state.
         menu_state = dynamic_menu_print(confirmation_menu_options, header)
 
-        # Checks if input is blank
-        if not menu_state:
-            print("Invalid input. Input cannot be blank!")
+        # Runs the function to check if menu_state is a valid input.
+        error=validate_option(menu_state)
+        # If the function returns a error, 
+        # print the error and loop back to the start.
+        if error:
+            print(error)
             continue
-
-        # Checks if input is a Base10 Number
-        if not menu_state.isdecimal():
-            print("Invalid input. Please enter a valid menu number.")
-            continue
-
         # Confirm All Inputs is the last option in the menu.
         if int(menu_state) == len(confirmation_menu_options):
             if finalise_answers(answers_dict):
