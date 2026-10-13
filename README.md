@@ -1,57 +1,186 @@
-# 1103_Group04
-INF1103 Programming Fundamentals project Group 4 
+# 1103_P8_G4
 
-**Team members:** Darrell Lee (2605569), Moe Han, Joana (2604246), Borra Nanditha (2605399), Thach Ke Vin (2604693), and Song En (2605357)
+INF1103 Programming Fundamentals project Group 4
+
+**Team Members:** Darrell Lee (2605569), Moe Han (2605699), Joana (2604246), Borra Nanditha (2605399), Thach Ke Vin (2604693), and Song En (2605357)
 
 ## Main Idea
 
-Hospitals in Singapore are overcrowded. Many patients, particularly those triaged at the less severe “P3” and “P4” level, often come to hospitals where they could instead seek adequate treatment from a pharmacy or a GP clinic. As a result, patients often have to wait long times, often hours, before being able to see a doctor. Our main idea is to build an integrative healthcare system that links patients, hospitals, pharmacies, and General Practitioner (GP) clinics together. Our goal is to make the process for patients to get the appropriate treatment easier and more effective, as well as give patients an accurate idea of how they should proceed. This in turn diverts patients away from the hospitals and reduces stress on their staff and departments. While our system would be valuable to hospitals, it can also be used by other medical facilities.
+Hospitals in Singapore can experience long waiting times due to patients seeking hospital care for conditions that may be manageable through a GP clinic, pharmacy, or retail medication.
 
-# 1. Problem Statement and Target Users
+Our project is an **AI-assisted patient triage and routing system** that helps patients understand the most suitable next step based on their symptoms and medical information.
 
-## What real-world problem does your application aim to solve?
+The system collects and validates patient information, uses AI to generate a preliminary diagnosis and medicine recommendations, validates the results against healthcare datasets, and routes the patient to one of the following:
 
-Singapore's public hospitals are strained by a high volume of low-acuity patients, driven largely by ineffective pre-primary triage at the patient level: patients experiencing severe physical discomfort frequently lack the medical literacy and immediate, evidence-based diagnostic tools required to accurately evaluate the severity of their condition. Conversely. Risk-averse patients default to high-intensity care settings for minor conditions that could be managed effectively via over-the-counter medication or at a local GP clinic. This misallocation of medical resources inflates waiting time for critical patients, increases out-of-pocket costs for the patient, and places unnecessary burdens on public hospitals. Therefore, our system provides to users: a reliable source of information for a quick preliminary diagnosis, to help guide and route patients to get the correct level of care they truly require, helping to reduce the administrative burden and influx of patients seeking out doctor diagnosis for minor ailments like the flu. Medical professionals will also be able to easily access the patient's symptoms and AI diagnosis, allowing them to save the time to get the information from the patient during a consult, and either confirm the diagnosis, or investigate further.
+- Emergency
+- Doctor
+- Pharmacist
+- Retail
 
-## Who are the intended users of the application?
+The system also stores patient records so that healthcare professionals can retrieve and review the patient's information and AI-generated results.
 
-Potential patients and medical experts are among our users. The potential patients refer to people who are in the polyclinic / hospital / any medical facility, seeking an appointment with a medical professional. This application interface will be accessible to users at certain medical facilities. The interface will retrieve user details similar to the existing walk-in clinic/hospital procedure. Once the required information is retrieved, it will produce a preliminary diagnosis and recommend appropriate actions, like sending them to the pharmacy or a doctor. Medical experts (doctors and pharmacists) will have access to information that the users have submitted. Before forming their own opinions, medical professionals can review the AI findings or use them as a reference. This saves a significant amount of time as doctors and pharmacists do not have to probe the patient from scratch for information – rather all they do is verify the information and clarify any other doubts with the patient. Additionally, if medical professionals disagree with the diagnosis, they can run their own tests and give their own recommendations, as the AI only serves to act as a preliminary diagnosis tool.
+## Target Users
 
-# 2. User Inputs
+The main users of the system are:
 
-## What information or data will users provide to the system?
+- Patients seeking medical assistance.
+- Doctors.
+- Pharmacists.
+- Other healthcare professionals.
 
-Users are to first give consent, then they will be prompted to input their basic information such as their name, NRIC, past medical history (E.g. Conditions and Chronic illnesses, etc.), any known allergies that they have and the current symptoms that they are facing, their pain level that they are currently facing if any and if they have an appointment to a doctor booked already or not and also phone number in order to contact them. As this is a proof-of-concept system that will be implemented with government authorization, we assume that personal information such as NRIC and names can be collected.
+Patients use the system to provide their symptoms and medical information before receiving a preliminary diagnosis and routing recommendation.
 
-# 3. Use of AI
+Healthcare professionals can access stored patient records and review the information before making their own assessment.
 
-## How will AI be utilized within the application?
+## Features
 
-The way we will utilize AI is the cognitive core for the program, ergo when user inputs in their medical information, we will form a hypothesis using the medical information coming from the user.
+### Patient Registration
 
-## What outputs, insights, or recommendations will the AI generate from the user inputs?
+- Collects patient information.
+- Validates user inputs.
+- Checks for emergency and priority symptoms.
+- Allows patients to review their information.
 
-The user’s data will be fed into the AI, with no personal identifiers to maintain a layer of anonymity. The AI will provide initial insights into potential illnesses based off symptoms, listing out the most likely diseases and any other potential sicknesses, (along with a critical or worst-case scenario), recommend a next course of action, and what drugs should be taken.
+### AI Diagnosis
 
-The drug recommendation, however, will only be printed if the drug is available over the counter (OTC) or in retail. In a scenario where the recommendation is a prescription only drug, the information will be kept only on our backend and logged.
+- Uses Gemini and Claude APIs.
+- Generates primary and secondary diagnoses.
+- Suggests possible medicines.
+- Provides an AI confidence score.
+- Validates diagnoses and medicines against healthcare datasets.
 
-# 4. Business Rules and Domain Logic
+### Patient Routing
 
-## What business rules, validations, or decision-making logic will be applied to the AI-generated outputs?
+Patients may be routed to:
 
-1. The buck does not stop with AI, as this is a healthcare system where human lives and health are being decided.
-2. The initial AI drug recommendation will be validated against a dataset of drugs that are licensed in Singapore
-3. The initial disease diagnosis will be validated against a dataset of all existing diseases and symptoms
-4. Prescription drugs can only be prescribed by a doctor, not AI.
-5. Pharmacist only drugs can only be issued after assessment by an actual pharmacist, not the AI.
-6. All patient records and diagnosis must be logged and stored
-7. Risk-based routing
-8. User’s drug allergy will be validated against our dataset of drugs
-9. Age restrictions must be checked before recommending medication
-10. OTC medicine recommendations are for low-risk cases only
-11. Existing medical conditions should be checked against drug recommendations
-12. Incomplete patient information (e.g. medical history) must block AI recommendations
-13. Any patient with chronic conditions must immediately be routed to a doctor.
+- Emergency
+- Doctor
+- Pharmacist
+- Retail
 
----
-## Github Link: https://github.com/nanditha1707/INF1103-labs
+Queue numbers are generated when required.
+
+Example:
+
+```text
+U001
+D001
+P001
+```
+
+### Data Management
+
+The Data Manager is responsible for:
+
+- Loading and cleaning the ICD-11 dataset.
+- Loading and cleaning the HSA medicine dataset.
+- Saving patient records.
+- Searching for patient records.
+- Generating medicine and patient-type breakdowns.
+
+Patient records are stored in:
+
+```text
+datasets/patient_records.csv
+```
+
+## Business Rules
+
+Some of the main rules used by the system include:
+
+1. AI output must be validated before it is used.
+2. Medicine recommendations must be checked against the HSA dataset.
+3. Diagnoses must be checked against the ICD-11 dataset.
+4. Prescription Only medicines require a doctor.
+5. Pharmacy Only medicines require a pharmacist.
+6. Priority and emergency patients are given urgent routing.
+7. Patient records and diagnoses are stored for future reference.
+
+## Project Structure
+
+```text
+main.py
+io_manager.py
+ai_manager.py
+logic_manager.py
+data_manager.py
+datasets/
+tests/
+requirements.txt
+dockerfile
+```
+
+## Technologies Used
+
+- Python
+- Pandas
+- NumPy
+- Google Gemini API
+- Anthropic Claude API
+- Docker
+- GitHub
+- Pytest
+- Pylint
+
+## Setup
+
+Install the required packages:
+
+```bash
+pip install -r requirements.txt
+```
+
+Create a `.env` file and add the required API keys:
+
+```text
+GEMINI_API_KEY="YOUR-GEMINI-API-KEY"
+ANTHROPIC_API_KEY="YOUR-ANTHROPIC-API-KEY"
+```
+
+## Running the Project
+
+Run the application using:
+
+```bash
+python main.py
+```
+
+## Running with Docker
+
+Build the Docker image:
+
+```bash
+docker build -f dockerfile -t 1103-group04 .
+```
+
+Run the container:
+
+```bash
+docker run --env-file .env -it 1103-group04
+```
+
+## Testing
+
+Run the tests using:
+
+```bash
+pytest
+```
+
+The system can also be manually tested by checking whether:
+
+- Inputs are validated correctly.
+- AI output is generated successfully.
+- Patients are routed correctly.
+- Queue numbers are generated correctly.
+- Patient records are saved properly.
+
+## GitHub Link
+
+https://github.com/nanditha1707/1103_Group04
+
+## Disclaimer
+
+This project is developed for educational purposes for INF1103 Programming Fundamentals.
+
+The system is a proof-of-concept and should not be used as a replacement for professional medical advice, diagnosis, or treatment.
