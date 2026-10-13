@@ -60,8 +60,9 @@ PRIORITY_KEYLIST = [
 # Storing the validation functions in the dictionary establishes a
 # logical link between the question and the validation function.
 #
-# They are accessed dynamically by the run_validation() function, 
-# excluding the symptom functions, which are handled separately.
+# They are accessed dynamically by the run_validation() function.
+# Questions with an input_function (e.g. symptoms) validate their own
+# input and do not need a validation function.
 
 def validate_boolean(user_answer: str) -> str | None:
     """Multiple questions have either Y or N as possible responses,
@@ -218,15 +219,21 @@ def symptom_diff() -> str:
             "or administrative clerk for assistance!"
         )
         
-def symptom_handler(symptom_list: list) -> list:
+def symptom_handler(previous_symptoms: list) -> list | str:
+    """Shows the symptom menu until the user selects Done.
+
+    Works on a copy of previous_symptoms, so the caller's list is never
+    changed.
+
+    Returns the new symptom list once the user selects Done, or the
+    quit / back command."""
+    symptom_list = previous_symptoms.copy()
     while True:
         header = "Symptoms"
         option = dynamic_menu_print(SYMPTOM_MENU, header)
-        # If user inputs quit or back, 
-        # reset symptom list and end program.
+        # If user inputs quit or back, return the command.
         symptom = None
         if option == QUIT_COMMAND or option == BACK_COMMAND:
-            symptom_list.clear()
             return option
         # For options 1 to 3, 
         # it adds the relevant symptom to the list
@@ -288,6 +295,21 @@ def symptom_handler(symptom_list: list) -> list:
         if symptom != None:
             append_list_if_unique(symptom_list, symptom)
 
+def symptom_input(previous_symptoms: list | None) -> tuple:
+    """Input function for the symptoms question.
+
+    Runs the symptom menu starting from the previous symptoms, which
+    are kept unchanged if the user types quit or back.
+
+    Returns the symptom list as a valid answer, or the quit / back
+    command so it is handled like any other answer."""
+    symptom_answer = symptom_handler(previous_symptoms or [])
+    if symptom_answer == QUIT_COMMAND or symptom_answer == BACK_COMMAND:
+        return symptom_answer, None
+
+    # The symptom menu has built in validation, so the list is valid.
+    return symptom_answer, True
+
 def run_validation(ALL_QUESTIONS: dict, user_answer: str, state: int) -> bool:
     """Selects the correct validation function for the current question
     and then runs it to check the user input.
@@ -348,6 +370,8 @@ def skip_if_male(answers_dict: dict) -> bool:
 # Set share_with_ai to True to explicitly send the information to AI.
 # Set skip_if to a skip condition to skip the question when it does not
 # apply. Skipped questions are stored as None.
+# Set input_function to replace the default typed input for questions
+# that need their own input process, such as the symptoms menu.
 
 ALL_QUESTIONS = [
     {
@@ -424,6 +448,7 @@ ALL_QUESTIONS = [
     {
         "key": "current_symptoms",
         "prompt": "Please tell us your current symptoms: ",
+        "input_function": symptom_input,
         "share_with_ai": True,
     },
     {
@@ -470,20 +495,14 @@ def run_questions():
     format."""
 
     # Initialise state and dictionary to store all answers.
-    # Initialise a list for previous symptoms,
     current_state = 0
     all_user_answers = {}
-    previous_symptoms=[]
     # Loop until every question has been answered.
     while current_state < len(ALL_QUESTIONS):
         # Returns the current user answer and its validity.
-        current_user_answer, answer_is_valid = input_handler(current_state)
-
-        if current_user_answer=="symptoms":
-            current_user_answer = symptom_handler(previous_symptoms)
-            if type(current_user_answer) == list:
-                previous_symptoms = current_user_answer
-                answer_is_valid = True
+        current_user_answer, answer_is_valid = input_handler(
+            current_state, all_user_answers
+        )
 
         # Returns QUIT_SIGNAL on quit or the previous state on back.
         # Otherwise the current_state remains unchanged.
@@ -521,8 +540,9 @@ def back_to_previous_question(state: int, answers_dict: dict) -> int:
     """Sets inputted state to the state of the previous question, which
     brings the user back to the previous question.
 
-    It also removes the previously entered answer from the answers
-    dictionary so the user can enter it again.
+    The previously entered answers are kept in the answers dictionary,
+    so questions with an input function (e.g. symptoms) can start from
+    them. They are overwritten when the user answers again.
     """
 
     if state == 0:
@@ -533,10 +553,8 @@ def back_to_previous_question(state: int, answers_dict: dict) -> int:
     # Skipped questions were never asked, so they are passed over and
     # the user goes back to the last question they actually answered.
     while previous_state > 0 and should_skip(previous_state, answers_dict):
-        answers_dict.pop(ALL_QUESTIONS[previous_state]["key"], None)
         previous_state -= 1
 
-    answers_dict.pop(ALL_QUESTIONS[previous_state]["key"], None)
     return previous_state
 
 
@@ -621,18 +639,23 @@ def validate_orchestrator(
 
     return isvalid_answer, state
 
-def input_handler(state: int) -> list | bool | int:
-    # If current question is symptoms, 
-    # it returns symptoms as it has separate handling logic.
-    if ALL_QUESTIONS[state]["key"] == "current_symptoms":
-        current_user_answer="symptoms"
+def input_handler(state: int, answers_dict: dict) -> tuple:
+    """Gets the user's answer to the question at this state.
 
-    # For any other key value it prints the prompt of the key,
+    Returns the answer and its validity: True if the input function has
+    already validated it, or None if it still needs to be validated."""
+    current_question = ALL_QUESTIONS[state]
+
+    # If the question has its own input function, it is run with the
+    # previous answer so the user can continue from it.
+    input_function = current_question.get("input_function")
+    if input_function is not None:
+        previous_answer = answers_dict.get(current_question["key"])
+        return input_function(previous_answer)
+
+    # For any other question it prints the prompt,
     # and sets the user's input as current_user_answer.
-    else:
-        current_question = ALL_QUESTIONS[state]
-        current_user_answer = input(f"{current_question['prompt']}").upper().strip()
-    # returns current_user_answer at the end of function
+    current_user_answer = input(f"{current_question['prompt']}").upper().strip()
     return current_user_answer, None
 
 def build_confirmation_menu(answers_dict: dict) -> tuple:
@@ -691,18 +714,7 @@ def edit_answer(state: int, answers_dict: dict) -> bool:
     if it is valid.
 
     Returns True if the user typed quit, otherwise False."""
-    revised_answer, answer_is_valid = input_handler(state)
-
-    # If the current question is symptoms, it automatically returns symptoms.
-    # Therefore to check for symptoms we check if revised answer is symptoms.
-    if revised_answer == "symptoms":
-        # Runs a copy of the previous symptoms through the symptom handler,
-        # as lists are mutable objects. That way, the previous symptoms
-        # are kept unchanged if the user types back or quit.
-        previous_symptoms = answers_dict.get("current_symptoms")
-        revised_answer = symptom_handler(previous_symptoms.copy())
-        # Sets answer_is_valid to True, as symptom_handler has built in validation.
-        answer_is_valid = True
+    revised_answer, answer_is_valid = input_handler(state, answers_dict)
 
     # If user inputs back,
     # it will warn the user that backing out of confirmation isnt possible.
