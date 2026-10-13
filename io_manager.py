@@ -4,10 +4,10 @@
 
 import difflib
 import re
+from datetime import datetime
 
 import pandas as pd
 import phonenumbers
-from tabulate import tabulate
 
 QUIT_SIGNAL = -99
 QUIT_COMMAND = "QUIT"
@@ -170,6 +170,20 @@ def validate_option(option:str):
     else:
         error = None
     return error
+
+def validate_date(user_answer: str):
+    error = "Please enter a valid date in YYYY-MM-DD format (e.g. 2026-10-13)."
+    user_answer = user_answer.strip()
+
+    if not re.fullmatch(r"[0-9]{4}-[0-9]{2}-[0-9]{2}", user_answer):
+        return error
+
+    try:
+        datetime.strptime(user_answer, "%Y-%m-%d")
+    except ValueError:
+        return error
+
+    return None
 
 def symptom_remove(symptom_list:list):
     # Prints the symptom_list
