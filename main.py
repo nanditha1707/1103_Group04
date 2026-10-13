@@ -140,3 +140,6 @@ while True:
         error=("The program has encountered an error."
               "Please approach a nurse or clerk for manual registration.")
         io.print_text(error)
+    else:
+        # 5. I/O manager: tell the patient what to do next
+        io.print_result(ai_output, logic_result)

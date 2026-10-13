@@ -4,6 +4,7 @@
 
 import difflib
 import re
+import textwrap
 from datetime import datetime
 
 import pandas as pd
@@ -863,6 +864,23 @@ def dynamic_menu_width(menu_list: list) -> int:
      menu_width=len(max(menu_list, key=len))+4
      return menu_width
 
+def print_box(lines: list, header: str | None = None) -> None:
+    """
+    Prints the lines inside a box with the dynamic width separator.
+    The header is optional; if omitted, only the lines are printed.
+    """
+    box_width = dynamic_menu_width(lines)
+    box_separator = box_width * "-"
+    print(box_separator)
+
+    if header:
+        print("|" + header.center(box_width - 2) + "|")
+        print(box_separator)
+
+    for line in lines:
+        print("|" + f" {line}".ljust(box_width - 2) + "|")
+    print(box_separator)
+
 def dynamic_menu_print(menu_options: list, menu_header: str | None = None) -> str:
     """
     Prints the menu, based off the menu list,
@@ -870,18 +888,7 @@ def dynamic_menu_print(menu_options: list, menu_header: str | None = None) -> st
     Ensures the menu print is properly formatted and centered.
     The header is optional; if omitted, only the options are printed.
     """
-    menu_width = dynamic_menu_width(menu_options)
-    menu_separator = menu_width * "-"
-    print(menu_separator)
-
-    if menu_header:
-        print("|" + menu_header.center(menu_width - 2) + "|")
-        print(menu_separator)
-
-    for option in menu_options:
-        print("|" + f" {option}".ljust(menu_width - 2) + "|")
-    print(menu_separator)
-
+    print_box(menu_options, menu_header)
     option = input("Please enter one of the above options: ").strip().upper()
     return option
 
@@ -902,6 +909,101 @@ def filter_answers(answers_dict: dict) -> dict:
 def print_text(text: str) -> None:
     """Prints a message to the patient, such as the AI error message."""
     print(text)
+
+
+# ======================================================================
+# RESULT MESSAGE FUNCTIONS
+# ======================================================================
+
+# Long messages and explanations are wrapped to this width so the
+# result box does not get too wide.
+RESULT_WRAP_WIDTH = 70
+RESULT_HEADER = "Registration Complete"
+# What the patient should do next for each route from logic_manager.
+ROUTE_MESSAGES = {
+    "EMERGENCY": (
+        "This may be an EMERGENCY. "
+        "Please approach a staff member right away and show them this "
+        "queue number."
+    ),
+    "Doctor": (
+        "Please take a seat and wait for your queue number to be called "
+        "to see a doctor."
+    ),
+    "Pharmacist": (
+        "Please proceed to the pharmacy and wait for your queue number "
+        "to be called."
+    ),
+    "Retail": (
+        "You do not need to see a doctor or pharmacist. "
+        "The medicines below can be bought from any retail store."
+    ),
+}
+RETAIL_DISCLAIMER = (
+    "This is not a final diagnosis. If your symptoms get worse or do not "
+    "improve, please see a doctor."
+)
+
+def wrap_text(text: str, indent: str = "") -> list:
+    """Splits text into lines no longer than RESULT_WRAP_WIDTH, adding
+    the indent to the start of each line."""
+    return textwrap.wrap(
+        text,
+        RESULT_WRAP_WIDTH,
+        initial_indent=indent,
+        subsequent_indent=indent,
+    )
+
+def build_diagnosis_lines(ai_output: dict, diagnosis: str) -> list:
+    """Builds the lines for one diagnosis: its title, explanation and
+    medicines. diagnosis is either "primary" or "secondary", matching
+    the start of the AI output keys."""
+    title = ai_output.get(f"{diagnosis}_diagnosis_ICD11_Title")
+    explanation = ai_output.get(f"{diagnosis}_diagnosis_explanation", "")
+
+    lines = [f"{diagnosis.capitalize()} Diagnosis: {title}"]
+    lines.extend(wrap_text(explanation, "  "))
+    lines.append("  Medicines:")
+    for number in [1, 2]:
+        medicine = ai_output.get(f"{diagnosis}_diagnosis_medicine_{number}")
+        # Skip medicine fields the AI left blank.
+        if medicine and medicine.strip():
+            lines.append(f"    - {medicine}")
+    return lines
+
+def build_result_lines(ai_output: dict, logic_result: dict) -> list:
+    """Builds the final message telling the patient what to do next,
+    based on the route and queue number from logic_manager.
+
+    Emergency, Doctor and Pharmacist patients get a queue number.
+    Retail patients buy medicine on their own, so they get both
+    diagnoses and all their medicines instead."""
+    route = logic_result.get("route")
+    queue_number = logic_result.get("queue_number")
+    lines = []
+
+    if queue_number:
+        lines.append(f"Your Queue Number: {queue_number}")
+        lines.append("")
+
+    # A route without a message should not happen, so the patient is
+    # sent to a nurse just in case.
+    route_message = ROUTE_MESSAGES.get(route, NURSE_ALERT_MESSAGE)
+    lines.extend(wrap_text(route_message))
+
+    if route == "Retail":
+        lines.append("")
+        lines.extend(build_diagnosis_lines(ai_output, "primary"))
+        lines.append("")
+        lines.extend(build_diagnosis_lines(ai_output, "secondary"))
+        lines.append("")
+        lines.extend(wrap_text(RETAIL_DISCLAIMER))
+
+    return lines
+
+def print_result(ai_output: dict, logic_result: dict) -> None:
+    """Prints the final message to the patient in a box."""
+    print_box(build_result_lines(ai_output, logic_result), RESULT_HEADER)
 
 
 def print_df(df: pd.DataFrame):
