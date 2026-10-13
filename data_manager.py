@@ -65,11 +65,6 @@ MEDICAL_COLUMNS=[
     "breathing_difficulties",
     "signs_of_stroke",
     "self_harm",
-    "current_symptoms",
-    "symptom_onset_days",
-    "chronic_conditions",
-    "current_medications",
-    "drug_allergies"
         ]
 
 AI_OUTPUT_COLUMN=[
@@ -403,7 +398,25 @@ def export_record(
 
     return True
 
+def export_query(query_df: pd.DataFrame) -> bool:
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    query_csv_path = f"datasets/query/query_{timestamp}.csv"
+    try:
+        # Appends the df to the CSV,
+        # only writing the header if the file is new.
+        # 'a' append mode in pandas creates a new csv file if none exists.
+        query_df.to_csv(
+            query_csv_path,
+            mode="a",
 
+            index=False,
+            encoding="utf-8"
+        )
+
+    # The file is open in another program (e.g. Excel) or cannot be written.
+    except OSError:
+        return False
+     
 # ======================================================================
 # PATIENT LOOKUP FUNCTIONS
 # ======================================================================
