@@ -11,14 +11,6 @@ import phonenumbers
 QUIT_SIGNAL = -99
 QUIT_COMMAND = "QUIT"
 BACK_COMMAND = "BACK"
-SYMPTOM_MENU = ["1. Cough",
-                "2. Flu",
-                "3. Headache",
-                "4. Fever",
-                "5. Other Symptoms",
-                "6. Remove a Symptom",
-                "7. Done",
-                "You can also input quit or back"]
 REG_EXIT_MESSAGE = "Exiting The Registration Process!"
 FILE_PATH = "Put here later" #To Be Updated
 SYMPTOMS_CSV_PATH = r"datasets/symptoms_umls.csv"
@@ -105,8 +97,8 @@ def validate_gender(user_answer: str) -> str | None:
     else:
         return "This is not a valid input, please only enter either M or F"
 
-def validate_positive_number(user_answer: str) -> str | None:
-    # .isdecimal() checks whether the number is a positive integer.
+def validate_decimal_integer(user_answer: str) -> str | None:
+    # .isdecimal() checks whether the number is a decimal integer.
     if user_answer.isdecimal():
         return None
     else:
@@ -140,7 +132,7 @@ def validate_phone_number(user_answer: str) -> str | None:
         )
 
     
-def validate_blank(user_answer: str) -> str | None:
+def validate_empty(user_answer: str) -> str | None:
     # Checks if user_answer has a value.
     if user_answer:
         return None
@@ -149,8 +141,8 @@ def validate_blank(user_answer: str) -> str | None:
         return ("Invalid Input ")
 
 def validate_option(option:str):
-    is_number = validate_positive_number(option)
-    is_blank = validate_blank(option)
+    is_number = validate_decimal_integer(option)
+    is_blank = validate_empty(option)
     if is_blank:
         error = is_blank
     elif is_number:
@@ -176,49 +168,105 @@ def symptom_remove(symptom_list:list):
                 symptom_list.remove(symptom)
                 return
 
-def symptom_diff() -> str:
-    # Initialises symptoms to input
-    symptom = input("Please enter your symptom here: ").strip().upper()
-    # Checks for exact match in valid symptoms list.
-    # Returns valid symptom if matched.
-    for val_symptom in SYMPTOMS_DIFFLIB_LIST:
-        if symptom == val_symptom:
-            return val_symptom
-    
-    # If no exact match exists, 
-    # it checks for a list of similar matches using difflib.    
+def match_symptom(symptom: str) -> tuple:
+    """Looks up the symptom in the symptoms dataset.
+
+    Returns (symptom, True) for an exact match, (closest symptom, False)
+    for a close match found by difflib, or (None, False) if there is no
+    match."""
+    if symptom in SYMPTOMS_DIFFLIB_LIST:
+        return symptom, True
+
+    # If no exact match exists,
+    # it checks for the closest similar match using difflib.
     match_list = difflib.get_close_matches(
         symptom, SYMPTOMS_DIFFLIB_LIST, n=1, cutoff=0.6
     )
-
-    # if matches exist, it grabs the closest one,
-    # and prompts the user to check if it is right.
     if match_list:
-        closest_match = match_list[0]
-        confirmation = (
-            input(f"Did you mean '{closest_match}'? (Y/N): ")
-            .strip()
-            .upper()
-        )
-        # if user indicates the match is correct, 
-        # it returns the matched symptom
-        if confirmation == "Y":
-            return(closest_match)
-    # If there are no matches, 
-    # it prints a message for the user to inform them.
-    elif not match_list:
+        return match_list[0], False
+    return None, False
+
+def symptom_diff() -> str | None:
+    """Asks for a symptom and matches it to the symptoms dataset.
+
+    Returns the matched symptom, or None if there is no match or the
+    user rejects the closest match."""
+    symptom = input("Please enter your symptom here: ").strip().upper()
+    matched_symptom, is_exact_match = match_symptom(symptom)
+
+    if matched_symptom is None:
         print(
             "This symptom is not in our database, "
             "please enter a valid symptom "
             "or approach a nurse or clerk for assistance!"
         )
-    else:
-        print(
-            "An unprecedented error has occured! "
-            "Please approach a nurse, "
-            "or administrative clerk for assistance!"
-        )
-        
+        return None
+
+    if is_exact_match:
+        return matched_symptom
+
+    # For a close match, the user is asked to check if it is right.
+    confirmation = (
+        input(f"Did you mean '{matched_symptom}'? (Y/N): ").strip().upper()
+    )
+    if confirmation == "Y":
+        return matched_symptom
+    return None
+
+def fever_severity() -> str | None:
+    """Asks whether the fever is high or regular.
+
+    Returns HIGH FEVER or FEVER, or None if the input is invalid."""
+    fever_answer = (
+        input("Is your fever above 39.0 degrees celcius? (Y/N): ").strip().upper()
+    )
+    validation_result = validate_boolean(fever_answer)
+    if validation_result is not None:
+        print(validation_result)
+        return None
+
+    if fever_answer == "Y":
+        return "HIGH FEVER"
+    return "FEVER"
+
+# List containing dictionaries to store the symptom menu options.
+# The position in the list sets the menu number, starting from 1.
+# Set symptom to add that symptom directly when the option is chosen.
+# Set ask_function to ask a follow up question instead. It returns the
+# symptom to add, or None if no symptom should be added.
+# Remove a Symptom and Done are always added after these options.
+
+SYMPTOM_OPTIONS = [
+    {"label": "Cough", "symptom": "COUGH"},
+    {"label": "Flu", "symptom": "FLU"},
+    {"label": "Headache", "symptom": "HEADACHE"},
+    {"label": "Fever", "ask_function": fever_severity},
+    {"label": "Other Symptoms", "ask_function": symptom_diff},
+]
+REMOVE_SYMPTOM_OPTION = str(len(SYMPTOM_OPTIONS) + 1)
+DONE_OPTION = str(len(SYMPTOM_OPTIONS) + 2)
+
+def build_symptom_menu() -> list:
+    """Builds the symptom menu lines from SYMPTOM_OPTIONS, followed by
+    the Remove a Symptom and Done options."""
+    symptom_menu = []
+    # Menu numbers start from 1, so one is added to each index.
+    for index in range(len(SYMPTOM_OPTIONS)):
+        option = SYMPTOM_OPTIONS[index]
+        symptom_menu.append(f"{index + 1}. {option['label']}")
+    symptom_menu.append(f"{REMOVE_SYMPTOM_OPTION}. Remove a Symptom")
+    symptom_menu.append(f"{DONE_OPTION}. Done")
+    symptom_menu.append("You can also input quit or back")
+    return symptom_menu
+
+def chosen_symptom(option: str) -> str | None:
+    """Returns the symptom for a numbered option in SYMPTOM_OPTIONS,
+    running its follow up question if it has one."""
+    chosen_option = SYMPTOM_OPTIONS[int(option) - 1]
+    if "ask_function" in chosen_option:
+        return chosen_option["ask_function"]()
+    return chosen_option["symptom"]
+
 def symptom_handler(previous_symptoms: list) -> list | str:
     """Shows the symptom menu until the user selects Done.
 
@@ -228,55 +276,28 @@ def symptom_handler(previous_symptoms: list) -> list | str:
     Returns the new symptom list once the user selects Done, or the
     quit / back command."""
     symptom_list = previous_symptoms.copy()
+    header = "Symptoms"
+    symptom_menu = build_symptom_menu()
     while True:
-        header = "Symptoms"
-        option = dynamic_menu_print(SYMPTOM_MENU, header)
-        # If user inputs quit or back, return the command.
+        option = dynamic_menu_print(symptom_menu, header)
         symptom = None
+
+        # If user inputs quit or back, return the command.
         if option == QUIT_COMMAND or option == BACK_COMMAND:
             return option
-        # For options 1 to 3, 
-        # it adds the relevant symptom to the list
-        elif option == "1":
-            symptom = "COUGH"
 
-        elif option == "2":
-            symptom = "FLU"
+        # For the options in SYMPTOM_OPTIONS,
+        # it gets the relevant symptom to add to the list.
+        elif option.isdecimal() and 1 <= int(option) <= len(SYMPTOM_OPTIONS):
+            symptom = chosen_symptom(option)
 
-        elif option == "3":
-            symptom = "HEADACHE"
-        # For options 4, 
-        # it checks if the fever is high or regular, 
-        # and sets symptom to it.
-        elif option == "4":
-            fever_severity = (
-                input("Is your fever above 39.0 degrees celcius?(Y/N): ")
-                .strip()
-                .upper()
-            )
-            if fever_severity == "Y":
-                symptom = "HIGH FEVER"
-
-            elif fever_severity == "N":
-                symptom = "FEVER"
-
-            elif not fever_severity:
-                print("Input cannot be blank. Please enter Y or N.")
-
-            else:
-                print("This is an invalid input. Only type Y or N.")
-
-        elif option == "5":
-            # Runs the difflib symptom function.
-            symptom=symptom_diff()
-
-        elif option == "6":
+        elif option == REMOVE_SYMPTOM_OPTION:
             # removes a symptom from the list.
             symptom_remove(symptom_list)
 
-        elif option == "7":
+        elif option == DONE_OPTION:
             # Checks if there is at least one symptom in list,
-            # if there ism't, prints a error message
+            # if there isn't, prints a error message
             if not symptom_list:
                 print(
                     "You have not entered any symptoms, "
@@ -291,8 +312,8 @@ def symptom_handler(previous_symptoms: list) -> list | str:
         else:
             print("This is not a valid option number.")
 
-        #If symptom is a valid symptom, it appends it to the list.
-        if symptom != None:
+        # If symptom is a valid symptom, it appends it to the list.
+        if symptom is not None:
             append_list_if_unique(symptom_list, symptom)
 
 def symptom_input(previous_symptoms: list | None) -> tuple:
@@ -401,7 +422,7 @@ ALL_QUESTIONS = [
     {
         "key": "age",
         "prompt": "Enter your Age: ",
-        "validation_function": validate_positive_number,
+        "validation_function": validate_decimal_integer,
         "share_with_ai": True,
     },
     {
@@ -456,7 +477,7 @@ ALL_QUESTIONS = [
         "prompt": (
             "How many days ago did your symptoms start? (e.g. 2, or 0 for today): "
         ),
-        "validation_function": validate_positive_number,
+        "validation_function": validate_decimal_integer,
         "share_with_ai": True,
     },
     {
