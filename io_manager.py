@@ -138,6 +138,18 @@ def validate_phone_number(user_answer: str) -> str | None:
             "please check the number and country code."
         )
 
+def validate_blank(user_answer: str) -> str | None:
+    # Checks if user_answer has a value.
+    if user_answer:
+        return None
+    # If the value is null. returns an error message.
+    else:
+        return (
+                    "Invalid Input "
+                    "only valid positive numbers are allowed!"
+                )
+    
+
 def symptom_remove(symptom_list:list):
     # Prints the symptom_list
     print(symptom_list, sep=", ")
