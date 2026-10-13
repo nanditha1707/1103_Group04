@@ -105,11 +105,23 @@ def validate_gender(user_answer: str) -> str | None:
         return "This is not a valid input, please only enter either M or F"
 
 def validate_decimal_integer(user_answer: str) -> str | None:
-    # .isdecimal() checks whether the number is a decimal integer.
+    # Validates whole numbers for 0 and higher.
+    # .isdecimal() only accepts the digits 0-9, so negative signs
+    # and decimal points are rejected.
+    # Used for symptom onset days, where 0 means today.
     if user_answer.isdecimal():
         return None
     else:
-        return "This is not a valid input, please only enter positive numbers."
+        return "This is not a valid input, please only enter whole numbers."
+
+def validate_positive_integer(user_answer: str) -> str | None:
+    # Validates whole numbers for 1 and above, so 0 is rejected.
+    # .isdecimal() is checked first so int() never receives invalid input.
+    # Used for age and menu options, which start from 1.
+    if user_answer.isdecimal() and int(user_answer) > 0:
+        return None
+    else:
+        return "This is not a valid input, please only enter positive whole numbers."
 
 def validate_phone_number(user_answer: str) -> str | None:
     """Uses Google's libphonenumber to parse the number and check it
@@ -148,7 +160,7 @@ def validate_empty(user_answer: str) -> str | None:
         return ("Invalid Input ")
 
 def validate_option(option:str):
-    is_number = validate_decimal_integer(option)
+    is_number = validate_positive_integer(option)
     is_blank = validate_empty(option)
     if is_blank:
         error = is_blank
@@ -429,7 +441,7 @@ ALL_QUESTIONS = [
     {
         "key": "age",
         "prompt": "Enter your Age: ",
-        "validation_function": validate_decimal_integer,
+        "validation_function": validate_positive_integer,
         "share_with_ai": True,
     },
     {
