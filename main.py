@@ -5,16 +5,54 @@ import ai_manager as ai
 import data_manager as data
 import io_manager as io
 import logic_manager as logic
+from tabulate import tabulate
 
 ADMIN_PASSWORD = "Password"
 MENU_EXIT_MESSAGE = "Admin Password Inputted, Exiting Program Now!"
 MAIN_MENU_OPTIONS = ["1. Patient Registration",
                      "2. Healthcare Professional Portal",
                      "3. Exit"]
+HEALTHCARE_PORTAL_OPTIONS = [
+    "1. Query Current Patient Information",
+    "2. Query Past Patient Information",
+    "3. Reports",
+                             ]
+FILTER_OPTIONS =[
+    "1. Patient Information", 
+    "2. Medical Information", 
+    "3. AI Ouput Information", 
+    "4. All Records"
+                 ]
+
 
 # ======================================================================
 # CORE FUNCTIONS
 # ======================================================================
+def option_handler(message:str):
+    option = input(message)
+    error_message = io.validate_option(option)
+    if error_message:
+        io.print_text(error_message)
+        return option
+    else:
+        return None
+    
+def healthcare_portal_routing(option:str):
+    option = int(option)
+    if option == 1:
+        records= data.load_records()
+        print(records[data.PATIENT_COLUMNS].to_markdown(headers="keys", index=False, tablefmt="grid", floatfmt=".2f", maxcolwidths=10))
+        filter_option= io.dynamic_menu_print(FILTER_OPTIONS)
+        filter= data.get_patient_filter(filter_option)
+        print(filter)
+        queue = input("Enter the Patient's Queue Number here.")
+        query_response= data.get_patient_by_queue(queue, filter)
+        if not query_response.empty:
+            print(query_response.to_markdown(headers=filter, index=False, tablefmt="grid", floatfmt=".2f", maxcolwidths=10))
+        else:
+            error ="There is no such patient, please enter a valid queue number!"
+            io.print_text(error)
+        
 
 def main_menu():
     header = "Main Menu"
@@ -36,8 +74,12 @@ def main_menu():
                 error = io.REG_EXIT_MESSAGE
                 io.print_text(error)
     elif main_menu_option == "2":
-        # WIP
-        pass
+        choice=io.dynamic_menu_print(HEALTHCARE_PORTAL_OPTIONS)
+        error= io.validate_option(choice)
+        if error:
+            print(error)
+        else:
+            healthcare_portal_routing(choice)
     elif main_menu_option == "3":
         inputted_pass=input("Enter the exit code here: ")
         if inputted_pass == ADMIN_PASSWORD:
