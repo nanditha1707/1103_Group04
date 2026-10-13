@@ -403,17 +403,11 @@ def export_record(
 # PATIENT LOOKUP FUNCTIONS
 # ======================================================================
 def get_patient_filter(option: str)-> list:
-    # Initialises filter to None
+    # Initialises filter to None,
+    # and makes option a int
+    option = int(option)
     filter= None
-    # Checks if option is a valid digit,
-    # which helps to avoid TypeError.
-    if not option.isdecimal():
-        print("This is not a digit."
-              "Enter a valid option number!")
-    # Checks if option is blank
-    elif not option:
-        print("Option cannot be blank.")
-    elif option == 1:
+    if option == 1:
         filter=PATIENT_COLUMNS
     elif option == 2:
         filter=MEDICAL_COLUMNS
@@ -425,7 +419,7 @@ def get_patient_filter(option: str)-> list:
         print("This is not a valid option number.")
     return filter
 
-def get_patient_by_queue(queue_number,filter: list)-> dict:
+def get_patient_by_queue(queue_number,filter: list)-> pd.DataFrame:
     """Find today's patient with the given queue number. Return their
     record as a dict, or None if they are not found."""
 
@@ -438,18 +432,9 @@ def get_patient_by_queue(queue_number,filter: list)-> dict:
 
     # Checks if records exist. If they do,
     # continues with the block.
-    if records != None:
-        # Iterates through the dataframe's rows.
-        for _, patient in records.iterrows():
-
-            # Searches for an entry with a matching date and queue number.
-            # Returns the first match, as the queue number is unique
-            # on a day-by-day basis.
-            if (
-                patient["queue_number"]== queue_number
-                and patient["date"]== today
-            ):
-                return patient[[filter]].to_dict()
+    if not records.empty:
+        patient=records.query("queue_number == @queue_number and date == @today")
+        return patient[filter]
     # If there is no such patient, return None.
     return None
 
