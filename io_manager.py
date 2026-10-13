@@ -326,11 +326,28 @@ def run_validation(ALL_QUESTIONS: dict, user_answer: str, state: int) -> bool:
 
 
 # ======================================================================
+# SKIP CONDITIONS
+# ======================================================================
+
+# Each skip condition takes the answers given so far and returns True
+# if the question does not apply to the user.
+#
+# They are stored in the question dictionaries in the ALL_QUESTIONS list
+# under "skip_if", and are accessed by the should_skip() function.
+
+def skip_if_male(answers_dict: dict) -> bool:
+    """Males cannot be pregnant, so the pregnancy question is skipped."""
+    return answers_dict.get("gender") == "M"
+
+
+# ======================================================================
 # ALL QUESTIONS LIST
 # ======================================================================
 # List containing dictionaries to store all questions to ask the user.
 # Each question and its related details are stored as a dictionary.
 # Set share_with_ai to True to explicitly send the information to AI.
+# Set skip_if to a skip condition to skip the question when it does not
+# apply. Skipped questions are stored as None.
 
 ALL_QUESTIONS = [
     {
@@ -375,6 +392,7 @@ ALL_QUESTIONS = [
         "key": "pregnancy",
         "prompt": "Are you currently pregnant? (Y/N): ",
         "validation_function": validate_boolean,
+        "skip_if": skip_if_male,
         "share_with_ai": True,
     },
     {
@@ -510,19 +528,26 @@ def back_to_previous_question(state: int, answers_dict: dict) -> int:
     if state == 0:
         return state
 
-    current_question_key = ALL_QUESTIONS[state]["key"]
     previous_state = state - 1
-    previous_question = ALL_QUESTIONS[previous_state]
-    previous_question_key = previous_question["key"]
-    answers_dict.pop(previous_question_key, None)
 
-    if current_question_key == "chest_pain" and answers_dict["gender"] == "M":
-        previous_state = previous_state - 1
-        previous_question = ALL_QUESTIONS[previous_state]
-        previous_question_key = previous_question["key"]
-        answers_dict.pop(previous_question_key, None)
+    # Skipped questions were never asked, so they are passed over and
+    # the user goes back to the last question they actually answered.
+    while previous_state > 0 and should_skip(previous_state, answers_dict):
+        answers_dict.pop(ALL_QUESTIONS[previous_state]["key"], None)
+        previous_state -= 1
 
+    answers_dict.pop(ALL_QUESTIONS[previous_state]["key"], None)
     return previous_state
+
+
+def should_skip(state: int, answers_dict: dict) -> bool:
+    """Returns True if the question at this state does not apply to the
+    user, based on the skip condition stored in its dictionary.
+    Questions without a skip condition are always asked."""
+    skip_condition = ALL_QUESTIONS[state].get("skip_if")
+    if skip_condition is None:
+        return False
+    return skip_condition(answers_dict)
 
 
 def process_quit_or_back(user_answer: str, state: int, answers_dict: dict) -> int:
@@ -554,21 +579,16 @@ def append_list_if_unique(list: list, user_answer: str):
             return list
     list.append(user_answer)
 
-def answers_appending(user_answer: str, answers_dict: dict, state: int) -> dict | int:
-    # Checks if the next question is the pregnancy question and if the
-    # user is male.
-    if state == 5 and answers_dict["gender"] == "M":
-        # Appends the answer to the current question and skips the
-        # pregnancy question if the user is male.
-        answers_dict[ALL_QUESTIONS[state]["key"]] = user_answer
-        # Adds 1 to the state to effectively skip the pregnancy question
-        # and move to the next question.
-        state += 1
-        # Appends None to the answers_dict for the pregnancy question.
-        answers_dict[ALL_QUESTIONS[state]["key"]] = None
-    else:
-        answers_dict[ALL_QUESTIONS[state]["key"]] = user_answer
+def answers_appending(user_answer: str, answers_dict: dict, state: int) -> int:
+    # Stores the answer and moves on to the next question.
+    answers_dict[ALL_QUESTIONS[state]["key"]] = user_answer
     state += 1
+
+    # Any following questions that do not apply to the user are stored
+    # as None and skipped.
+    while state < len(ALL_QUESTIONS) and should_skip(state, answers_dict):
+        answers_dict[ALL_QUESTIONS[state]["key"]] = None
+        state += 1
     return state
 
 def is_priority(answers_dict: dict) -> dict:
@@ -622,10 +642,10 @@ def build_confirmation_menu(answers_dict: dict) -> tuple:
     editable_states = []
 
     for state, question in enumerate(ALL_QUESTIONS):
-        # Males cannot be pregnant,
+        # Skipped questions do not apply to the user,
         # so the value is shown as Not Applicable
         # and the question cannot be edited.
-        if question["key"] == "pregnancy" and answers_dict["gender"] == "M":
+        if should_skip(state, answers_dict):
             value = "Not Applicable"
         else:
             value = answers_dict.get(question["key"])
@@ -642,20 +662,21 @@ def build_confirmation_menu(answers_dict: dict) -> tuple:
 def finalise_answers(answers_dict: dict) -> bool:
     """Prepares the answers to be confirmed.
 
-    Males cannot be pregnant, so pregnancy is set to None. If gender
-    was changed from M to F, pregnancy must be answered before
-    confirming.
+    Skipped questions do not apply, so their answers are set to None.
+    A question that was skipped before may now apply (e.g. gender
+    changed from M to F), so it must be answered before confirming.
 
-    Returns True if the answers are ready to be confirmed, otherwise
-    prints an error message and returns False."""
-    if answers_dict["gender"] == "M":
-        answers_dict["pregnancy"] = None
-    elif answers_dict["pregnancy"] is None:
-        print(
-            "You have not answered the pregnancy question. "
-            "Please answer it before confirming your inputs."
-        )
-        return False
+    Returns True if every question that applies has been answered,
+    otherwise prints which question is missing and returns False."""
+    for state, question in enumerate(ALL_QUESTIONS):
+        if should_skip(state, answers_dict):
+            answers_dict[question["key"]] = None
+        elif answers_dict.get(question["key"]) is None:
+            print(
+                f"You have not answered '{question['prompt'].strip()}' "
+                "Please answer it before confirming your inputs."
+            )
+            return False
 
     # Updates the dictionary of answers with the latest priority status.
     is_priority(answers_dict)
