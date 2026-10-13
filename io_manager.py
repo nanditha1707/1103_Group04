@@ -7,6 +7,7 @@ import re
 
 import pandas as pd
 import phonenumbers
+from tabulate import tabulate
 
 QUIT_SIGNAL = -99
 QUIT_COMMAND = "QUIT"
@@ -886,3 +887,10 @@ def filter_answers(answers_dict: dict) -> dict:
 def print_text(text: str) -> None:
     """Prints a message to the patient, such as the AI error message."""
     print(text)
+
+
+def print_df(df: pd.DataFrame):
+    """
+    Print a dataframe that will automatically be formatted into a grid, by row, using the tabulate library.
+    """
+    print(df.to_markdown(index=False, tablefmt="grid", floatfmt=".2f", maxcolwidths=10))
