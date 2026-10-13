@@ -31,35 +31,38 @@ def option_handler(option:str):
     error_message = io.validate_option(option)
     return error_message
 
-def patient_query_handler(date) ->str:
+def patient_query_handler(date) ->str | None:
+    error = None
     filter_option= io.dynamic_menu_print(FILTER_OPTIONS)
-    is_valid = option_handler(filter_option)
-    if is_valid:
+    option_error = option_handler(filter_option)
+    if option_error is None:
         filter= data.get_patient_filter(filter_option)
         if filter is None:
             error = "This is not a valid option number!"
-        else:  
-            queue = input("Enter the Patient's Queue Number here.")
-            query_response= data.get_patient_by_queue(queue, filter, date)
-            if not query_response.empty:
+        else:
+            queue = input("Enter the Patient's Queue Number here.").strip().upper()
+            # Load the latest records so patients registered this session are found.
+            records = data.load_records()
+            query_response= data.get_patient_by_queue(records, queue, filter, date)
+            if query_response is not None and not query_response.empty:
                 io.print_df(query_response)
             else:
                 error ="There is no such patient, please enter a valid queue number!"
     else:
-        error = is_valid
+        error = option_error
     return error
-    
+
 def healthcare_portal_routing(option:str):
     option = int(option)
     error = None
     today = data.get_current_date()
     if option == 1:
-        error_message = patient_query_handler(today)
+        error = patient_query_handler(today)
     if option == 2:
         date = input("Enter the Date here. (YYYY-MM-DD)")
 
     if error:
-        io.print_text(error_message)
+        io.print_text(error)
 
 
 
@@ -85,9 +88,11 @@ def main_menu():
                 io.print_text(error)
     elif main_menu_option == "2":
         choice=io.dynamic_menu_print(HEALTHCARE_PORTAL_OPTIONS)
-        is_valid= option_handler(choice)
-        if  is_valid:
+        option_error= option_handler(choice)
+        if option_error is None:
             healthcare_portal_routing(choice)
+        else:
+            io.print_text(option_error)
 
     elif main_menu_option == "3":
         inputted_pass=input("Enter the exit code here: ")
@@ -96,9 +101,12 @@ def main_menu():
             return io.QUIT_SIGNAL
         else:
             error="This is not the right password!"
+            io.print_text(error)
 
 # load the ICD and HSA datasets once, when the program starts
 icd_df, hsa_df = data.get_cleaned_datasets()
+# Copy the starter patient records on the first run
+data.create_records_file_if_missing()
 #Load the previous entry records
 previous_records_df= data.load_records()
 

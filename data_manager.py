@@ -9,21 +9,26 @@ import numpy as np
 import pandas as pd
 
 # Folder paths, based on where this file is, not where the program is run from.
+# Every module gets its file paths from here.
 PROJECT_DIR = Path(__file__).resolve().parent
 # Read-only datasets that ship with the app.
-REFERENCE_DIR = PROJECT_DIR / "reference"
-# Saved patient records.
 DATASETS_DIR = PROJECT_DIR / "datasets"
+# Saved patient records.
+RECORDS_DIR = PROJECT_DIR / "records"
 # Exported query results.
 QUERY_DIR = PROJECT_DIR / "query"
 
 # File paths.
-ICD_CSV_PATH = REFERENCE_DIR / "icd11.csv"
-HSA_CSV_PATH = REFERENCE_DIR / "hsa.csv"
+ICD_CSV_PATH = DATASETS_DIR / "icd11.csv"
+HSA_CSV_PATH = DATASETS_DIR / "hsa.csv"
+SYMPTOMS_CSV_PATH = DATASETS_DIR / "symptoms_umls.csv"
 
 # CSV file used to store patient records.
 # Same file logic_manager reads to work out queue numbers.
-RECORDS_CSV_PATH = DATASETS_DIR / "patient_records.csv"
+RECORDS_CSV_PATH = RECORDS_DIR / "patient_records.csv"
+
+# Starter patient records, copied to RECORDS_CSV_PATH on the first run.
+SEED_RECORDS_CSV_PATH = DATASETS_DIR / "patient_records_seed.csv"
 
 # Fixed column order for patient_records.csv.
 # Every row uses this same list, so a failed AI response (which only
@@ -332,6 +337,25 @@ def get_cleaned_datasets():
 # ======================================================================
 # PATIENT RECORD FUNCTIONS
 # ======================================================================
+def create_records_file_if_missing() -> bool:
+    """Copy the starter records into the records folder if there is no
+    patient records CSV yet. Existing records are never overwritten.
+    Return False if the starter records could not be copied."""
+    if RECORDS_CSV_PATH.exists():
+        return True
+
+    try:
+        RECORDS_DIR.mkdir(exist_ok=True)
+        shutil.copyfile(SEED_RECORDS_CSV_PATH, RECORDS_CSV_PATH)
+
+    # The seed file is missing or the records folder cannot be written.
+    # The program still runs and starts with no records.
+    except OSError:
+        return False
+
+    return True
+
+
 def load_records() -> pd.DataFrame:
     """Load all patient records. Return None if the file does not
     exist yet."""
@@ -383,8 +407,8 @@ def export_record(
     new_record_df = pd.DataFrame([csv_row])
 
     try:
-        # Creates the datasets folder if it does not exist yet.
-        DATASETS_DIR.mkdir(exist_ok=True)
+        # Creates the records folder if it does not exist yet.
+        RECORDS_DIR.mkdir(exist_ok=True)
 
         # Appends the df to the CSV,
         # only writing the header if the file is new.
@@ -437,7 +461,7 @@ def get_patient_by_queue(records:pd.DataFrame, queue_number,filter_columns: list
 
     # Checks if records exist. If they do,
     # continues with the block.
-    if not records.empty:
+    if records is not None and not records.empty:
         patient=records.query("queue_number == @queue_number and date == @today")
         return patient[filter_columns]
     # If there is no such patient, return None.

@@ -3,7 +3,6 @@
 # ======================================================================
 import json
 import time
-from pathlib import Path
 
 import anthropic
 import httpx
@@ -12,6 +11,8 @@ import pandas as pd
 from dotenv import load_dotenv
 from google import genai
 from google.genai import errors as genai_errors
+
+import data_manager as data
 
 # Timeout for 1 AI API request.
 REQUEST_TIMEOUT_SECONDS = 20
@@ -26,10 +27,6 @@ MODELS = [
     {"provider": "gemini", "model": "gemini-3.8-flash"},
     {"provider": "gemini", "model": "gemini-3.5-flash-lite"},
 ]
-
-REFERENCE_DIR = Path(__file__).resolve().parent / "reference"
-FILE_PATH_ICD11 = REFERENCE_DIR / "icd11.csv"
-FILE_PATH_HSA = REFERENCE_DIR / "hsa.csv"
 
 FAIL = "Fail immediately"
 RETRY_SAME_MODEL = "Retry on the same model"
@@ -151,8 +148,8 @@ Symptom definitions:
 - 'high fever' means a temperature at or above 39 degrees Celsius.
 - 'fever' means a temperature below 39 degrees Celsius."""
 
-DF_ICD11 = pd.read_csv(FILE_PATH_ICD11)
-DF_HSA = pd.read_csv(FILE_PATH_HSA)
+DF_ICD11 = pd.read_csv(data.ICD_CSV_PATH)
+DF_HSA = pd.read_csv(data.HSA_CSV_PATH)
 VALID_DIAGNOSES = DF_ICD11["Title"].str.strip().str.upper()
 VALID_CODES = DF_ICD11["Code"].str.strip().str.upper()
 VALID_MEDICINES = pd.concat(

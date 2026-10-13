@@ -3,5 +3,5 @@
 __pycache__/
 
 # Patient records and query exports created at runtime
-datasets/
+records/
 query/

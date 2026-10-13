@@ -5,22 +5,22 @@
 import difflib
 import re
 from datetime import datetime
-from pathlib import Path
 
 import pandas as pd
 import phonenumbers
+
+import data_manager as data
 
 QUIT_SIGNAL = -99
 QUIT_COMMAND = "QUIT"
 BACK_COMMAND = "BACK"
 REG_EXIT_MESSAGE = "Exiting The Registration Process!"
 FILE_PATH = "Put here later" #To Be Updated
-SYMPTOMS_CSV_PATH = Path(__file__).resolve().parent / "reference" / "symptoms_umls.csv"
 
 def load_symptoms() -> list:
     """Reads the symptoms dataset. Returns all symptom names in
     uppercase since user input is uppercased before matching."""
-    symptoms_dataframe = pd.read_csv(SYMPTOMS_CSV_PATH)
+    symptoms_dataframe = pd.read_csv(data.SYMPTOMS_CSV_PATH)
     symptoms_column = symptoms_dataframe["term"].str.upper()
     return symptoms_column.tolist()
 

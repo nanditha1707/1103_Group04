@@ -2,11 +2,9 @@
 # IMPORT FUNCTIONS AND CONSTANTS
 # ======================================================================
 from datetime import datetime
-from pathlib import Path
 import pandas as pd
 
-# Saved patient records, used to work out queue numbers.
-PATIENT_RECORDS_CSV_PATH = Path(__file__).resolve().parent / "datasets" / "patient_records.csv"
+import data_manager as data
 
 
 # ======================================================================
@@ -186,7 +184,8 @@ def get_queue_number(queue_type: str) -> str | None:
         # Read the saved patient records.
         # dtype=str keeps queue numbers like D001 as text.
         # keep_default_na=False turns blank cells into "" instead of NaN.
-        records_df = pd.read_csv(PATIENT_RECORDS_CSV_PATH, dtype=str, keep_default_na=False)
+        # Saved patient records, used to work out queue numbers.
+        records_df = pd.read_csv(data.RECORDS_CSV_PATH, dtype=str, keep_default_na=False)
 
         # Only look at todays patients.
         todays_df = records_df[records_df["date"] == today]
