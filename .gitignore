@@ -3,5 +3,6 @@
 __pycache__/
 
 # Patient records and query exports created at runtime
+# These files should stay local
 records/
 query/
