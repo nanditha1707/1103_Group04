@@ -138,17 +138,15 @@ def validate_phone_number(user_answer: str) -> str | None:
             "please check the number and country code."
         )
 
+    
 def validate_blank(user_answer: str) -> str | None:
     # Checks if user_answer has a value.
     if user_answer:
         return None
     # If the value is null. returns an error message.
     else:
-        return (
-                    "Invalid Input "
-                    "only valid positive numbers are allowed!"
-                )
-    
+        return ("Invalid Input ")
+
 
 def symptom_remove(symptom_list:list):
     # Prints the symptom_list
@@ -603,35 +601,102 @@ def input_handler(state: int) -> list | bool | int:
     # returns current_user_answer at the end of function
     return current_user_answer, None
 
+def build_confirmation_menu(answers_dict: dict) -> tuple:
+    """Builds one menu line per question in ALL_QUESTIONS, so each menu
+    number always matches the question's state plus one, regardless of
+    the order of the keys in answers_dict.
+
+    Returns the menu options, with Confirm All Inputs as the last
+    option, and the list of states the user is allowed to edit."""
+    confirmation_menu_options = []
+    editable_states = []
+
+    for state, question in enumerate(ALL_QUESTIONS):
+        # Males cannot be pregnant,
+        # so the value is shown as Not Applicable
+        # and the question cannot be edited.
+        if question["key"] == "pregnancy" and answers_dict["gender"] == "M":
+            value = "Not Applicable"
+        else:
+            value = answers_dict.get(question["key"])
+            editable_states.append(state)
+        confirmation_menu_options.append(
+            f"{state + 1:02d}. {question['prompt']}{value}"
+        )
+
+    # Appends the option to confirm all inputs to the list of options.
+    confirmation_option = len(ALL_QUESTIONS) + 1
+    confirmation_menu_options.append(f"{confirmation_option:02d}. Confirm All Inputs")
+    return confirmation_menu_options, editable_states
+
+def finalise_answers(answers_dict: dict) -> bool:
+    """Prepares the answers to be confirmed.
+
+    Males cannot be pregnant, so pregnancy is set to None. If gender
+    was changed from M to F, pregnancy must be answered before
+    confirming.
+
+    Returns True if the answers are ready to be confirmed, otherwise
+    prints an error message and returns False."""
+    if answers_dict["gender"] == "M":
+        answers_dict["pregnancy"] = None
+    elif answers_dict["pregnancy"] is None:
+        print(
+            "You have not answered the pregnancy question. "
+            "Please answer it before confirming your inputs."
+        )
+        return False
+
+    # Updates the dictionary of answers with the latest priority status.
+    is_priority(answers_dict)
+    return True
+
+def edit_answer(state: int, answers_dict: dict) -> bool:
+    """Asks the question at this state again, and stores the new answer
+    if it is valid.
+
+    Returns True if the user typed quit, otherwise False."""
+    revised_answer, answer_is_valid = input_handler(state)
+
+    # If the current question is symptoms, it automatically returns symptoms.
+    # Therefore to check for symptoms we check if revised answer is symptoms.
+    if revised_answer == "symptoms":
+        # Runs a copy of the previous symptoms through the symptom handler,
+        # as lists are mutable objects. That way, the previous symptoms
+        # are kept unchanged if the user types back or quit.
+        previous_symptoms = answers_dict.get("current_symptoms")
+        revised_answer = symptom_handler(previous_symptoms.copy())
+        # Sets answer_is_valid to True, as symptom_handler has built in validation.
+        answer_is_valid = True
+
+    # If user inputs back,
+    # it will warn the user that backing out of confirmation isnt possible.
+    if revised_answer == BACK_COMMAND:
+        print("You cannot go back during the confirmation process. "
+              "Please enter a valid input.")
+        return False
+
+    if revised_answer == QUIT_COMMAND:
+        return True
+
+    # Runs the user input through the validate orcherstrator function,
+    # which will run the appropriate validation function to check inputs,
+    # and stores the answer if it is valid.
+    validate_orchestrator(answer_is_valid, revised_answer, state, answers_dict)
+    return False
+
 def confirm_inputs(answers_dict: dict) -> bool | None:
+    """Shows every answer so the user can edit any of them before
+    confirming.
+
+    Returns True once the answers are confirmed, or None if the user
+    types quit or changes consent to N."""
     header = "Confirmation Screen"
     # Confirmation should break if user chooses to change consent to N
     while answers_dict["consent"] == "Y":
-        # Initialise lists to store valid editable keys, 
-        # and the menu options to dynamically print menu
-        confirmation_menu_options = []
-        editable_keys = []
-
-        # Iterates through the list of answers
-        for question_number, (key, value) in enumerate(answers_dict.items()):
-            #
-            if question_number < len(ALL_QUESTIONS):
-                prompt = ALL_QUESTIONS[question_number]["prompt"]
-                current_entry = f"{question_number + 1:02d}.{prompt}{value}"
-                # Males cannot be pregnant, 
-                # so the value is overriden with Not Applicable.
-                if key == "pregnancy" and answers_dict["gender"] == "M":
-                    current_entry= f"{question_number + 1:02d}. {prompt}Not Applicable"
-                # Only appends key and prints if key is not priority, 
-                # and the key is not pregnancy or the person is a female, 
-                # as the logic for male and pregnant key has been handled above.
-                elif key != "pregnancy" or answers_dict["gender"] == "F":
-                    editable_keys.append(key)
-                confirmation_menu_options.append(current_entry)
-        
-        confirmation_option = len(confirmation_menu_options)+1
-        # Appends the option to confirm all inputs to the list of options.
-        confirmation_menu_options.append(f"{confirmation_option:02d}. Confirm All Inputs")
+        confirmation_menu_options, editable_states = (
+            build_confirmation_menu(answers_dict)
+        )
         # Prints the menu and gets input as menu_state.
         menu_state = dynamic_menu_print(confirmation_menu_options, header)
 
@@ -641,91 +706,38 @@ def confirm_inputs(answers_dict: dict) -> bool | None:
             continue
 
         # Checks if input is a Base10 Number
-        elif not menu_state.isdecimal():
-            print("Invalid input. Please enter a valid number or 'Y' to confirm.")
+        if not menu_state.isdecimal():
+            print("Invalid input. Please enter a valid menu number.")
             continue
 
-        # Checks if user is confirming the inputs
-        elif int(menu_state) == confirmation_option:
-            # Updates the dictionary of answers with the latest priority status.
-            is_priority(answers_dict)
-            # Males cannot be pregnant so it sets pregnancy to None.
-            if answers_dict["gender"] == "M":
-                answers_dict["pregnancy"] = None
-                # Returns confirmation status as True
+        # Confirm All Inputs is the last option in the menu.
+        if int(menu_state) == len(confirmation_menu_options):
+            if finalise_answers(answers_dict):
                 return True
+            continue
 
-            # Checks if user gender is F, 
-            # and checks if they have answered the pregnancy question.
-            if answers_dict["gender"] == "F" and answers_dict["pregnancy"] is None:
-                    # Prints a error message if they have not,
-                    # and brings them back to the start of the loop.
-                    print(
-                        "You have not answered the pregnancy question. "
-                        "Please answer it before confirming your inputs."
-                    )
-                    continue
-            else:
-                return True
-        # Menu options are the keys in the list with one added to them,
-        # so one has to be deducted in order to ensure the right key is edited.
-        key_to_edit = int(menu_state) - 1
+        # Menu numbers are the question states with one added to them,
+        # so one has to be deducted in order to edit the right question.
+        state_to_edit = int(menu_state) - 1
 
-        # Check if the key to be edited is within the valid range,
+        # Check if the question is within the valid range,
         # and prints a error message if it isnt.
-        if not 0 <= key_to_edit < len(confirmation_menu_options):
+        if not 0 <= state_to_edit < len(ALL_QUESTIONS):
             print("Invalid input. Please enter a valid menu option!")
             continue
 
-        # Check if the key is a valid editable key.
+        # Check if the question can be edited.
         # If it is not, print a error message and loop back to the start.
-        if ALL_QUESTIONS[key_to_edit]["key"] not in editable_keys:
+        if state_to_edit not in editable_states:
             print("That item cannot be edited.")
             continue
-        
-        if ALL_QUESTIONS[key_to_edit]["key"] in editable_keys:
-            # Runs the input_handler function to get the user input,
-            # and initialise answer_is_valid.
-            revised_answer, answer_is_valid = input_handler(key_to_edit)
-            # If the current question is symptoms, it automatically returns symptoms. 
-            # Therefore to check for symptoms we check if revised answer is symptoms.
-            if revised_answer=="symptoms":
-                # Grabs previous symptom input directly from the answers_dict
-                previous_symptoms = answers_dict.get("current_symptoms")
-                # Runs a copy of the list through the symptom handler as lists are mutable objects
-                # That way, the previous symptoms list is maintained so it can be used.
-                #The new symptom list is stored in revised_answer
-                revised_answer = symptom_handler(previous_symptoms.copy())
-                # The only way to return a empty list,is if the user types back or quit. 
-                # In such a scenario, the previous symptoms should be retained.
-                if not revised_answer:
-                    revised_answer = previous_symptoms
-                # Sets answer_is_valid to True, as symptom_handler has built in validation.
-                answer_is_valid = True
 
-            # If user inputs back,
-            # it will warn the user that backing out of confirmation isnt possible.
-            if revised_answer == BACK_COMMAND:
-                print("You cannot go back during the confirmation process. "
-                      "Please enter a valid input.")
-                continue
+        # If the user types quit while editing, exit confirmation.
+        if edit_answer(state_to_edit, answers_dict):
+            break
 
-            # If the user inputs the quit command,
-            # it breaks the loop
-            if revised_answer == QUIT_COMMAND:
-                break
-
-            # Runs the user input through the validate orcherstrator function,
-            # which will run the appropriate validation function to check inputs.
-            answer_is_valid, key_to_edit = validate_orchestrator(
-                answer_is_valid, 
-                revised_answer, 
-                key_to_edit, 
-                answers_dict)
-            
-    # Only way to break out of the while loop, 
-    # is if user changes consent to N, 
-    # or if user types quit
+    # Only way to break out of the while loop,
+    # is if user changes consent to N or if user types quit
     return None
 
 def dynamic_menu_width(menu_list: list) -> int:
