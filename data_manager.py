@@ -354,7 +354,8 @@ def join_symptoms(patient_record: dict) -> dict:
 def export_record(
     all_user_responses: dict,
     ai_output: dict,
-    logic_result: dict
+    logic_result: dict,
+    records_df: pd.DataFrame
 ) -> bool:
     """Save a completed patient record to the patient records CSV.
     Return True if saved, False if the file could not be written."""
@@ -377,13 +378,13 @@ def export_record(
         csv_row[column] = patient_record.get(column)
 
     # Change the row into a one-row dataframe.
-    record_df = pd.DataFrame([csv_row])
+    new_record_df = pd.DataFrame([csv_row])
 
     try:
         # Appends the df to the CSV,
         # only writing the header if the file is new.
         # 'a' append mode in pandas creates a new csv file if none exists.
-        record_df.to_csv(
+        new_record_df.to_csv(
             RECORDS_CSV_PATH,
             mode="a",
             header=not os.path.exists(RECORDS_CSV_PATH),
@@ -394,6 +395,11 @@ def export_record(
     # The file is open in another program (e.g. Excel) or cannot be written.
     except OSError:
         return False
+    
+    # Only update the history after the save succeeded,
+    # so it never contains a record that is missing from the CSV.
+    if records_df is not None:
+        records_df.loc[len(records_df)] = new_record_df.iloc[0]
 
     return True
 
@@ -418,12 +424,15 @@ def get_patient_filter(option: str)-> list:
         print("This is not a valid option number.")
     return filter
 
-def get_patient_by_queue(queue_number,filter: list)-> pd.DataFrame:
+def get_current_date()-> datetime:
+    # grabs the current date
+    today = datetime.now().strftime("%Y-%m-%d")
+    return today
+
+def get_patient_by_queue(queue_number,filter: list, today:datetime)-> pd.DataFrame:
     """Find today's patient with the given queue number. Return their
     record as a dict, or None if they are not found."""
-
-    # Sets today to the current date.
-    today = datetime.now().strftime("%Y-%m-%d")
+    
     # Loads the existing records.
     # If the records do not exist,
     # the function returns None.
