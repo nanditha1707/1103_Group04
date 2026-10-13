@@ -5,6 +5,7 @@
 import difflib
 import re
 from datetime import datetime
+from pathlib import Path
 
 import pandas as pd
 import phonenumbers
@@ -14,7 +15,7 @@ QUIT_COMMAND = "QUIT"
 BACK_COMMAND = "BACK"
 REG_EXIT_MESSAGE = "Exiting The Registration Process!"
 FILE_PATH = "Put here later" #To Be Updated
-SYMPTOMS_CSV_PATH = r"datasets/symptoms_umls.csv"
+SYMPTOMS_CSV_PATH = Path(__file__).resolve().parent / "reference" / "symptoms_umls.csv"
 
 def load_symptoms() -> list:
     """Reads the symptoms dataset. Returns all symptom names in

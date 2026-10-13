@@ -1,3 +1,7 @@
 .env
 .pytest_cache
 __pycache__/
+
+# Patient records and query exports created at runtime
+datasets/
+query/

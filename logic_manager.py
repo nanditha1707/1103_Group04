@@ -2,10 +2,11 @@
 # IMPORT FUNCTIONS AND CONSTANTS
 # ======================================================================
 from datetime import datetime
+from pathlib import Path
 import pandas as pd
 
 # Saved patient records, used to work out queue numbers.
-PATIENT_RECORDS_CSV_PATH = "datasets/patient_records.csv"
+PATIENT_RECORDS_CSV_PATH = Path(__file__).resolve().parent / "datasets" / "patient_records.csv"
 
 
 # ======================================================================

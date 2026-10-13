@@ -1,20 +1,29 @@
 # ======================================================================
 # IMPORT FUNCTIONS AND CONSTANTS
 # ======================================================================
-import os
 from datetime import datetime
+from pathlib import Path
 import shutil
 
 import numpy as np
 import pandas as pd
 
+# Folder paths, based on where this file is, not where the program is run from.
+PROJECT_DIR = Path(__file__).resolve().parent
+# Read-only datasets that ship with the app.
+REFERENCE_DIR = PROJECT_DIR / "reference"
+# Saved patient records.
+DATASETS_DIR = PROJECT_DIR / "datasets"
+# Exported query results.
+QUERY_DIR = PROJECT_DIR / "query"
+
 # File paths.
-ICD_CSV_PATH = "datasets/icd11.csv"
-HSA_CSV_PATH = "datasets/hsa.csv"
+ICD_CSV_PATH = REFERENCE_DIR / "icd11.csv"
+HSA_CSV_PATH = REFERENCE_DIR / "hsa.csv"
 
 # CSV file used to store patient records.
 # Same file logic_manager reads to work out queue numbers.
-RECORDS_CSV_PATH = "datasets/patient_records.csv"
+RECORDS_CSV_PATH = DATASETS_DIR / "patient_records.csv"
 
 # Fixed column order for patient_records.csv.
 # Every row uses this same list, so a failed AI response (which only
@@ -374,13 +383,16 @@ def export_record(
     new_record_df = pd.DataFrame([csv_row])
 
     try:
+        # Creates the datasets folder if it does not exist yet.
+        DATASETS_DIR.mkdir(exist_ok=True)
+
         # Appends the df to the CSV,
         # only writing the header if the file is new.
         # 'a' append mode in pandas creates a new csv file if none exists.
         new_record_df.to_csv(
             RECORDS_CSV_PATH,
             mode="a",
-            header=not os.path.exists(RECORDS_CSV_PATH),
+            header=not RECORDS_CSV_PATH.exists(),
             index=False,
             encoding="utf-8"
         )
@@ -443,8 +455,11 @@ def print_or_export(filter_columns:list):
 
 def export_query(query_df: pd.DataFrame) -> bool:
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    query_csv_path = f"datasets/query/query_{timestamp}.csv"
+    query_csv_path = QUERY_DIR / f"query_{timestamp}.csv"
     try:
+        # Creates the query folder if it does not exist yet.
+        QUERY_DIR.mkdir(exist_ok=True)
+
         # Appends the df to the CSV,
         # only writing the header if the file is new.
         # 'a' append mode in pandas creates a new csv file if none exists.

@@ -3,6 +3,7 @@
 # ======================================================================
 import json
 import time
+from pathlib import Path
 
 import anthropic
 import httpx
@@ -26,8 +27,9 @@ MODELS = [
     {"provider": "gemini", "model": "gemini-3.5-flash-lite"},
 ]
 
-FILE_PATH_ICD11 = "datasets/icd11.csv"
-FILE_PATH_HSA = "datasets/hsa.csv"
+REFERENCE_DIR = Path(__file__).resolve().parent / "reference"
+FILE_PATH_ICD11 = REFERENCE_DIR / "icd11.csv"
+FILE_PATH_HSA = REFERENCE_DIR / "hsa.csv"
 
 FAIL = "Fail immediately"
 RETRY_SAME_MODEL = "Retry on the same model"
