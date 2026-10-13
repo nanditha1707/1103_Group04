@@ -62,9 +62,9 @@ def main_menu():
         io.print_text(error)
     elif main_menu_option == "1":
         all_answers = io.run_questions()
-        if all_answers == None or len(all_answers) < len(io.ALL_QUESTIONS)+1:
+        if all_answers is None:
             return None
-        elif len(all_answers) == len(io.ALL_QUESTIONS)+1:
+        else:
             confirmed = io.confirm_inputs(all_answers)
             if confirmed:
                 confirm_message = "Thank you for confirming your inputs."

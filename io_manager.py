@@ -23,12 +23,19 @@ def load_symptoms() -> list:
     return symptoms_column.tolist()
 
 SYMPTOMS_DIFFLIB_LIST = load_symptoms()
-PRIORITY_KEYLIST = [
+# Answering Y to any of these questions means the user needs a nurse
+# immediately, so registration stops straight away.
+EMERGENCY_KEYS = [
     "chest_pain",
     "breathing_difficulties",
     "signs_of_stroke",
     "self_harm",
 ]
+UNDERAGE_PREGNANCY_AGE = 16
+NURSE_ALERT_MESSAGE = (
+    "You need immediate medical attention. "
+    "Please approach a nurse right away for help."
+)
 
 # ======================================================================
 # VALIDATION FUNCTIONS
@@ -357,7 +364,7 @@ def run_validation(ALL_QUESTIONS: dict, user_answer: str, state: int) -> bool:
     # or the error message string in validation_result.
     validation_result = current_question_validator(user_answer)
 
-    # If validation_result indicates 'No problems', then return True.
+    # If validation_result indicates valid input, then return True.
     if validation_result == None:
         return True
 
@@ -505,9 +512,9 @@ ALL_QUESTIONS = [
 # ======================================================================
 
 def run_questions():
-    """Uses a dictionary approach to move between questions.
-    all_questions variable stores a list of dictionaries, each one
-    containing a question.
+    """This is the main run function. It uses a dictionary approach to 
+    move between questions. all_questions variable stores a list of 
+    dictionaries, each one containing a question.
 
     This function cycles through the list of dictionaries to dynamically
     access the correct question based on the current state.
@@ -550,9 +557,11 @@ def run_questions():
         if answer_is_valid != True:
             continue
 
-    # Adds "ai_bypass":True into the dictionary
-    # if any red flag question was answered Y.
-    is_priority(all_user_answers)
+        # If the user needs a nurse immediately,
+        # registration stops here.
+        if needs_nurse(all_user_answers):
+            print_text(NURSE_ALERT_MESSAGE)
+            return None
 
     return all_user_answers
 
@@ -630,20 +639,28 @@ def answers_appending(user_answer: str, answers_dict: dict, state: int) -> int:
         state += 1
     return state
 
-def is_priority(answers_dict: dict) -> dict:
-    """
-    Creates or sets the value of the dictionary key to True or False as it is a bool, 
-    based off whether the user replied Y to any of the concerning questions.
-    """
-    answers_dict["priority"] = False
+def has_emergency_answer(answers_dict: dict) -> bool:
+    """Returns True if the user answered Y to any emergency question."""
+    for key in EMERGENCY_KEYS:
+        if answers_dict.get(key) == "Y":
+            return True
+    return False
 
-    for questions, value in answers_dict.items():
-        if questions in PRIORITY_KEYLIST and value == "Y":
-            answers_dict["priority"] = True
+def is_underage_pregnancy(answers_dict: dict) -> bool:
+    """Returns True if the user is pregnant and under 16 years old.
 
-    # For edge cases like an underage girl being pregnant
-    if answers_dict.get("pregnancy") == "Y" and int(answers_dict["age"]) < 16:
-        answers_dict["priority"] = True
+    A pregnancy answer left over from before the gender was changed to
+    M no longer applies, so it is ignored."""
+    return (
+        not skip_if_male(answers_dict)
+        and answers_dict.get("pregnancy") == "Y"
+        and int(answers_dict["age"]) < UNDERAGE_PREGNANCY_AGE
+    )
+
+def needs_nurse(answers_dict: dict) -> bool:
+    """Returns True if the answers so far mean the user needs a nurse
+    immediately, so registration should stop."""
+    return has_emergency_answer(answers_dict) or is_underage_pregnancy(answers_dict)
 
 def validate_orchestrator(
     isvalid_answer: bool, user_answer: str, state: int, answers_dict: dict
@@ -725,9 +742,6 @@ def finalise_answers(answers_dict: dict) -> bool:
                 "Please answer it before confirming your inputs."
             )
             return False
-
-    # Updates the dictionary of answers with the latest priority status.
-    is_priority(answers_dict)
     return True
 
 def edit_answer(state: int, answers_dict: dict) -> bool:
@@ -758,7 +772,7 @@ def confirm_inputs(answers_dict: dict) -> bool | None:
     confirming.
 
     Returns True once the answers are confirmed, or None if the user
-    types quit or changes consent to N."""
+    types quit, changes consent to N or needs a nurse immediately."""
     header = "Confirmation Screen"
     # Confirmation should break if user chooses to change consent to N
     while answers_dict["consent"] == "Y":
@@ -800,6 +814,12 @@ def confirm_inputs(answers_dict: dict) -> bool | None:
         # If the user types quit while editing, exit confirmation.
         if edit_answer(state_to_edit, answers_dict):
             break
+
+        # If the edited answer means the user needs a nurse immediately,
+        # registration stops here.
+        if needs_nurse(answers_dict):
+            print_text(NURSE_ALERT_MESSAGE)
+            return None
 
     # Only way to break out of the while loop,
     # is if user changes consent to N or if user types quit
