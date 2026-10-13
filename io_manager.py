@@ -757,20 +757,25 @@ def dynamic_menu_width(menu_list: list) -> int:
      menu_width=len(max(menu_list, key=len))+4
      return menu_width
 
-def dynamic_menu_print(menu_options:list, menu_header:str):
+def dynamic_menu_print(menu_options: list, menu_header: str | None = None) -> str:
     """
     Prints the menu, based off the menu list,
-    with the dynamic width separator. 
-    Ensures the menu print is properly formatted and centered
+    with the dynamic width separator.
+    Ensures the menu print is properly formatted and centered.
+    The header is optional; if omitted, only the options are printed.
     """
-    menu_width=dynamic_menu_width(menu_options)
-    menu_separator=menu_width * "-"
+    menu_width = dynamic_menu_width(menu_options)
+    menu_separator = menu_width * "-"
     print(menu_separator)
-    print("|" + menu_header.center(menu_width - 2) + "|")
-    print(menu_separator)
+
+    if menu_header:
+        print("|" + menu_header.center(menu_width - 2) + "|")
+        print(menu_separator)
+
     for option in menu_options:
         print("|" + f" {option}".ljust(menu_width - 2) + "|")
     print(menu_separator)
+
     option = input("Please enter one of the above options: ").strip().upper()
     return option
 
