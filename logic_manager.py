@@ -81,15 +81,13 @@ def is_emergency(ai_output: dict) -> bool:
     return False
 
 
-def decide_route(answers_dict: dict, ai_output: dict, hsa_df: pd.DataFrame | None) -> str | None:
+def decide_route(ai_output: dict, hsa_df: pd.DataFrame | None) -> str | None:
     """Decide where the patient should go: EMERGENCY, Doctor, Pharmacist
     or Retail. Returns None if the AI output failed, so the patient is
     not routed."""
 
-    # AI output failed validation, so the patient is not routed.
-    # This fulfills the requirement of AI being the center of the app.
-    # If AI API fails, the patient is not routed and their information
-    # thus also cannot be stored in the database.
+    # AI output failed validation, so the patient is not routed because
+    # the AI output is not reliable.
     if "error" in ai_output:
         return None
 
@@ -97,18 +95,14 @@ def decide_route(answers_dict: dict, ai_output: dict, hsa_df: pd.DataFrame | Non
     if is_emergency(ai_output):
         return "EMERGENCY"
 
-    # AI bypass always routes the patient to a doctor.
-    if answers_dict.get("priority"):
-        return "Doctor"
-
     # Without HSA data the medicines cannot be checked, so see a doctor.
     if hsa_df is None:
         return "Doctor"
 
-    # Get all medicines reccomended by AI.
+    # Get all medicines recomended by AI.
     ai_medicines=get_medicines(ai_output)
 
-    # Remember if at least one pharm only medicine is found.
+    # Variable to store if at least one pharmacy-only medicine is found.
     pharmacist_needed = False
 
     # Check each recommended medicine.
@@ -205,13 +199,12 @@ def get_queue_number(queue_type: str) -> str | None:
 # ======================================================================
 # FINAL RESULT FUNCTION
 # ======================================================================
-def process_result(answers_dict: dict, ai_output: dict, hsa_df: pd.DataFrame | None) -> dict:
+def process_result(ai_output: dict, hsa_df: pd.DataFrame | None) -> dict:
     """Create the final domain result. Routes the patient, gives them a
     queue number and returns both with the current date and time."""
 
     # Where the patient goes.
     route=decide_route(
-        answers_dict,
         ai_output,
         hsa_df
     )
@@ -223,8 +216,8 @@ def process_result(answers_dict: dict, ai_output: dict, hsa_df: pd.DataFrame | N
     if route is None:
         queue_number = None
 
-    # AI bypass and emergency routes use the urgent queue ( U queue ).
-    elif answers_dict.get("priority") or route =="EMERGENCY":
+    # Emergency route uses the urgent queue ( U queue ).
+    elif route =="EMERGENCY":
         queue_number = get_queue_number("Urgent")
 
     # Docter route ( D queue ).

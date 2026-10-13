@@ -12,7 +12,7 @@ from logic_manager import (
     process_result
 )
 
-from validation_data import get_cleaned_datasets
+from data_manager import get_cleaned_datasets
 
 # Load cleaned datasets
 icd_df, hsa_df = get_cleaned_datasets()
@@ -49,12 +49,6 @@ ai_output = {
 }
 
 
-# Test AI bypass route
-all_user_responses = {
-    "priority": True
-}
-
-
 # Get medicines from AI output
 medicines = get_medicines(ai_output)
 
@@ -77,7 +71,6 @@ for medicine in medicines:
 
 # Process final routing result
 result = process_result(
-    all_user_responses,
     ai_output,
     hsa_df
 )

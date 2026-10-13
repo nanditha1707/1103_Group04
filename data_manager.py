@@ -28,7 +28,6 @@ RECORD_COLUMNS = [
     "age", 
     "phone_number",
     "pregnancy",
-    "priority",
     "chest_pain",
     "breathing_difficulties",
     "signs_of_stroke",
@@ -499,10 +498,10 @@ def get_medicine_breakdown(date):
                 if pd.notna(medicine):
 
                     if medicine in medicine_counts:
-                        medicine_counts[medicine]+=1
+                        medicine_counts[medicine] += 1
 
                     else:
-                        medicine_counts[medicine]=1
+                        medicine_counts[medicine] = 1
 
     return medicine_counts
 
@@ -527,13 +526,12 @@ def get_patient_type_breakdown(date):
         return patient_types
 
     # Check each patient.
-    for index, patient in records.iterrows():
+    for _, patient in records.iterrows():
 
         # Only check records from the selected date.
         if patient["date"]==date:
 
-            # Priority patients count as emergency.
-            if str(patient["priority"])=="True":
+            if patient["route"]=="EMERGENCY":
                 patient_types["Emergency"]+=1
 
             elif patient["route"]=="Doctor":

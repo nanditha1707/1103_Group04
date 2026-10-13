@@ -29,16 +29,15 @@ patient_1 = {
     "name": "Darrell",
     "age": "31",
     "gender": "M",
-    "red_flag_chest_pain": "N",
-    "red_flag_breathing": "N",
-    "red_flag_stroke": "N",
+    "chest_pain": "N",
+    "breathing_difficulties": "N",
+    "signs_of_stroke": "N",
     "self_harm": "N",
     "current_symptoms": "Cough, Fever",
     "symptom_onset": "2 days ago",
     "chronic_conditions": "N",
     "current_medications": "N",
-    "drug_allergies": "N",
-    "priority": False
+    "drug_allergies": "N"
 }
 
 ai_output_1 = {
@@ -69,16 +68,15 @@ patient_2 = {
     "name": "Nanditha",
     "age": "20",
     "gender": "F",
-    "red_flag_chest_pain": "N",
-    "red_flag_breathing": "N",
-    "red_flag_stroke": "N",
+    "chest_pain": "N",
+    "breathing_difficulties": "N",
+    "signs_of_stroke": "N",
     "self_harm": "N",
     "current_symptoms": "Cough",
     "symptom_onset": "1 day ago",
     "chronic_conditions": "N",
     "current_medications": "N",
-    "drug_allergies": "N",
-    "priority": False
+    "drug_allergies": "N"
 }
 
 ai_output_2 = {
@@ -109,16 +107,15 @@ patient_3 = {
     "name": "Alex",
     "age": "45",
     "gender": "M",
-    "red_flag_chest_pain": "Y",
-    "red_flag_breathing": "N",
-    "red_flag_stroke": "N",
+    "chest_pain": "N",
+    "breathing_difficulties": "N",
+    "signs_of_stroke": "N",
     "self_harm": "N",
     "current_symptoms": "Chest pain",
     "symptom_onset": "Today",
     "chronic_conditions": "Y",
     "current_medications": "Y",
-    "drug_allergies": "N",
-    "priority": True
+    "drug_allergies": "N"
 }
 
 ai_output_3 = {
@@ -137,7 +134,7 @@ logic_result_3 = {
     "queue_number": "U001",
     "date": today,
     "time": "12:00:00",
-    "route": "Doctor"
+    "route": "EMERGENCY"
 }
 
 

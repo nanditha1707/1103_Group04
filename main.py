@@ -5,7 +5,6 @@ import ai_manager as ai
 import data_manager as data
 import io_manager as io
 import logic_manager as logic
-from tabulate import tabulate
 
 ADMIN_PASSWORD = "Password"
 MENU_EXIT_MESSAGE = "Admin Password Inputted, Exiting Program Now!"
@@ -113,7 +112,7 @@ while True:
         continue
 
     # 3. Logic manager: decide and print the route and queue number
-    logic_result = logic.process_result(answers, ai_output, hsa_df)
+    logic_result = logic.process_result(ai_output, hsa_df)
 
     # 4. Data manager: save the completed record to patient_records.csv
     is_export=data.export_record(answers, ai_output, logic_result)
