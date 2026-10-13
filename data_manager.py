@@ -3,6 +3,7 @@
 # ======================================================================
 import os
 from datetime import datetime
+import shutil
 
 import numpy as np
 import pandas as pd
@@ -398,25 +399,6 @@ def export_record(
 
     return True
 
-def export_query(query_df: pd.DataFrame) -> bool:
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    query_csv_path = f"datasets/query/query_{timestamp}.csv"
-    try:
-        # Appends the df to the CSV,
-        # only writing the header if the file is new.
-        # 'a' append mode in pandas creates a new csv file if none exists.
-        query_df.to_csv(
-            query_csv_path,
-            mode="a",
-
-            index=False,
-            encoding="utf-8"
-        )
-
-    # The file is open in another program (e.g. Excel) or cannot be written.
-    except OSError:
-        return False
-     
 # ======================================================================
 # PATIENT LOOKUP FUNCTIONS
 # ======================================================================
@@ -424,18 +406,16 @@ def get_patient_filter(option: str)-> list:
     # Initialises filter to None,
     # and makes option a int
     option = int(option)
-    filter= None
+    filter_list= None
     if option == 1:
-        filter=PATIENT_COLUMNS
+        filter_list=PATIENT_COLUMNS
     elif option == 2:
-        filter=MEDICAL_COLUMNS
+        filter_list=MEDICAL_COLUMNS
     elif option == 3:
-        filter=AI_OUTPUT_COLUMN
+        filter_list=AI_OUTPUT_COLUMN
     elif option == 4:
-        filter= RECORD_COLUMNS
-    else:
-        print("This is not a valid option number.")
-    return filter
+        filter_list= RECORD_COLUMNS
+    return filter_list
 
 def get_current_date()-> datetime:
     # grabs the current date
@@ -458,6 +438,34 @@ def get_patient_by_queue(queue_number,filter: list, today:datetime)-> pd.DataFra
         return patient[filter]
     # If there is no such patient, return None.
     return None
+
+def print_or_export(filter:list):
+    len_needed= len(filter)*10
+    terminal_length=shutil.get_terminal_size()
+    if terminal_length > len_needed:
+        return "export"
+    else:
+        return: "print"
+
+def export_query(query_df: pd.DataFrame) -> bool:
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    query_csv_path = f"datasets/query/query_{timestamp}.csv"
+    try:
+        # Appends the df to the CSV,
+        # only writing the header if the file is new.
+        # 'a' append mode in pandas creates a new csv file if none exists.
+        query_df.to_csv(
+            query_csv_path,
+            mode="a",
+
+            index=False,
+            encoding="utf-8"
+        )
+
+    # The file is open in another program (e.g. Excel) or cannot be written.
+    except OSError:
+        return False
+     
 
 
 # ======================================================================
