@@ -40,7 +40,20 @@ def get_medicines(ai_output: dict) -> list:
 
 def get_classification(ai_medicine: str, hsa_df: pd.DataFrame) -> str | None:
     """Look up the HSA classification of a medicine, e.g. Prescription
-    Only. Returns None if the medicine is not in the HSA dataset."""
+    Only. If the medicine matches several rows, the least restrictive
+    classification is returned. This is because if the same medicine is
+    available at a retail store, there is no need to go to a pharmacist
+    or a doctor. Returns None if the medicine is not in the HSA dataset."""
+
+    # HSA classifications ordered from least to most restrictive.
+    classification_order = [
+        "General Sale List",
+        "Pharmacy Only",
+        "Prescription Only"
+    ]
+
+    # Variable to store the least restrictive classification found so far.
+    least_restrictive = None
 
     # Go through the HSA dataset one row at a time. The row number is used
     # to get the drug name and active ingredient from that same row.
@@ -51,11 +64,25 @@ def get_classification(ai_medicine: str, hsa_df: pd.DataFrame) -> str | None:
         # Check if the AI medicine matches either field.
         if ai_medicine in drug_name or ai_medicine in ingredient:
 
-            # Return the HSA classification from the same row.
-            return hsa_df["Classification"][row]
+            # Get the HSA classification from the same row.
+            classification = hsa_df["Classification"][row]
 
-    # Return None if medicine is not found.
-    return None
+            # Skip classifications that are not in the order list.
+            if classification not in classification_order:
+                continue
+
+            # General Sale List is the least restrictive, so stop searching.
+            if classification == classification_order[0]:
+                return classification
+
+            # Keep it if it is less restrictive than the one stored.
+            if (least_restrictive is None
+                    or classification_order.index(classification)
+                    < classification_order.index(least_restrictive)):
+                least_restrictive = classification
+
+    # Return the least restrictive classification, or None if not found.
+    return least_restrictive
 
 
 # ======================================================================

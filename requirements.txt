@@ -7,3 +7,4 @@ httpx
 httpx2
 pylint
 python-dotenv
+tabulate
