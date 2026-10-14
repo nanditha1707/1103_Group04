@@ -132,24 +132,21 @@ def test_emergency_chest_pain(monkeypatch):
     assert result is None
 
 
-def test_underage_pregnancy(monkeypatch):
+def test_underage_patient(monkeypatch):
 
     give_inputs(monkeypatch, [
         "Y",
         "JANE TAN",
         "T1111111A",
         "F",
-        "15",
-        "+65 93456789",
-        "Y"                 # Pregnant
+        "17"                # Age
     ])
 
     result = io.run_questions()
 
-    print("\nSCENARIO: Underage Pregnancy")
-    print("Age: 15")
-    print("Pregnant: Y")
-    print("Expected: Registration stops and patient is sent to nurse")
+    print("\nSCENARIO: Underage Patient")
+    print("Age: 17")
+    print("Expected: Registration stops and patient is sent to manual registration")
     print("Actual:", result)
 
     assert result is None

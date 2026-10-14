@@ -34,11 +34,13 @@ EMERGENCY_KEYS = [
     "signs_of_stroke",
     "self_harm",
 ]
-UNDERAGE_PREGNANCY_AGE = 16
 NURSE_ALERT_MESSAGE = (
     "You need immediate medical attention. "
     "Please approach a nurse right away for help."
 )
+# Users under this age cannot self register, so registration stops.
+MINIMUM_AGE = 18
+MANUAL_REGISTRATION_MESSAGE = "Please proceed to manual registration."
 
 # ======================================================================
 # VALIDATION FUNCTIONS
@@ -586,10 +588,11 @@ def run_questions():
         if answer_is_valid != True:
             continue
 
-        # If the user needs a nurse immediately,
-        # registration stops here.
-        if needs_nurse(all_user_answers):
-            print_message(NURSE_ALERT_MESSAGE)
+        # If the answers so far mean registration cannot continue,
+        # it stops here.
+        stop_message = get_stop_message(all_user_answers)
+        if stop_message:
+            print_message(stop_message)
             return None
 
     return all_user_answers
@@ -675,21 +678,20 @@ def has_emergency_answer(answers_dict: dict) -> bool:
             return True
     return False
 
-def is_underage_pregnancy(answers_dict: dict) -> bool:
-    """Returns True if the user is pregnant and under 16 years old.
+def is_underage(answers_dict: dict) -> bool:
+    """Returns True if the user is under MINIMUM_AGE. False if the age
+    question has not been answered yet."""
+    age = answers_dict.get("age")
+    return age is not None and int(age) < MINIMUM_AGE
 
-    A pregnancy answer left over from before the gender was changed to
-    M no longer applies, so it is ignored."""
-    return (
-        not skip_if_male(answers_dict)
-        and answers_dict.get("pregnancy") == "Y"
-        and int(answers_dict["age"]) < UNDERAGE_PREGNANCY_AGE
-    )
-
-def needs_nurse(answers_dict: dict) -> bool:
-    """Returns True if the answers so far mean the user needs a nurse
-    immediately, so registration should stop."""
-    return has_emergency_answer(answers_dict) or is_underage_pregnancy(answers_dict)
+def get_stop_message(answers_dict: dict) -> str | None:
+    """Returns the message to show if the answers so far mean
+    registration should stop, otherwise None."""
+    if has_emergency_answer(answers_dict):
+        return NURSE_ALERT_MESSAGE
+    if is_underage(answers_dict):
+        return MANUAL_REGISTRATION_MESSAGE
+    return None
 
 def validate_orchestrator(
     isvalid_answer: bool, user_answer: str, state: int, answers_dict: dict
@@ -801,7 +803,7 @@ def confirm_inputs(answers_dict: dict) -> bool | None:
     confirming.
 
     Returns True once the answers are confirmed, or None if the user
-    types quit, changes consent to N or needs a nurse immediately."""
+    types quit, changes consent to N or registration has to stop."""
     header = "Confirmation Screen"
     # Confirmation should break if user chooses to change consent to N
     while answers_dict["consent"] == "Y":
@@ -844,10 +846,11 @@ def confirm_inputs(answers_dict: dict) -> bool | None:
         if edit_answer(state_to_edit, answers_dict):
             break
 
-        # If the edited answer means the user needs a nurse immediately,
-        # registration stops here.
-        if needs_nurse(answers_dict):
-            print_message(NURSE_ALERT_MESSAGE)
+        # If the edited answer means registration cannot continue,
+        # it stops here.
+        stop_message = get_stop_message(answers_dict)
+        if stop_message:
+            print_message(stop_message)
             return None
 
     # Only way to break out of the while loop,
