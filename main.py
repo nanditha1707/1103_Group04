@@ -89,6 +89,9 @@ def healthcare_portal_routing(option:str):
                 elif report_option == "3":
                     result = data.get_patient_type_breakdown(previous_records_df, date)
                     header = "Patient Type Breakdown Report"
+                else:
+                    result = None
+                    error_message = "This is not a valid option number!"
                 if result:
                     io.print_df_and_reports(result, header)
                 else:
@@ -97,7 +100,8 @@ def healthcare_portal_routing(option:str):
                 error_message = date_error
         else:
             error_message = option_error
-
+    else:
+        error_message= "This is not a valid option number!"
     if error_message:
         io.print_message(error_message)
 

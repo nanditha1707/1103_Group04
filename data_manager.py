@@ -489,7 +489,7 @@ def print_or_export(filter_columns:list):
     header_width_needed = sum(len(item) for item in filter_columns)
     width_needed = max(width_needed, header_width_needed)
     terminal_width=shutil.get_terminal_size().columns
-    if terminal_width > width_needed:
+    if terminal_width >= width_needed:
         return "print"
     else:
         return "export"
