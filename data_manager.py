@@ -354,7 +354,16 @@ def create_records_file_if_missing() -> bool:
 
     try:
         RECORDS_DIR.mkdir(exist_ok=True)
-        shutil.copyfile(SEED_RECORDS_CSV_PATH, RECORDS_CSV_PATH)
+        # Read the seed file first, so if it is missing the records
+        # file is never created.
+        # "b" copies the bytes exactly in binary mode, so copy is
+        # identical to the seed.
+        with open(SEED_RECORDS_CSV_PATH, "rb") as seed_file:
+            seed_contents = seed_file.read()
+
+        # Create the records file and write the seed contents into it.
+        with open(RECORDS_CSV_PATH, "wb") as records_file:
+            records_file.write(seed_contents)
 
     # The seed file is missing or the records folder cannot be written.
     # The program still runs and starts with no records.
