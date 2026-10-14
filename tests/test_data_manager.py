@@ -15,9 +15,16 @@ import data_manager as data
 def test_clean_icd_data():
 
     fake_icd = pd.DataFrame({
+        "Code": [
+            " ca00 ",
+            "CA00",
+            "8A80",
+            "CA02",
+            "CA03"
+        ],
         "Title": [
-            "Common Cold",
-            "Common Cold",
+            " Acute nasopharyngitis ",
+            "Acute nasopharyngitis",
             "Migraine",
             "",
             "-"
@@ -28,16 +35,21 @@ def test_clean_icd_data():
 
     print("\nSCENARIO: Clean ICD Data")
     print("Expected:")
-    print("- Duplicate Common Cold removed")
+    print("- Codes and names stripped and uppercased")
+    print("- Duplicate Acute nasopharyngitis removed")
     print("- Empty value removed")
     print("- Dash value removed")
     print("- Migraine remains")
     print("Actual:")
     print(result)
 
+    assert list(result["Code"]) == [
+        "CA00",
+        "8A80"
+    ]
     assert list(result["DiseaseName"]) == [
-        "Common Cold",
-        "Migraine"
+        "ACUTE NASOPHARYNGITIS",
+        "MIGRAINE"
     ]
 
 
@@ -264,8 +276,7 @@ def test_export_record(tmp_path, monkeypatch):
     result = data.export_record(
         user_answers,
         ai_output,
-        logic_result,
-        None
+        logic_result
     )
 
     saved_records = pd.read_csv(

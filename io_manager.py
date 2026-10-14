@@ -16,7 +16,6 @@ QUIT_SIGNAL = -99
 QUIT_COMMAND = "QUIT"
 BACK_COMMAND = "BACK"
 REG_EXIT_MESSAGE = "Exiting The Registration Process!"
-FILE_PATH = "Put here later" #To Be Updated
 
 def load_symptoms() -> list:
     """Reads the symptoms dataset. Returns all symptom names in
@@ -575,7 +574,8 @@ def run_questions():
 
         # If the user typed 'back',
         # skip the rest of the loop and ask the previous question.
-        # current_state was already set to QUIT_SIGNAL in process_quit_or_back().
+        # current_state was already set to the previous question
+        # in process_quit_or_back().
         elif current_user_answer == BACK_COMMAND:
             continue
 
@@ -656,7 +656,7 @@ def append_list_if_unique(list: list, user_answer: str):
     for value in list:
         if value == user_answer:
             print("This value already exists in the list!")
-            return list
+            return
     list.append(user_answer)
 
 def answers_appending(user_answer: str, answers_dict: dict, state: int) -> int:

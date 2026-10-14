@@ -12,7 +12,7 @@ from dotenv import load_dotenv
 from google import genai
 from google.genai import errors as genai_errors
 
-import data_manager as data
+import logic_manager as logic
 
 # Timeout for 1 AI API request.
 REQUEST_TIMEOUT_SECONDS = 20
@@ -147,14 +147,6 @@ Emergency:
 Symptom definitions:
 - 'high fever' means a temperature at or above 39 degrees Celsius.
 - 'fever' means a temperature below 39 degrees Celsius."""
-
-DF_ICD11 = pd.read_csv(data.ICD_CSV_PATH)
-DF_HSA = pd.read_csv(data.HSA_CSV_PATH)
-VALID_DIAGNOSES = DF_ICD11["Title"].str.strip().str.upper()
-VALID_CODES = DF_ICD11["Code"].str.strip().str.upper()
-VALID_MEDICINES = pd.concat(
-    [DF_HSA["Productname"], DF_HSA["Activeingredients"]]
-).str.strip().str.upper()
 
 # Reads API key from local .env file.
 load_dotenv(override=True)
@@ -400,11 +392,17 @@ def format_ai_output(ai_output: dict) -> dict:
 # ======================================================================
 # CORE FUNCTIONS
 # ======================================================================
-def get_ai_response(context: str, prompt: str, schema: dict) -> dict:
+def get_ai_response(
+    context: str,
+    prompt: str,
+    schema: dict,
+    icd_df: pd.DataFrame,
+    hsa_df: pd.DataFrame | None
+) -> dict:
     """Try each model in MODELS until one returns a valid JSON reply.
 
     Errors are classified to decide whether to retry, switch model,
-    switch provider or fail immediately. Returns an error dict if 
+    switch provider or fail immediately. Returns an error dict if
     nothing works before TOTAL_TIMEOUT_SECONDS runs out.
     """
     
@@ -434,7 +432,7 @@ def get_ai_response(context: str, prompt: str, schema: dict) -> dict:
             # ValueError is classified as RETRY_SAME_MODEL, so invalid ai output
             # fails validation and retries the same model, then switches model / provider
             # once retries run out, the same as other errors.
-            if not validate_ai_output(ai_output):
+            if not validate_ai_output(ai_output, icd_df, hsa_df):
                 raise ValueError("AI output not found in the ICD11 / HSA datasets")
 
             return ai_output
@@ -495,48 +493,62 @@ def create_ai_prompt(ai_output: dict) -> str:
 
     return ai_prompt
 
-def get_ai_output(answers_filtered: dict) -> dict:
+def get_ai_output(
+    answers_filtered: dict,
+    icd_df: pd.DataFrame | None,
+    hsa_df: pd.DataFrame | None
+) -> dict:
     """Build the prompt from the filtered patient answers and return the
-    validated AI output, or an error dict if every model failed."""
+    validated AI output, or an error dict if every model failed.
+
+    icd_df and hsa_df are the cleaned datasets loaded by data_manager.
+    hsa_df is the same one logic_manager routes with, so every medicine
+    that passes validation has a classification."""
+
+    # Without ICD data the diagnoses cannot be checked, so the AI is not
+    # called and the patient is sent to manual registration.
+    if icd_df is None:
+        return {"error": CONTACT_SUPPORT_MESSAGE}
+
     ai_prompt = create_ai_prompt(answers_filtered)
-    return get_ai_response(AI_MEDICAL_CONTEXT, ai_prompt, AI_OUTPUT_SCHEMA)
+    return get_ai_response(
+        AI_MEDICAL_CONTEXT, ai_prompt, AI_OUTPUT_SCHEMA, icd_df, hsa_df
+    )
 
 
 # ======================================================================
 # AI OUTPUT VALIDATION FUNCTIONS
 # ======================================================================
-def validate_diagnosis(ai_diagnosis: str, ai_code: str) -> bool:
+def validate_diagnosis(ai_diagnosis: str, ai_code: str, icd_df: pd.DataFrame) -> bool:
     """
-    Check that an AI diagnosis title and its code are in the ICD11 dataset.
+    Check that an AI diagnosis title and its code are in the cleaned
+    ICD11 dataset.
 
     Returns True only if the title and code are an exact match on the
     same row, so a real title paired with the wrong code fails.
     Expects the title and code to already be stripped and uppercased by
-    format_ai_output.
+    format_ai_output, the same as the cleaned dataset.
     """
 
-    # Go through DF_ICD11 one row at a time. The row number is used to get
-    # the "Title" and "Code" from that same row. Return True as soon as the
-    # ai_output diagnosis and code match on the same row.
-    for row in range(len(VALID_DIAGNOSES)):
-        valid_diagnosis = VALID_DIAGNOSES[row]
-        valid_code = VALID_CODES[row]
+    # Creates a mask of the rows where both the disease name and the
+    # code match, so they have to be on the same row.
+    is_match = (icd_df["DiseaseName"] == ai_diagnosis) & (icd_df["Code"] == ai_code)
 
-        if ai_diagnosis == valid_diagnosis and ai_code == valid_code:
-            return True
-
-    return False
+    return bool(is_match.any())
 
 
-def validate_medicine(ai_medicine: str) -> bool:
+def validate_medicine(ai_medicine: str, hsa_df: pd.DataFrame) -> bool:
     """
-    Check that an AI medicine is in the HSA dataset.
+    Check that an AI medicine is in the cleaned HSA dataset.
 
     Returns True if the medicine is found inside any product name or
-    active ingredient, e.g. 'Paracetamol' is found in
-    'SUNNY PARACETAMOL TABLET 500 mg'. Returns False for an empty
+    active ingredient, e.g. 'PARACETAMOL' is found in
+    'SUNNY PARACETAMOL TABLET 500 MG'. Returns False for an empty
     medicine. Expects the medicine to already be stripped and uppercased
     by format_ai_output.
+
+    Uses the same lookup as logic_manager's routing, so a medicine that
+    passes validation always has an HSA classification to route with.
     """
 
     # An empty medicine is never valid. This check is needed because ''
@@ -544,17 +556,12 @@ def validate_medicine(ai_medicine: str) -> bool:
     if ai_medicine == "":
         return False
 
-    # Return True as soon as the AI output medicine is contained in a
-    # dataset entry, e.g. 'Paracetamol' in 'SUNNY PARACETAMOL TABLET 500 mg'.
-    for medicine in VALID_MEDICINES:
-        if ai_medicine in medicine:
-            return True
-
-    # else if AI output medicine not in the dataset then return False.
-    return False
+    return logic.get_classification(ai_medicine, hsa_df) is not None
 
 
-def validate_ai_output(ai_output: dict) -> bool:
+def validate_ai_output(
+    ai_output: dict, icd_df: pd.DataFrame, hsa_df: pd.DataFrame | None
+) -> bool:
     """
     Check the AI output against the ICD11 and HSA datasets.
 
@@ -574,16 +581,24 @@ def validate_ai_output(ai_output: dict) -> bool:
     primary_diagnosis_is_valid = validate_diagnosis(
         ai_output["primary_diagnosis_ICD11_Title"],
         ai_output["primary_diagnosis_ICD11_Code"],
+        icd_df,
     )
     secondary_diagnosis_is_valid = validate_diagnosis(
         ai_output["secondary_diagnosis_ICD11_Title"],
         ai_output["secondary_diagnosis_ICD11_Code"],
+        icd_df,
     )
 
     # Return False if either doesn't match. Only pass validation when
     # both primary and secondary diagnosis are valid.
     if not primary_diagnosis_is_valid or not secondary_diagnosis_is_valid:
         return False
+
+    # Without HSA data the medicines cannot be checked. logic_manager
+    # sends the patient to a doctor in that case, so only the diagnoses
+    # need to be valid.
+    if hsa_df is None:
+        return True
 
     # Step 2: Collect the 4 medicine fields into a list so they can be
     # checked one at a time.
@@ -598,7 +613,7 @@ def validate_ai_output(ai_output: dict) -> bool:
     valid_medicine_count = 0
 
     for medicine in medicines:
-        if validate_medicine(medicine):
+        if validate_medicine(medicine, hsa_df):
             valid_medicine_count += 1
 
     # Case 1 (normal): all 4 medicines are valid and the 2 diagnosis match.

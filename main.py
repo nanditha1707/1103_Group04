@@ -51,8 +51,8 @@ def patient_query_handler(date) ->str | None:
             if query_response is not None and not query_response.empty:
                 if next_action == "print":
                     io.print_df_and_reports(query_response)
-                elif next_action == "export":
-                    data.export_query(query_response)
+                elif next_action == "export" and not data.export_query(query_response):
+                    error = "The query results could not be exported!"
             else:
                 error ="There is no such patient, please enter a valid queue number!"
     else:
@@ -146,8 +146,6 @@ def main_menu():
 icd_df, hsa_df = data.get_cleaned_datasets()
 # Copy the starter patient records on the first run
 data.create_records_file_if_missing()
-#Load the previous entry records
-previous_records_df= data.load_records()
 
 while True:
     # 1. I/O manager: collect the patient's answers
@@ -161,7 +159,7 @@ while True:
     answers_filtered = io.filter_answers(answers)
 
     # 2. AI manager: get a diagnosis and medicines
-    ai_output = ai.get_ai_output(answers_filtered)
+    ai_output = ai.get_ai_output(answers_filtered, icd_df, hsa_df)
 
     # get_ai_output returns a dictionary when every AI model failed.
     # The key is "error". The value of the key is the message telling 
@@ -174,7 +172,7 @@ while True:
     logic_result = logic.process_result(ai_output, hsa_df)
 
     # 4. Data manager: save the completed record to patient_records.csv
-    is_export=data.export_record(answers, ai_output, logic_result, previous_records_df)
+    is_export=data.export_record(answers, ai_output, logic_result)
     if not is_export:
         error=("The program has encountered an error."
               "Please approach a nurse or clerk for manual registration.")

@@ -112,59 +112,58 @@ ROUTE_LABELS = {
 # ======================================================================
 # DATASET LOADING FUNCTIONS
 # ======================================================================
-def load_icd_data():
-    """Load the ICD-11 dataset. Return None if the file is missing or
+def load_dataset(csv_path: Path) -> pd.DataFrame | None:
+    """Load a dataset CSV. Return None if the file is missing or
     cannot be read."""
 
     try:
-        icd_df = pd.read_csv(
-            ICD_CSV_PATH,
+        return pd.read_csv(
+            csv_path,
             low_memory=False
         )
 
-        return icd_df
-
-    except FileNotFoundError:
-        return None
-
-    except pd.errors.ParserError:
-        return None
-
-
-def load_hsa_data():
-    """Load the HSA dataset. Return None if the file is missing or
-    cannot be read."""
-
-    try:
-        hsa_df = pd.read_csv(
-            HSA_CSV_PATH,
-            low_memory=False
-        )
-
-        return hsa_df
-
-    except FileNotFoundError:
-        return None
-    
-    except pd.errors.ParserError:
+    except (FileNotFoundError, pd.errors.ParserError):
         return None
 
 
 # ======================================================================
 # DATASET CLEANING FUNCTIONS
 # ======================================================================
-def clean_icd_data(icd_df):
-    """Return the ICD-11 dataset with only cleaned, unique disease names."""
+def replace_blank_values(dataset_df: pd.DataFrame) -> pd.DataFrame:
+    """Return the dataset with empty and dash values replaced by NaN,
+    so they can be removed with dropna."""
 
-    # Keep only the disease title column.
+    # Replace empty strings with NaN.
+    dataset_df = dataset_df.replace(
+        r"^\s*$",
+        np.nan,
+        regex=True
+    )
+
+    # Replace dash values with NaN.
+    dataset_df = dataset_df.replace(
+        r"^\s*[-–—]+\s*$",
+        np.nan,
+        regex=True
+    )
+
+    return dataset_df
+
+
+def clean_icd_data(icd_df):
+    """Return the ICD-11 dataset with only the disease codes and names,
+    cleaned and without duplicates."""
+
+    # Keep only the code and disease title columns.
     icd_df = icd_df[
         [
+            "Code",
             "Title"
         ]
     ].copy()
 
 
-    # Rename the column to make it clearer.
+    # Rename the title column to make it clearer.
     icd_df = icd_df.rename(
         columns={
             "Title": "DiseaseName"
@@ -172,34 +171,30 @@ def clean_icd_data(icd_df):
     )
 
 
-    # Replace empty strings with NaN.
-    icd_df = icd_df.replace(
-        r"^\s*$",
-        np.nan,
-        regex=True
-    )
+    icd_df = replace_blank_values(icd_df)
 
 
-    # Replace dash values with NaN.
-    icd_df = icd_df.replace(
-        r"^\s*[-–—]+\s*$",
-        np.nan,
-        regex=True
-    )
-
-
-    # Remove rows where the disease name is missing.
+    # Remove rows where the code or disease name is missing.
     icd_df = icd_df.dropna(
         subset=[
+            "Code",
             "DiseaseName"
         ]
     )
 
-    # Remove extra spaces.
+    # Remove extra spaces and uppercase, to match the formatted AI output.
+    icd_df["Code"] = (
+        icd_df["Code"]
+        .astype(str)
+        .str.strip()
+        .str.upper()
+    )
+
     icd_df["DiseaseName"] = (
         icd_df["DiseaseName"]
         .astype(str)
         .str.strip()
+        .str.upper()
     )
 
     # Remove duplicate diseases.
@@ -244,19 +239,7 @@ def clean_hsa_data(hsa_df):
     )
 
 
-    # Replace empty strings with NaN.
-    hsa_df = hsa_df.replace(
-        r"^\s*$",
-        np.nan,
-        regex=True
-    )
-
-    # Replace dash values with NaN.
-    hsa_df = hsa_df.replace(
-        r"^\s*[-–—]+\s*$",
-        np.nan,
-        regex=True
-    )
+    hsa_df = replace_blank_values(hsa_df)
 
 
     # Remove rows that are missing important information.
@@ -322,22 +305,17 @@ def clean_hsa_data(hsa_df):
 
 
 def get_cleaned_datasets():
-    """Load and clean both datasets. Return (None, None) if either
-    dataset fails to load."""
+    """Load and clean the ICD-11 and HSA datasets. Either one is None if
+    its file fails to load."""
 
-    icd_df = load_icd_data()
-    hsa_df = load_hsa_data()
+    icd_df = load_dataset(ICD_CSV_PATH)
+    hsa_df = load_dataset(HSA_CSV_PATH)
 
-    if icd_df is None or hsa_df is None:
-        return None, None
+    if icd_df is not None:
+        icd_df = clean_icd_data(icd_df)
 
-    icd_df = clean_icd_data(
-        icd_df
-    )
-
-    hsa_df = clean_hsa_data(
-        hsa_df
-    )
+    if hsa_df is not None:
+        hsa_df = clean_hsa_data(hsa_df)
 
     return icd_df, hsa_df
 
@@ -345,12 +323,11 @@ def get_cleaned_datasets():
 # ======================================================================
 # PATIENT RECORD FUNCTIONS
 # ======================================================================
-def create_records_file_if_missing() -> bool:
+def create_records_file_if_missing() -> None:
     """Copy the starter records into the records folder if there is no
-    patient records CSV yet. Existing records are never overwritten.
-    Return False if the starter records could not be copied."""
+    patient records CSV yet. Existing records are never overwritten."""
     if RECORDS_CSV_PATH.exists():
-        return True
+        return
 
     try:
         RECORDS_DIR.mkdir(exist_ok=True)
@@ -368,9 +345,7 @@ def create_records_file_if_missing() -> bool:
     # The seed file is missing or the records folder cannot be written.
     # The program still runs and starts with no records.
     except OSError:
-        return False
-
-    return True
+        pass
 
 
 def load_records() -> pd.DataFrame:
@@ -397,8 +372,7 @@ def join_symptoms(patient_record: dict) -> dict:
 def export_record(
     all_user_responses: dict,
     ai_output: dict,
-    logic_result: dict,
-    records_df: pd.DataFrame
+    logic_result: dict
 ) -> bool:
     """Save a completed patient record to the patient records CSV.
     Return True if saved, False if the file could not be written."""
@@ -441,11 +415,6 @@ def export_record(
     # The file is open in another program (e.g. Excel) or cannot be written.
     except OSError:
         return False
-    
-    # Only update the history after the save succeeded,
-    # so it never contains a record that is missing from the CSV.
-    if records_df is not None:
-        records_df.loc[len(records_df)] = new_record_df.iloc[0]
 
     return True
 
@@ -467,14 +436,16 @@ def get_patient_filter(option: str)-> list:
         filter_columns= RECORD_COLUMNS
     return filter_columns
 
-def get_current_date()-> datetime:
+def get_current_date()-> str:
     # grabs the current date
     today = datetime.now().strftime("%Y-%m-%d")
     return today
 
 def get_patient_by_queue(records:pd.DataFrame, queue_number,filter_columns: list, today: str)-> pd.DataFrame:
-    """Find today's patient with the given queue number. Return their
-    record as a dict, or None if they are not found."""
+    """Find the patient with the given queue number on the given date.
+    Return a DataFrame of their record with only the filter_columns,
+    which is empty if no patient matches, or None if there are no
+    records."""
 
     # Checks if records exist. If they do,
     # continues with the block.
@@ -495,15 +466,17 @@ def print_or_export(filter_columns:list):
         return "export"
 
 def export_query(query_df: pd.DataFrame) -> bool:
+    """Save the query results to a new timestamped CSV in the query
+    folder. Return True if saved, False if the file could not be
+    written."""
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     query_csv_path = QUERY_DIR / f"query_{timestamp}.csv"
     try:
         # Creates the query folder if it does not exist yet.
         QUERY_DIR.mkdir(exist_ok=True)
 
-        # Appends the df to the CSV,
-        # only writing the header if the file is new.
-        # 'a' append mode in pandas creates a new csv file if none exists.
+        # Writes the df to a new CSV file with a header.
+        # The timestamp in the file name keeps each export separate.
         query_df.to_csv(
             query_csv_path,
             mode="w",
@@ -514,7 +487,8 @@ def export_query(query_df: pd.DataFrame) -> bool:
     # The file is open in another program (e.g. Excel) or cannot be written.
     except OSError:
         return False
-     
+
+    return True
 
 
 # ======================================================================
