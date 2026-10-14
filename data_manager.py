@@ -523,49 +523,18 @@ def get_medicine_count(date, medicine):
     return count
 
 
-def get_medicine_breakdown(date):
+def get_medicine_breakdown(date, records):
     """Return a dict of each medicine issued on a given date and how
     many times it was issued."""
 
-    # Dictionary to store each medicine and its count.
-    medicine_counts={}
+    # Filter to the selected date once.
+    day_records = records.loc[records["date"] == date, MEDICINE_FIELDS]
 
-    try:
-        # Open patient records.
-        records = pd.read_csv(RECORDS_CSV_PATH)
+    # Flatten all medicine columns into one Series, drop empties, and count.
+    medicine_counts = day_records.stack().value_counts()
 
-    except FileNotFoundError:
-        return medicine_counts
-
-    # Medicine fields from AI output.
-    medicine_fields =[
-        "primary_diagnosis_medicine_1",
-        "primary_diagnosis_medicine_2",
-        "secondary_diagnosis_medicine_1",
-        "secondary_diagnosis_medicine_2"
-    ]
-
-    # Check each patient.
-    for index, patient in records.iterrows():
-
-        # Only check records from the selected date.
-        if patient["date"]==date:
-
-            # Check all medicine fields.
-            for field in medicine_fields:
-
-                medicine =patient[field]
-
-                # Only count if the medicine is not empty.
-                if pd.notna(medicine):
-
-                    if medicine in medicine_counts:
-                        medicine_counts[medicine] += 1
-
-                    else:
-                        medicine_counts[medicine] = 1
-
-    return medicine_counts
+    # Returns medicine counts as a dictionary
+    return medicine_counts.to_dict()
 
 
 def get_patient_type_breakdown(date):
