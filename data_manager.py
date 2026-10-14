@@ -100,6 +100,14 @@ MEDICINE_FIELDS=[
     "secondary_diagnosis_medicine_2"
 ]
 
+# Maps the route value stored in the records to the matching label.
+ROUTE_LABELS = {
+    "EMERGENCY": "Emergency",
+    "Doctor": "Doctor",
+    "Pharmacist": "Pharmacy",
+    "Retail": "Retail",
+}
+
 
 # ======================================================================
 # DATASET LOADING FUNCTIONS
@@ -537,41 +545,22 @@ def get_medicine_breakdown(date, records):
     return medicine_counts.to_dict()
 
 
-def get_patient_type_breakdown(date):
+def get_patient_type_breakdown(records: pd.DataFrame, date: str):
     """Return how many Emergency, Doctor, Pharmacy and Retail patients
     there were on a given date."""
 
-    # Start all counts at 0.
-    patient_types={
-        "Emergency":0,
-        "Doctor":0,
-        "Pharmacy":0,
-        "Retail":0
-    }
+    # Creates a mask to filter the df by, 
+    # and filters the df for matching rows.
+    is_on_date = records["date"] == date
+    records_on_date = records[is_on_date]
+    # Get the count for how many times each route type appears.
+    route_counts = records_on_date["route"].value_counts()
 
-    try:
-        # Open patient records.
-        records = pd.read_csv(RECORDS_CSV_PATH)
-
-    except FileNotFoundError:
-        return patient_types
-
-    # Check each patient.
-    for _, patient in records.iterrows():
-
-        # Only check records from the selected date.
-        if patient["date"]==date:
-
-            if patient["route"]=="EMERGENCY":
-                patient_types["Emergency"]+=1
-
-            elif patient["route"]=="Doctor":
-                 patient_types["Doctor"]+=1
-
-            elif patient["route"]=="Pharmacist":
-                 patient_types["Pharmacy"]+=1
-
-            elif patient["route"]=="Retail":
-                 patient_types["Retail"]+=1
+    # Put the label and matching value into the dictionary, 
+    # ignoring any entries with no value.
+    patient_types = {}
+    for route, label in ROUTE_LABELS.items():
+        if route in route_counts:
+            patient_types[label] = int(route_counts[route])
 
     return patient_types
