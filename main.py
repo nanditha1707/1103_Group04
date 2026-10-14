@@ -39,16 +39,20 @@ def patient_query_handler(date) ->str | None:
     filter_option= io.dynamic_menu_print(FILTER_OPTIONS)
     option_error = io.validate_option(filter_option)
     if option_error is None:
-        filter= data.get_patient_filter(filter_option)
-        if filter is None:
+        filter_list= data.get_patient_filter(filter_option)
+        if filter_list is None:
             error = "This is not a valid option number!"
         else:
-            queue = input("Enter the Patient's Queue Number here.").strip().upper()
+            queue = input("Enter the Patient's Queue Number here: ").strip().upper()
             # Load the latest records so patients registered this session are found.
             records = data.load_records()
-            query_response= data.get_patient_by_queue(records, queue, filter, date)
+            query_response= data.get_patient_by_queue(records, queue, filter_list, date)
+            next_action = data.print_or_export(filter_list)
             if query_response is not None and not query_response.empty:
-                io.print_df_and_reports(query_response)
+                if next_action == "print":
+                    io.print_df_and_reports(query_response)
+                elif next_action == "export":
+                    data.export_query(query_response)
             else:
                 error ="There is no such patient, please enter a valid queue number!"
     else:
