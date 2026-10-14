@@ -78,8 +78,7 @@ def healthcare_portal_routing(option:str):
             date = input("Enter the Date here. (YYYY-MM-DD): ").strip()
             date_error = io.validate_date(date)
             if date_error is None:
-                records = data.load_records()
-
+                previous_records_df = data.load_records()
                 if report_option == "1":
                     medicine = input("Enter a medicine name: ").strip().upper()
                     result = data.get_medicine_count(previous_records_df,medicine, date)
@@ -102,9 +101,6 @@ def healthcare_portal_routing(option:str):
     if error_message:
         io.print_message(error_message)
 
-
-
-
 def main_menu():
     header = "Main Menu"
     main_menu_option= io.dynamic_menu_print(MAIN_MENU_OPTIONS, header)
@@ -119,7 +115,7 @@ def main_menu():
             confirmed = io.confirm_inputs(all_answers)
             if confirmed:
                 confirm_message = "Thank you for confirming your inputs."
-                print(confirm_message)
+                io.print_message(confirm_message)
                 return all_answers
             else:
                 error = io.REG_EXIT_MESSAGE
