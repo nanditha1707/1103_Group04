@@ -520,21 +520,21 @@ def export_query(query_df: pd.DataFrame) -> bool:
 # ======================================================================
 # REPORT FUNCTIONS
 # ======================================================================
-def get_medicine_count(records: pd.DataFrame, medicine: str, date: str) -> pd.DataFrame:
-    """Return a one-row DataFrame with the medicine and how many times
-    it was issued on a given date."""
+def get_medicine_count(records: pd.DataFrame, medicine: str, date: str) -> dict:
+    """Return a dict with how many times a specific medicine was issued
+    on a given date. Returns an empty dict if it was not issued."""
 
-    # Keep only the medicine columns for the selected date.
+    # Filter to the selected date once.
     day_records = records.loc[records["date"] == date, MEDICINE_FIELDS]
 
-    # Flatten to one Series (empty cells are dropped) and lowercase it.
-    medicines = day_records.stack().astype(str)
+    # Flatten all medicine columns into one Series, drop empties, and count.
+    medicine_counts = day_records.stack().value_counts()
 
-    # Count the entries that match the medicine.
-    count = int((medicines == medicine).sum())
+    # Keep only the requested medicine, if it appears at all.
+    if medicine in medicine_counts.index:
+        return {medicine: int(medicine_counts[medicine])}
 
-    # Wrap the result in a one-row DataFrame.
-    return pd.DataFrame({"Medicine": [medicine], "Count": [count]})
+    return {}
 
 
 def get_medicine_breakdown(records: pd.DataFrame, date: str) -> dict:

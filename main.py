@@ -48,7 +48,7 @@ def patient_query_handler(date) ->str | None:
             records = data.load_records()
             query_response= data.get_patient_by_queue(records, queue, filter, date)
             if query_response is not None and not query_response.empty:
-                io.print_df(query_response)
+                io.print_df_and_reports(query_response)
             else:
                 error ="There is no such patient, please enter a valid queue number!"
     else:
@@ -62,7 +62,7 @@ def healthcare_portal_routing(option:str):
     if option == 1:
         error_message = patient_query_handler(today)
     if option == 2:
-        datetime_answer = str(input("Enter the Date here. (YYYY-MM-DD)"))
+        datetime_answer = input("Enter the Date here. (YYYY-MM-DD): ").strip()
         error_message = io.validate_date(datetime_answer)
         if error_message is None:
             error_message = patient_query_handler(datetime_answer)
@@ -79,14 +79,14 @@ def healthcare_portal_routing(option:str):
                 if report_option == "1":
                     medicine = input("Enter a medicine name: ").strip().upper()
                     result = data.get_medicine_count(previous_records_df,medicine, date)
-                    header = "Specific Medicine Count:"
+                    header = ""
                 elif report_option == "2":
                     result = data.get_medicine_breakdown(previous_records_df, date)
                     header = "Medicine Breakdown Report"
                 elif report_option == "3":
                     result = data.get_patient_type_breakdown(previous_records_df, date)
                     header = "Patient Type Breakdown Report"
-                if result.empty and result is not None:
+                if result:
                     io.print_df_and_reports(result, header)
                 else:
                     error_message= "There is no matching records for the given date!"
