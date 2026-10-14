@@ -27,14 +27,11 @@ FILTER_OPTIONS =[
 # ======================================================================
 # CORE FUNCTIONS
 # ======================================================================
-def option_handler(option:str):
-    error_message = io.validate_option(option)
-    return error_message
 
 def patient_query_handler(date) ->str | None:
     error = None
     filter_option= io.dynamic_menu_print(FILTER_OPTIONS)
-    option_error = option_handler(filter_option)
+    option_error = io.validate_option(filter_option)
     if option_error is None:
         filter= data.get_patient_filter(filter_option)
         if filter is None:
@@ -88,7 +85,7 @@ def main_menu():
                 io.print_text(error)
     elif main_menu_option == "2":
         choice=io.dynamic_menu_print(HEALTHCARE_PORTAL_OPTIONS)
-        option_error= option_handler(choice)
+        option_error= io.validate_option(choice)
         if option_error is None:
             healthcare_portal_routing(choice)
         else:
