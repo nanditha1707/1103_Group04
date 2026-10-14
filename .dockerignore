@@ -4,6 +4,5 @@ README.md
 __pycache__
 .git
 .ruff_cache
-tests/
 records/
 query/
