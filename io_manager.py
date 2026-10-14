@@ -6,24 +6,28 @@ import difflib
 import re
 import textwrap
 from datetime import datetime
+from typing import Any
 
 import pandas as pd
 import phonenumbers
 
 import data_manager as data
 
+# Returned instead of a state or answers when the user quits.
 QUIT_SIGNAL = -99
+# Commands the user can type at any question, compared after uppercasing.
 QUIT_COMMAND = "QUIT"
 BACK_COMMAND = "BACK"
 REG_EXIT_MESSAGE = "Exiting The Registration Process!"
 
-def load_symptoms() -> list:
+def load_symptoms() -> list[str]:
     """Reads the symptoms dataset. Returns all symptom names in
     uppercase since user input is uppercased before matching."""
     symptoms_dataframe = pd.read_csv(data.SYMPTOMS_CSV_PATH)
     symptoms_column = symptoms_dataframe["term"].str.upper()
     return symptoms_column.tolist()
 
+# Loaded once on import so every symptom lookup uses the same list.
 SYMPTOMS_DIFFLIB_LIST = load_symptoms()
 # Answering Y to any of these questions means the user needs a nurse
 # immediately, so registration stops straight away.
@@ -103,6 +107,7 @@ def validate_name(user_answer: str) -> str | None:
 
 
 def validate_gender(user_answer: str) -> str | None:
+    """Only M or F are accepted."""
     if user_answer in ["M", "F"]:
         return None
     else:
@@ -163,7 +168,9 @@ def validate_empty(user_answer: str) -> str | None:
     else:
         return ("Invalid Input ")
 
-def validate_option(option:str):
+def validate_option(option: str) -> str | None:
+    """Validates a menu option. The blank check runs first so an empty
+    input gets the blank error instead of the number error."""
     is_number = validate_positive_integer(option)
     is_blank = validate_empty(option)
     if is_blank:
@@ -174,13 +181,18 @@ def validate_option(option:str):
         error = None
     return error
 
-def validate_date(user_answer: str):
+def validate_date(user_answer: str) -> str | None:
+    """Validates a date in YYYY-MM-DD format that exists on the
+    calendar, e.g. 2026-02-30 is rejected."""
     error = "Please enter a valid date in YYYY-MM-DD format (e.g. 2026-10-13)."
     user_answer = user_answer.strip()
 
+    # The regex checks the format first, since strptime also accepts
+    # single digit months and days such as 2026-1-5.
     if not re.fullmatch(r"[0-9]{4}-[0-9]{2}-[0-9]{2}", user_answer):
         return error
 
+    # strptime raises ValueError for dates that do not exist.
     try:
         datetime.strptime(user_answer, "%Y-%m-%d")
     except ValueError:
@@ -188,7 +200,9 @@ def validate_date(user_answer: str):
 
     return None
 
-def symptom_remove(symptom_list:list):
+def symptom_remove(symptom_list: list[str]) -> None:
+    """Asks which symptom to remove and removes it from symptom_list in
+    place. Nothing is removed if the symptom is not in the list."""
     # Prints the symptom_list
     print(symptom_list, sep=", ")
     # Initialises remove_target to the input value.
@@ -205,7 +219,7 @@ def symptom_remove(symptom_list:list):
                 symptom_list.remove(symptom)
                 return
 
-def match_symptom(symptom: str) -> tuple:
+def match_symptom(symptom: str) -> tuple[str | None, bool]:
     """Looks up the symptom in the symptoms dataset.
 
     Returns (symptom, True) for an exact match, (closest symptom, False)
@@ -273,7 +287,7 @@ def fever_severity() -> str | None:
 # symptom to add, or None if no symptom should be added.
 # Remove a Symptom and Done are always added after these options.
 
-SYMPTOM_OPTIONS = [
+SYMPTOM_OPTIONS: list[dict[str, Any]] = [
     {"label": "Cough", "symptom": "COUGH"},
     {"label": "Flu", "symptom": "FLU"},
     {"label": "Headache", "symptom": "HEADACHE"},
@@ -283,7 +297,7 @@ SYMPTOM_OPTIONS = [
 REMOVE_SYMPTOM_OPTION = str(len(SYMPTOM_OPTIONS) + 1)
 DONE_OPTION = str(len(SYMPTOM_OPTIONS) + 2)
 
-def build_symptom_menu() -> list:
+def build_symptom_menu() -> list[str]:
     """Builds the symptom menu lines from SYMPTOM_OPTIONS, followed by
     the Remove a Symptom and Done options."""
     symptom_menu = []
@@ -304,7 +318,7 @@ def chosen_symptom(option: str) -> str | None:
         return chosen_option["ask_function"]()
     return chosen_option["symptom"]
 
-def symptom_handler(previous_symptoms: list) -> list | str:
+def symptom_handler(previous_symptoms: list[str]) -> list[str] | str:
     """Shows the symptom menu until the user selects Done.
 
     Works on a copy of previous_symptoms, so the caller's list is never
@@ -353,7 +367,9 @@ def symptom_handler(previous_symptoms: list) -> list | str:
         if symptom is not None:
             append_list_if_unique(symptom_list, symptom)
 
-def symptom_input(previous_symptoms: list | None) -> tuple:
+def symptom_input(
+    previous_symptoms: list[str] | None
+) -> tuple[list[str] | str, bool | None]:
     """Input function for the symptoms question.
 
     Runs the symptom menu starting from the previous symptoms, which
@@ -368,7 +384,7 @@ def symptom_input(previous_symptoms: list | None) -> tuple:
     # The symptom menu has built in validation, so the list is valid.
     return symptom_answer, True
 
-def run_validation(ALL_QUESTIONS: dict, user_answer: str, state: int) -> bool:
+def run_validation(ALL_QUESTIONS: list[dict], user_answer: str, state: int) -> bool:
     """Selects the correct validation function for the current question
     and then runs it to check the user input.
 
@@ -431,7 +447,7 @@ def skip_if_male(answers_dict: dict) -> bool:
 # Set input_function to replace the default typed input for questions
 # that need their own input process, such as the symptoms menu.
 
-ALL_QUESTIONS = [
+ALL_QUESTIONS: list[dict[str, Any]] = [
     {
         "key": "consent",
         "prompt": (
@@ -541,7 +557,7 @@ ALL_QUESTIONS = [
 # CORE FUNCTIONS
 # ======================================================================
 
-def run_questions():
+def run_questions() -> dict | None:
     """This is the main run function. It uses a dictionary approach to 
     move between questions. all_questions variable stores a list of 
     dictionaries, each one containing a question.
@@ -549,12 +565,12 @@ def run_questions():
     This function cycles through the list of dictionaries to dynamically
     access the correct question based on the current state.
 
-    The output, all_user_responses, will be in structured dictionary
-    format."""
+    The output, all_user_answers, will be in structured dictionary
+    format. Returns None if the user quits or registration has to stop."""
 
     # Initialise state and dictionary to store all answers.
     current_state = 0
-    all_user_answers = {}
+    all_user_answers: dict = {}
     # Loop until every question has been answered.
     while current_state < len(ALL_QUESTIONS):
         # Returns the current user answer and its validity.
@@ -570,7 +586,7 @@ def run_questions():
         
         # If the user types quit or consent is "N", exit the function.
         if current_state == QUIT_SIGNAL:
-            return
+            return None
 
         # If the user typed 'back',
         # skip the rest of the loop and ask the previous question.
@@ -630,9 +646,15 @@ def should_skip(state: int, answers_dict: dict) -> bool:
     return skip_condition(answers_dict)
 
 
-def process_quit_or_back(user_answer: str, state: int, answers_dict: dict) -> int:
+def process_quit_or_back(
+    user_answer: str | list[str], state: int, answers_dict: dict
+) -> int:
     """
     This function handles when the user presses quit or back.
+
+    Returns QUIT_SIGNAL if the user typed quit or answered N to consent,
+    the previous question's state if the user typed back, otherwise the
+    state unchanged.
     """
     if user_answer == QUIT_COMMAND or (
         ALL_QUESTIONS[state]["key"] == "consent" and user_answer == "N"
@@ -652,14 +674,20 @@ def process_quit_or_back(user_answer: str, state: int, answers_dict: dict) -> in
             )
     return state
 
-def append_list_if_unique(list: list, user_answer: str):
-    for value in list:
+def append_list_if_unique(values: list[str], user_answer: str) -> None:
+    """Appends user_answer to values in place, unless it is already in
+    the list."""
+    for value in values:
         if value == user_answer:
             print("This value already exists in the list!")
             return
-    list.append(user_answer)
+    values.append(user_answer)
 
-def answers_appending(user_answer: str, answers_dict: dict, state: int) -> int:
+def answers_appending(
+    user_answer: str | list[str], answers_dict: dict, state: int
+) -> int:
+    """Stores a valid answer under its question's key and returns the
+    state of the next question that applies to the user."""
     # Stores the answer and moves on to the next question.
     answers_dict[ALL_QUESTIONS[state]["key"]] = user_answer
     state += 1
@@ -694,8 +722,19 @@ def get_stop_message(answers_dict: dict) -> str | None:
     return None
 
 def validate_orchestrator(
-    isvalid_answer: bool, user_answer: str, state: int, answers_dict: dict
-) -> bool:
+    isvalid_answer: bool | None,
+    user_answer: str | list[str],
+    state: int,
+    answers_dict: dict,
+) -> tuple[bool, int]:
+    """Validates the answer if it has not been validated yet, and stores
+    it if it is valid.
+
+    isvalid_answer is True if the input function already validated the
+    answer, or None if it still needs to be validated.
+
+    Returns whether the answer is valid and the state to go to next,
+    which is unchanged if the answer is invalid."""
     if isvalid_answer is None:
         # Runs the validation function on the current question which
         # returns True for valid and False for invalid user input.
@@ -708,7 +747,9 @@ def validate_orchestrator(
 
     return isvalid_answer, state
 
-def input_handler(state: int, answers_dict: dict) -> tuple:
+def input_handler(
+    state: int, answers_dict: dict
+) -> tuple[str | list[str], bool | None]:
     """Gets the user's answer to the question at this state.
 
     Returns the answer and its validity: True if the input function has
@@ -727,7 +768,7 @@ def input_handler(state: int, answers_dict: dict) -> tuple:
     current_user_answer = input(f"{current_question['prompt']}").upper().strip()
     return current_user_answer, None
 
-def build_confirmation_menu(answers_dict: dict) -> tuple:
+def build_confirmation_menu(answers_dict: dict) -> tuple[list[str], list[int]]:
     """Builds one menu line per question in ALL_QUESTIONS, so each menu
     number always matches the question's state plus one, regardless of
     the order of the keys in answers_dict.
@@ -741,6 +782,7 @@ def build_confirmation_menu(answers_dict: dict) -> tuple:
         # Skipped questions do not apply to the user,
         # so the value is shown as Not Applicable
         # and the question cannot be edited.
+        value: str | list[str] | None
         if should_skip(state, answers_dict):
             value = "Not Applicable"
         else:
@@ -857,17 +899,19 @@ def confirm_inputs(answers_dict: dict) -> bool | None:
     # is if user changes consent to N or if user types quit
     return None
 
-def dynamic_menu_width(menu_list: list) -> int:
+def dynamic_menu_width(menu_list: list[str]) -> int | None:
     """
     Looks for the longest string in a list,
     and returns its value +4 as the output.
     The +4 is due to needing to account for space for the | and " ".
+    Returns None if the list is empty.
     """
     if menu_list:
-     menu_width=len(max(menu_list, key=len))+4
-     return menu_width
+        menu_width=len(max(menu_list, key=len))+4
+        return menu_width
+    return None
 
-def print_box(lines: list, header: str | None = None) -> None:
+def print_box(lines: list[str], header: str | None = None) -> None:
     """
     Prints the lines inside a box with the dynamic width separator.
     The header is optional; if omitted, only the lines are printed.
@@ -884,7 +928,7 @@ def print_box(lines: list, header: str | None = None) -> None:
         print("|" + f" {line}".ljust(box_width - 2) + "|")
     print(box_separator)
 
-def dynamic_menu_print(menu_options: list, menu_header: str | None = None) -> str:
+def dynamic_menu_print(menu_options: list[str], menu_header: str | None = None) -> str:
     """
     Prints the menu, based off the menu list,
     with the dynamic width separator.
@@ -947,7 +991,7 @@ RETAIL_DISCLAIMER = (
     "improve, please see a doctor."
 )
 
-def wrap_text(text: str, indent: str = "") -> list:
+def wrap_text(text: str, indent: str = "") -> list[str]:
     """Splits text into lines no longer than RESULT_WRAP_WIDTH, adding
     the indent to the start of each line."""
     return textwrap.wrap(
@@ -957,7 +1001,7 @@ def wrap_text(text: str, indent: str = "") -> list:
         subsequent_indent=indent,
     )
 
-def build_diagnosis_lines(ai_output: dict, diagnosis: str) -> list:
+def build_diagnosis_lines(ai_output: dict, diagnosis: str) -> list[str]:
     """Builds the lines for one diagnosis: its title, explanation and
     medicines. diagnosis is either "primary" or "secondary", matching
     the start of the AI output keys."""
@@ -974,7 +1018,7 @@ def build_diagnosis_lines(ai_output: dict, diagnosis: str) -> list:
             lines.append(f"    - {medicine}")
     return lines
 
-def build_result_lines(ai_output: dict, logic_result: dict) -> list:
+def build_result_lines(ai_output: dict, logic_result: dict) -> list[str]:
     """Builds the final message telling the patient what to do next,
     based on the route and queue number from logic_manager.
 
@@ -1009,17 +1053,17 @@ def print_result(ai_output: dict, logic_result: dict) -> None:
     print_box(build_result_lines(ai_output, logic_result), RESULT_HEADER)
 
 
-def print_df_and_reports(data: pd.DataFrame | dict, title: str = ""):
+def print_df_and_reports(report: pd.DataFrame | dict, title: str = "") -> None:
     """
     Print a dataframe or dict that will automatically be formatted into a grid, by row, using the tabulate library.
     If a title is given, it is shown in a box centered over the table.
     """
     # to_markdown only exists on DataFrames, so wrap a flat dict
     # in a list to turn it into a one-row DataFrame.
-    if isinstance(data, dict):
-        report_df = pd.DataFrame([data])
+    if isinstance(report, dict):
+        report_df = pd.DataFrame([report])
     else:
-        report_df = data
+        report_df = report
 
     # Build the table as a string first so its width can be measured
     # before anything is printed.

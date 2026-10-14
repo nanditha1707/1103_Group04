@@ -61,6 +61,7 @@ RECORD_COLUMNS = [
     "ai_confidence_score",
     "route"
 ]
+# Column groups shown by each healthcare portal query filter option.
 PATIENT_COLUMNS=[
     "name", 
     "nric", 
@@ -150,7 +151,7 @@ def replace_blank_values(dataset_df: pd.DataFrame) -> pd.DataFrame:
     return dataset_df
 
 
-def clean_icd_data(icd_df):
+def clean_icd_data(icd_df: pd.DataFrame) -> pd.DataFrame:
     """Return the ICD-11 dataset with only the disease codes and names,
     cleaned and without duplicates."""
 
@@ -209,7 +210,7 @@ def clean_icd_data(icd_df):
     return icd_df
 
 
-def clean_hsa_data(hsa_df):
+def clean_hsa_data(hsa_df: pd.DataFrame) -> pd.DataFrame:
     """Return the HSA dataset with only the required drug columns,
     cleaned and without duplicates."""
 
@@ -304,7 +305,7 @@ def clean_hsa_data(hsa_df):
     return hsa_df 
 
 
-def get_cleaned_datasets():
+def get_cleaned_datasets() -> tuple[pd.DataFrame | None, pd.DataFrame | None]:
     """Load and clean the ICD-11 and HSA datasets. Either one is None if
     its file fails to load."""
 
@@ -348,7 +349,7 @@ def create_records_file_if_missing() -> None:
         pass
 
 
-def load_records() -> pd.DataFrame:
+def load_records() -> pd.DataFrame | None:
     """Load all patient records. Return None if the file does not
     exist yet."""
     try:
@@ -421,27 +422,37 @@ def export_record(
 # ======================================================================
 # PATIENT LOOKUP FUNCTIONS
 # ======================================================================
-def get_patient_filter(option: str)-> list:
+def get_patient_filter(option: str) -> list[str] | None:
+    """Return the record columns for a filter menu option (1 to 4).
+    Return None for any other option number. Expects option to already
+    be checked as a positive whole number by io_manager.validate_option."""
     # Initialises filter to None,
     # and makes option a int
-    option = int(option)
-    filter_columns= None
-    if option == 1:
+    option_number = int(option)
+    filter_columns = None
+    if option_number == 1:
         filter_columns=PATIENT_COLUMNS
-    elif option == 2:
+    elif option_number == 2:
         filter_columns=MEDICAL_COLUMNS
-    elif option == 3:
+    elif option_number == 3:
         filter_columns=AI_OUTPUT_COLUMN
-    elif option == 4:
+    elif option_number == 4:
         filter_columns= RECORD_COLUMNS
     return filter_columns
 
-def get_current_date()-> str:
+def get_current_date() -> str:
+    """Return today's date as YYYY-MM-DD, the same format as the date
+    column in the patient records."""
     # grabs the current date
     today = datetime.now().strftime("%Y-%m-%d")
     return today
 
-def get_patient_by_queue(records:pd.DataFrame, queue_number,filter_columns: list, today: str)-> pd.DataFrame:
+def get_patient_by_queue(
+    records: pd.DataFrame | None,
+    queue_number: str,
+    filter_columns: list[str],
+    today: str
+) -> pd.DataFrame | None:
     """Find the patient with the given queue number on the given date.
     Return a DataFrame of their record with only the filter_columns,
     which is empty if no patient matches, or None if there are no
@@ -450,12 +461,17 @@ def get_patient_by_queue(records:pd.DataFrame, queue_number,filter_columns: list
     # Checks if records exist. If they do,
     # continues with the block.
     if records is not None and not records.empty:
+        # @ lets query use the local variables queue_number and today.
         patient=records.query("queue_number == @queue_number and date == @today")
         return patient[filter_columns]
     # If there is no such patient, return None.
     return None
 
-def print_or_export(filter_columns:list):
+def print_or_export(filter_columns: list[str]) -> str:
+    """Return "print" if a table with these columns fits in the
+    terminal, otherwise "export" so it is saved to a CSV instead."""
+    # Each column is at least 10 characters wide (the table's
+    # maxcolwidths), but a long column name needs more than that.
     width_needed= len(filter_columns)*10
     header_width_needed = sum(len(item) for item in filter_columns)
     width_needed = max(width_needed, header_width_needed)
@@ -494,7 +510,7 @@ def export_query(query_df: pd.DataFrame) -> bool:
 # ======================================================================
 # REPORT FUNCTIONS
 # ======================================================================
-def get_medicine_count(records: pd.DataFrame, medicine: str, date: str) -> dict:
+def get_medicine_count(records: pd.DataFrame, medicine: str, date: str) -> dict[str, int]:
     """Return a dict with how many times a specific medicine was issued
     on a given date. Returns an empty dict if it was not issued."""
 
@@ -525,7 +541,7 @@ def get_medicine_breakdown(records: pd.DataFrame, date: str) -> dict:
     return medicine_counts.to_dict()
 
 
-def get_patient_type_breakdown(records: pd.DataFrame, date: str) -> dict:
+def get_patient_type_breakdown(records: pd.DataFrame, date: str) -> dict[str, int]:
     """Return how many Emergency, Doctor, Pharmacy and Retail patients
     there were on a given date."""
 

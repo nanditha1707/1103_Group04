@@ -21,13 +21,15 @@ TOTAL_TIMEOUT_SECONDS = 60
 # Retry number for retrying on same the same model.
 MAX_RETRIES_PER_MODEL = 2
 # Models to use for the AI API, in order of execution.
-MODELS = [
+MODELS: list[dict[str, str]] = [
     {"provider": "claude", "model": "claude-opus-5-5"},
     {"provider": "claude", "model": "claude-sonnet-5-5"},
     {"provider": "gemini", "model": "gemini-3.8-flash"},
     {"provider": "gemini", "model": "gemini-3.5-flash-lite"},
 ]
 
+# Actions returned by classify_error, telling get_ai_response what to
+# do after a failed request.
 FAIL = "Fail immediately"
 RETRY_SAME_MODEL = "Retry on the same model"
 SWITCH_MODEL = "Switch to next model in MODELS"
@@ -37,12 +39,15 @@ CONTACT_SUPPORT_MESSAGE = (
     "Either an unexpected error has occured or all AI APIs are currently down. "
 )
 
+# Gemini raises raw httpx / httpx2 errors for timeouts and dropped
+# connections, so both libraries are checked in classify_error.
 GEMINI_TIMEOUT_ERRORS = (httpx.TimeoutException, httpx2.TimeoutException)
 GEMINI_CONNECTION_ERRORS = (httpx.TransportError, httpx2.TransportError)
 # Error message raised when the AI returns no text. classify_error checks
 # for this exact message to tell it apart from other ValueErrors.
 NO_TEXT_ERROR_MESSAGE = "AI returned no text"
 
+# Every field the AI must return, used to build the JSON schema below.
 AI_OUTPUT_FIELDS = {
     "primary_diagnosis_ICD11_Title": {"type": "string"},
     "primary_diagnosis_ICD11_Code": {"type": "string"},
@@ -57,6 +62,8 @@ AI_OUTPUT_FIELDS = {
     "ai_confidence_score":{"type": "integer"},
 }
 
+# JSON schema both providers use to force the reply into AI_OUTPUT_FIELDS.
+# additionalProperties False stops the AI adding fields of its own.
 AI_OUTPUT_SCHEMA = {
     "type": "object",
     "properties": AI_OUTPUT_FIELDS,
@@ -64,6 +71,7 @@ AI_OUTPUT_SCHEMA = {
     "additionalProperties": False,
 }
 
+# System prompt sent with every request.
 AI_MEDICAL_CONTEXT = """
 You are a clinical decision support assistant at a primary care clinic in Singapore.
 Your goal is to effectively and accurately triage patients based on the patient
@@ -483,12 +491,12 @@ def get_ai_response(
     return {"error": CONTACT_SUPPORT_MESSAGE}
 
 
-def create_ai_prompt(ai_output: dict) -> str:
-    """Build the patient intake prompt from the already filtered answers
-    """
+def create_ai_prompt(answers_filtered: dict) -> str:
+    """Build the patient intake prompt from the already filtered answers,
+    with one "- key: value" line per answer."""
     ai_prompt = "Presenting patient answers:\n"
 
-    for key, value in ai_output.items():
+    for key, value in answers_filtered.items():
         ai_prompt += f"- {key}: {value}\n"
 
     return ai_prompt
