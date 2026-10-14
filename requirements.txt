@@ -6,5 +6,6 @@ anthropic
 httpx
 httpx2
 pylint
+pytest
 python-dotenv
 tabulate
