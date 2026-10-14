@@ -1006,8 +1006,40 @@ def print_result(ai_output: dict, logic_result: dict) -> None:
     print_box(build_result_lines(ai_output, logic_result), RESULT_HEADER)
 
 
-def print_df(df: pd.DataFrame):
+def print_df_and_reports(data: pd.DataFrame | dict, title: str = ""):
     """
-    Print a dataframe that will automatically be formatted into a grid, by row, using the tabulate library.
+    Print a dataframe or dict that will automatically be formatted into a grid, by row, using the tabulate library.
+    If a title is given, it is shown in a box centered over the table.
     """
-    print(df.to_markdown(index=False, tablefmt="grid", floatfmt=".2f", maxcolwidths=10))
+    # to_markdown only exists on DataFrames, so wrap a flat dict
+    # in a list to turn it into a one-row DataFrame.
+    if isinstance(data, dict):
+        report_df = pd.DataFrame([data])
+    else:
+        report_df = data
+
+    # Build the table as a string first so its width can be measured
+    # before anything is printed.
+    grid_table = report_df.to_markdown(index=False, tablefmt="grid", floatfmt=".2f", maxcolwidths=10)
+
+    # Only print a header if a title was given.
+    if title:
+        # Every line of a grid table is the same length, 
+        # so the longest line gives the full width of the table.
+        grid_width = max(len(line) for line in grid_table.splitlines())
+
+        # The title box has a "|" on each side, 
+        # so the text sits in the space between them.
+        inner_width = grid_width - 2
+
+        # Create a border made of "+" corners and "-" fill.
+        title_border = "+" + "-" * inner_width + "+"
+
+        # Pad the title so it is centered, then close it with "|" on both sides.
+        title_row = "|" + title.center(inner_width) + "|"
+
+        print(title_border)
+        print(title_row)
+
+    # The table's own top border acts as the bottom border of the title box.
+    print(grid_table)

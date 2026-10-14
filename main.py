@@ -57,10 +57,10 @@ def patient_query_handler(date) ->str | None:
 
 def healthcare_portal_routing(option:str):
     option = int(option)
-    error = None
+    error_message = None
     today = data.get_current_date()
     if option == 1:
-        error = patient_query_handler(today)
+        error_message = patient_query_handler(today)
     if option == 2:
         datetime_answer = str(input("Enter the Date here. (YYYY-MM-DD)"))
         error_message = io.validate_date(datetime_answer)
@@ -78,24 +78,25 @@ def healthcare_portal_routing(option:str):
 
                 if report_option == "1":
                     medicine = input("Enter a medicine name: ").strip().upper()
-                    result = data.get_medicine_count(date,medicine)
-                    print("\nSpecific Medicine Count:")
-                    print(result)
+                    result = data.get_medicine_count(medicine, date)
+                    header = "Specific Medicine Count:"
                 elif report_option == "2":
-                    result = data.get_medicine_breakdown(date, records)
-                    print("\nMedicine Breakdown:")
-                    print(result)
+                    result = data.get_patient_type_breakdown(previous_records_df, date)
+                    header = "Medicine Breakdown Report"
                 elif report_option == "3":
-                    result = data.get_patient_type_breakdown(records, date)
-                    print("\nPatient Type Breakdown:")
-                    print(result)
+                    result = data.get_patient_type_breakdown(previous_records_df, date)
+                    header = "Patient Type Breakdown Report"
+                if result:
+                    io.print_df_and_reports(result, header)
+                else:
+                    error_message= "There is no matching records for the given date!"
             else:
-                error = date_error
+                error_message = date_error
         else:
-            error = option_error
+            error_message = option_error
 
-    if error:
-        io.print_text(error)
+    if error_message:
+        io.print_text(error_message)
 
 
 
