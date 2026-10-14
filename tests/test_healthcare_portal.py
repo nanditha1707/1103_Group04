@@ -104,9 +104,15 @@ def test_current_patient_found(monkeypatch):
     printed = []
 
     monkeypatch.setattr(
+        main["data"],
+        "print_or_export",
+        lambda filters: "print"
+    )
+    
+    monkeypatch.setattr(
         main["io"],
-        "print_df",
-        lambda df: printed.append(df)
+        "print_df_and_reports",
+        lambda df, *args: printed.append(df)
     )
 
     result = main["patient_query_handler"](

@@ -50,19 +50,24 @@ def setup_records(tmp_path, monkeypatch):
 
 
 def test_medicine_count(tmp_path, monkeypatch):
-    setup_records(tmp_path, monkeypatch)
+
+    records = setup_records(
+        tmp_path,
+        monkeypatch
+    )
 
     result = data.get_medicine_count(
-        "2026-10-14",
-        "PARACETAMOL"
+        records,
+        "PARACETAMOL",
+        "2026-10-14"
     )
 
     print("\nSCENARIO: Specific Medicine Count")
     print("Medicine: PARACETAMOL")
-    print("Expected: 2")
+    print("Expected: {'PARACETAMOL': 2}")
     print("Actual:", result)
 
-    assert result == 2
+    assert result["PARACETAMOL"] == 2
 
 def test_medicine_breakdown(tmp_path, monkeypatch):
 
@@ -72,8 +77,8 @@ def test_medicine_breakdown(tmp_path, monkeypatch):
     )
 
     result = data.get_medicine_breakdown(
-        "2026-10-14",
-        records
+        records,
+        "2026-10-14"
     )
 
     print("\nSCENARIO: Medicine Breakdown")
