@@ -2,18 +2,33 @@
 # IMPORT FUNCTIONS AND CONSTANTS
 # ======================================================================
 from datetime import datetime
+from pathlib import Path
+import shutil
 
-import pandas as pd
 import numpy as np
-import os
+import pandas as pd
+
+# Folder paths, based on where this file is, not where the program is run from.
+# Every module gets its file paths from here.
+PROJECT_DIR = Path(__file__).resolve().parent
+# Read-only datasets that ship with the app.
+DATASETS_DIR = PROJECT_DIR / "datasets"
+# Saved patient records.
+RECORDS_DIR = PROJECT_DIR / "records"
+# Exported query results.
+QUERY_DIR = PROJECT_DIR / "query"
 
 # File paths.
-ICD_CSV_PATH = "datasets/icd11.csv"
-HSA_CSV_PATH = "datasets/hsa.csv"
+ICD_CSV_PATH = DATASETS_DIR / "icd11.csv"
+HSA_CSV_PATH = DATASETS_DIR / "hsa.csv"
+SYMPTOMS_CSV_PATH = DATASETS_DIR / "symptoms_umls.csv"
 
 # CSV file used to store patient records.
 # Same file logic_manager reads to work out queue numbers.
-RECORDS_CSV_PATH = "datasets/patient_records.csv"
+RECORDS_CSV_PATH = RECORDS_DIR / "patient_records.csv"
+
+# Starter patient records, copied to RECORDS_CSV_PATH on the first run.
+SEED_RECORDS_CSV_PATH = DATASETS_DIR / "patient_records_seed.csv"
 
 # Fixed column order for patient_records.csv.
 # Every row uses this same list, so a failed AI response (which only
@@ -22,17 +37,12 @@ RECORD_COLUMNS = [
     "date",
     "time",
     "queue_number",
-    "nric",
-    "name",
+    "name", 
+    "nric", 
+    "gender", 
+    "age", 
     "phone_number",
-    "gender",
-    "age",
     "pregnancy",
-    "priority",
-    "chest_pain",
-    "breathing_difficulties",
-    "signs_of_stroke",
-    "self_harm",
     "current_symptoms",
     "symptom_onset_days",
     "chronic_conditions",
@@ -51,7 +61,37 @@ RECORD_COLUMNS = [
     "ai_confidence_score",
     "route"
 ]
+PATIENT_COLUMNS=[
+    "name", 
+    "nric", 
+    "gender", 
+    "age", 
+    "phone_number"
+                 ]
+MEDICAL_COLUMNS=[
+    "date",
+    "route",
+    "pregnancy",
+    "current_symptoms",
+    "symptom_onset_days",
+    "chronic_conditions",
+    "current_medications",
+    "drug_allergies",
+        ]
 
+AI_OUTPUT_COLUMN=[
+        "primary_diagnosis_ICD11_Code",
+        "primary_diagnosis_ICD11_Title",
+        "primary_diagnosis_explanation",
+        "primary_diagnosis_medicine_1",
+        "primary_diagnosis_medicine_2",
+        "secondary_diagnosis_ICD11_Code",
+        "secondary_diagnosis_ICD11_Title",
+        "secondary_diagnosis_explanation",
+        "secondary_diagnosis_medicine_1",
+        "secondary_diagnosis_medicine_2",
+        "ai_confidence_score"
+            ]
 # Medicine fields from AI output.
 MEDICINE_FIELDS=[
     "primary_diagnosis_medicine_1",
@@ -60,63 +100,70 @@ MEDICINE_FIELDS=[
     "secondary_diagnosis_medicine_2"
 ]
 
+# Maps the route value stored in the records to the matching label.
+ROUTE_LABELS = {
+    "EMERGENCY": "Emergency",
+    "Doctor": "Doctor",
+    "Pharmacist": "Pharmacy",
+    "Retail": "Retail",
+}
+
 
 # ======================================================================
 # DATASET LOADING FUNCTIONS
 # ======================================================================
-def load_icd_data():
-    """Load the ICD-11 dataset. Return None if the file is missing or
+def load_dataset(csv_path: Path) -> pd.DataFrame | None:
+    """Load a dataset CSV. Return None if the file is missing or
     cannot be read."""
 
     try:
-        icd_df = pd.read_csv(
-            ICD_CSV_PATH,
+        return pd.read_csv(
+            csv_path,
             low_memory=False
         )
 
-        return icd_df
-
-    except FileNotFoundError:
-        return None
-
-    except pd.errors.ParserError:
-        return None
-
-
-def load_hsa_data():
-    """Load the HSA dataset. Return None if the file is missing or
-    cannot be read."""
-
-    try:
-        hsa_df = pd.read_csv(
-            HSA_CSV_PATH,
-            low_memory=False
-        )
-
-        return hsa_df
-
-    except FileNotFoundError:
-        return None
-    
-    except pd.errors.ParserError:
+    except (FileNotFoundError, pd.errors.ParserError):
         return None
 
 
 # ======================================================================
 # DATASET CLEANING FUNCTIONS
 # ======================================================================
-def clean_icd_data(icd_df):
-    """Return the ICD-11 dataset with only cleaned, unique disease names."""
+def replace_blank_values(dataset_df: pd.DataFrame) -> pd.DataFrame:
+    """Return the dataset with empty and dash values replaced by NaN,
+    so they can be removed with dropna."""
 
-    # Keep only the disease title column.
+    # Replace empty strings with NaN.
+    dataset_df = dataset_df.replace(
+        r"^\s*$",
+        np.nan,
+        regex=True
+    )
+
+    # Replace dash values with NaN.
+    dataset_df = dataset_df.replace(
+        r"^\s*[-–—]+\s*$",
+        np.nan,
+        regex=True
+    )
+
+    return dataset_df
+
+
+def clean_icd_data(icd_df):
+    """Return the ICD-11 dataset with only the disease codes and names,
+    cleaned and without duplicates."""
+
+    # Keep only the code and disease title columns.
     icd_df = icd_df[
         [
+            "Code",
             "Title"
         ]
     ].copy()
 
 
-    # Rename the column to make it clearer.
+    # Rename the title column to make it clearer.
     icd_df = icd_df.rename(
         columns={
             "Title": "DiseaseName"
@@ -124,34 +171,30 @@ def clean_icd_data(icd_df):
     )
 
 
-    # Replace empty strings with NaN.
-    icd_df = icd_df.replace(
-        r"^\s*$",
-        np.nan,
-        regex=True
-    )
+    icd_df = replace_blank_values(icd_df)
 
 
-    # Replace dash values with NaN.
-    icd_df = icd_df.replace(
-        r"^\s*[-–—]+\s*$",
-        np.nan,
-        regex=True
-    )
-
-
-    # Remove rows where the disease name is missing.
+    # Remove rows where the code or disease name is missing.
     icd_df = icd_df.dropna(
         subset=[
+            "Code",
             "DiseaseName"
         ]
     )
 
-    # Remove extra spaces.
+    # Remove extra spaces and uppercase, to match the formatted AI output.
+    icd_df["Code"] = (
+        icd_df["Code"]
+        .astype(str)
+        .str.strip()
+        .str.upper()
+    )
+
     icd_df["DiseaseName"] = (
         icd_df["DiseaseName"]
         .astype(str)
         .str.strip()
+        .str.upper()
     )
 
     # Remove duplicate diseases.
@@ -196,19 +239,7 @@ def clean_hsa_data(hsa_df):
     )
 
 
-    # Replace empty strings with NaN.
-    hsa_df = hsa_df.replace(
-        r"^\s*$",
-        np.nan,
-        regex=True
-    )
-
-    # Replace dash values with NaN.
-    hsa_df = hsa_df.replace(
-        r"^\s*[-–—]+\s*$",
-        np.nan,
-        regex=True
-    )
+    hsa_df = replace_blank_values(hsa_df)
 
 
     # Remove rows that are missing important information.
@@ -274,22 +305,17 @@ def clean_hsa_data(hsa_df):
 
 
 def get_cleaned_datasets():
-    """Load and clean both datasets. Return (None, None) if either
-    dataset fails to load."""
+    """Load and clean the ICD-11 and HSA datasets. Either one is None if
+    its file fails to load."""
 
-    icd_df = load_icd_data()
-    hsa_df = load_hsa_data()
+    icd_df = load_dataset(ICD_CSV_PATH)
+    hsa_df = load_dataset(HSA_CSV_PATH)
 
-    if icd_df is None or hsa_df is None:
-        return None, None
+    if icd_df is not None:
+        icd_df = clean_icd_data(icd_df)
 
-    icd_df = clean_icd_data(
-        icd_df
-    )
-
-    hsa_df = clean_hsa_data(
-        hsa_df
-    )
+    if hsa_df is not None:
+        hsa_df = clean_hsa_data(hsa_df)
 
     return icd_df, hsa_df
 
@@ -297,6 +323,31 @@ def get_cleaned_datasets():
 # ======================================================================
 # PATIENT RECORD FUNCTIONS
 # ======================================================================
+def create_records_file_if_missing() -> None:
+    """Copy the starter records into the records folder if there is no
+    patient records CSV yet. Existing records are never overwritten."""
+    if RECORDS_CSV_PATH.exists():
+        return
+
+    try:
+        RECORDS_DIR.mkdir(exist_ok=True)
+        # Read the seed file first, so if it is missing the records
+        # file is never created.
+        # "b" copies the bytes exactly in binary mode, so copy is
+        # identical to the seed.
+        with open(SEED_RECORDS_CSV_PATH, "rb") as seed_file:
+            seed_contents = seed_file.read()
+
+        # Create the records file and write the seed contents into it.
+        with open(RECORDS_CSV_PATH, "wb") as records_file:
+            records_file.write(seed_contents)
+
+    # The seed file is missing or the records folder cannot be written.
+    # The program still runs and starts with no records.
+    except OSError:
+        pass
+
+
 def load_records() -> pd.DataFrame:
     """Load all patient records. Return None if the file does not
     exist yet."""
@@ -344,16 +395,91 @@ def export_record(
         csv_row[column] = patient_record.get(column)
 
     # Change the row into a one-row dataframe.
-    record_df = pd.DataFrame([csv_row])
+    new_record_df = pd.DataFrame([csv_row])
 
     try:
+        # Creates the records folder if it does not exist yet.
+        RECORDS_DIR.mkdir(exist_ok=True)
+
         # Appends the df to the CSV,
         # only writing the header if the file is new.
         # 'a' append mode in pandas creates a new csv file if none exists.
-        record_df.to_csv(
+        new_record_df.to_csv(
             RECORDS_CSV_PATH,
             mode="a",
-            header=not os.path.exists(RECORDS_CSV_PATH),
+            header=not RECORDS_CSV_PATH.exists(),
+            index=False,
+            encoding="utf-8"
+        )
+
+    # The file is open in another program (e.g. Excel) or cannot be written.
+    except OSError:
+        return False
+
+    return True
+
+# ======================================================================
+# PATIENT LOOKUP FUNCTIONS
+# ======================================================================
+def get_patient_filter(option: str)-> list:
+    # Initialises filter to None,
+    # and makes option a int
+    option = int(option)
+    filter_columns= None
+    if option == 1:
+        filter_columns=PATIENT_COLUMNS
+    elif option == 2:
+        filter_columns=MEDICAL_COLUMNS
+    elif option == 3:
+        filter_columns=AI_OUTPUT_COLUMN
+    elif option == 4:
+        filter_columns= RECORD_COLUMNS
+    return filter_columns
+
+def get_current_date()-> str:
+    # grabs the current date
+    today = datetime.now().strftime("%Y-%m-%d")
+    return today
+
+def get_patient_by_queue(records:pd.DataFrame, queue_number,filter_columns: list, today: str)-> pd.DataFrame:
+    """Find the patient with the given queue number on the given date.
+    Return a DataFrame of their record with only the filter_columns,
+    which is empty if no patient matches, or None if there are no
+    records."""
+
+    # Checks if records exist. If they do,
+    # continues with the block.
+    if records is not None and not records.empty:
+        patient=records.query("queue_number == @queue_number and date == @today")
+        return patient[filter_columns]
+    # If there is no such patient, return None.
+    return None
+
+def print_or_export(filter_columns:list):
+    width_needed= len(filter_columns)*10
+    header_width_needed = sum(len(item) for item in filter_columns)
+    width_needed = max(width_needed, header_width_needed)
+    terminal_width=shutil.get_terminal_size().columns
+    if terminal_width >= width_needed:
+        return "print"
+    else:
+        return "export"
+
+def export_query(query_df: pd.DataFrame) -> bool:
+    """Save the query results to a new timestamped CSV in the query
+    folder. Return True if saved, False if the file could not be
+    written."""
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    query_csv_path = QUERY_DIR / f"query_{timestamp}.csv"
+    try:
+        # Creates the query folder if it does not exist yet.
+        QUERY_DIR.mkdir(exist_ok=True)
+
+        # Writes the df to a new CSV file with a header.
+        # The timestamp in the file name keeps each export separate.
+        query_df.to_csv(
+            query_csv_path,
+            mode="w",
             index=False,
             encoding="utf-8"
         )
@@ -366,186 +492,55 @@ def export_record(
 
 
 # ======================================================================
-# PATIENT LOOKUP FUNCTIONS
-# ======================================================================
-def get_patient_by_queue(queue_number):
-    """Find today's patient with the given queue number. Return their
-    record as a dict, or None if they are not found."""
-
-    # Sets today to the current date.
-    today = datetime.now().strftime("%Y-%m-%d")
-    # Loads the existing records.
-    # If the records do not exist,
-    # the function returns None.
-    records = load_records()
-
-    # Checks if records exist. If they do,
-    # continues with the block.
-    if records != None:
-        # Iterates through the dataframe's rows.
-        for _, patient in records.iterrows():
-
-            # Searches for an entry with a matching date and queue number.
-            # Returns the first match, as the queue number is unique
-            # on a day-by-day basis.
-            if (
-                patient["queue_number"]== queue_number
-                and patient["date"]== today
-            ):
-                return patient.to_dict()
-    # If there is no such patient, return None.
-    return None
-
-
-def display_patient(patient):
-    """Print a patient's information, AI diagnosis and routing details."""
-
-    if patient is None:
-        print("Patient not found.")
-        return
-
-    print("\nPATIENT INFORMATION")
-    print("-------------------")
-
-    print("Name:",patient["name"])
-    print("Age:", patient["age"])
-    print("Gender:", patient["gender"])
-    print("Chest Pain:", patient["red_flag_chest_pain"])
-    print("Breathing Issue:", patient["red_flag_breathing"])
-    print("Stroke Symptoms:",patient["red_flag_stroke"])
-    print("Self Harm:",patient["self_harm"])
-    print("Symptoms:", patient["current_symptoms"])
-    print("Symptom Onset:", patient["symptom_onset"])
-    print("Chronic Conditions:", patient["chronic_conditions"])
-    print("Current Medications:", patient["current_medications"])
-    print("Drug Allergies:", patient["drug_allergies"])
-
-    print("\nAI DIAGNOSIS")
-    print("------------")
-
-    print( "Primary Diagnosis:", patient["primary_diagnosis_ICD11_Title"])
-    print("Primary Diagnosis Code:", patient["primary_diagnosis_ICD11_Code"])
-    print("Secondary Diagnosis:", patient["secondary_diagnosis_ICD11_Title"])
-    print("Secondary Diagnosis Code:", patient["secondary_diagnosis_ICD11_Code"])
-    print("Primary Medicine 1:", patient["primary_diagnosis_medicine_1"])
-    print("Primary Medicine 2:",patient["primary_diagnosis_medicine_2"])
-    print("Secondary Medicine 1:", patient["secondary_diagnosis_medicine_1"])
-    print("Secondary Medicine 2:", patient["secondary_diagnosis_medicine_2"])
-    print("AI Confidence Score:",patient["ai_confidence_score"])
-
-    print("\nROUTING INFORMATION")
-    print("-------------------")
-
-    print("Queue Number:", patient["queue_number"])
-    print("Route:", patient["route"])
-    print("Date:", patient["date"])
-    print("Time:", patient["time"])
-
-
-# ======================================================================
 # REPORT FUNCTIONS
 # ======================================================================
-def get_medicine_count(date, medicine):
-    """Return how many times a medicine was issued on a given date."""
-    records = load_records()
-    count = 0
+def get_medicine_count(records: pd.DataFrame, medicine: str, date: str) -> dict:
+    """Return a dict with how many times a specific medicine was issued
+    on a given date. Returns an empty dict if it was not issued."""
 
-    # Check each patient.
-    for index, patient in records.iterrows():
+    # Filter to the selected date once.
+    day_records = records.loc[records["date"] == date, MEDICINE_FIELDS]
 
-        # Only check records from the selected date.
-        if patient["date"]== date:
+    # Flatten all medicine columns into one Series, drop empties, and count.
+    medicine_counts = day_records.stack().value_counts()
 
-            # Check all medicine fields.
-            for field in MEDICINE_FIELDS:
+    # Keep only the requested medicine, if it appears at all.
+    if medicine in medicine_counts.index:
+        return {medicine: int(medicine_counts[medicine])}
 
-                if str(patient[field]).lower()== medicine.lower():
-                    count += 1
-
-    return count
+    return {}
 
 
-def get_medicine_breakdown(date):
+def get_medicine_breakdown(records: pd.DataFrame, date: str) -> dict:
     """Return a dict of each medicine issued on a given date and how
     many times it was issued."""
 
-    # Dictionary to store each medicine and its count.
-    medicine_counts={}
+    # Filter to the selected date once.
+    day_records = records.loc[records["date"] == date, MEDICINE_FIELDS]
 
-    try:
-        # Open patient records.
-        records = pd.read_csv(RECORDS_CSV_PATH)
+    # Flatten all medicine columns into one Series, drop empties, and count.
+    medicine_counts = day_records.stack().value_counts()
 
-    except FileNotFoundError:
-        return medicine_counts
-
-    # Medicine fields from AI output.
-    medicine_fields =[
-        "primary_diagnosis_medicine_1",
-        "primary_diagnosis_medicine_2",
-        "secondary_diagnosis_medicine_1",
-        "secondary_diagnosis_medicine_2"
-    ]
-
-    # Check each patient.
-    for index, patient in records.iterrows():
-
-        # Only check records from the selected date.
-        if patient["date"]==date:
-
-            # Check all medicine fields.
-            for field in medicine_fields:
-
-                medicine =patient[field]
-
-                # Only count if the medicine is not empty.
-                if pd.notna(medicine):
-
-                    if medicine in medicine_counts:
-                        medicine_counts[medicine]+=1
-
-                    else:
-                        medicine_counts[medicine]=1
-
-    return medicine_counts
+    # Returns medicine counts as a dictionary
+    return medicine_counts.to_dict()
 
 
-def get_patient_type_breakdown(date):
+def get_patient_type_breakdown(records: pd.DataFrame, date: str) -> dict:
     """Return how many Emergency, Doctor, Pharmacy and Retail patients
     there were on a given date."""
 
-    # Start all counts at 0.
-    patient_types={
-        "Emergency":0,
-        "Doctor":0,
-        "Pharmacy":0,
-        "Retail":0
-    }
+    # Creates a mask to filter the df by, 
+    # and filters the df for matching rows.
+    is_on_date = records["date"] == date
+    records_on_date = records[is_on_date]
+    # Get the count for how many times each route type appears.
+    route_counts = records_on_date["route"].value_counts()
 
-    try:
-        # Open patient records.
-        records = pd.read_csv(RECORDS_CSV_PATH)
-
-    except FileNotFoundError:
-        return patient_types
-
-    # Check each patient.
-    for index, patient in records.iterrows():
-
-        # Only check records from the selected date.
-        if patient["date"]==date:
-
-            # Priority patients count as emergency.
-            if str(patient["priority"])=="True":
-                patient_types["Emergency"]+=1
-
-            elif patient["route"]=="Doctor":
-                 patient_types["Doctor"]+=1
-
-            elif patient["route"]=="Pharmacist":
-                 patient_types["Pharmacy"]+=1
-
-            elif patient["route"]=="Retail":
-                 patient_types["Retail"]+=1
+    # Put the label and matching value into the dictionary, 
+    # ignoring any entries with no value.
+    patient_types = {}
+    for route, label in ROUTE_LABELS.items():
+        if route in route_counts:
+            patient_types[label] = int(route_counts[route])
 
     return patient_types

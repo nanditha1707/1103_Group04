@@ -1,3 +1,8 @@
 .env
 README.md
-pytest_cache
+.pytest_cache
+__pycache__
+.git
+.ruff_cache
+records/
+query/

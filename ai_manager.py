@@ -12,6 +12,8 @@ from dotenv import load_dotenv
 from google import genai
 from google.genai import errors as genai_errors
 
+import logic_manager as logic
+
 # Timeout for 1 AI API request.
 REQUEST_TIMEOUT_SECONDS = 20
 # Timeout for all API requests to return a valid answer. 
@@ -21,25 +23,25 @@ MAX_RETRIES_PER_MODEL = 2
 # Models to use for the AI API, in order of execution.
 MODELS = [
     {"provider": "claude", "model": "claude-opus-5-5"},
-    {"provider": "claude", "model": "claude-sonnet-5"},
+    {"provider": "claude", "model": "claude-sonnet-5-5"},
     {"provider": "gemini", "model": "gemini-3.8-flash"},
     {"provider": "gemini", "model": "gemini-3.5-flash-lite"},
 ]
 
-FILE_PATH_ICD11 = "datasets/icd11.csv"
-FILE_PATH_HSA = "datasets/hsa.csv"
-
 FAIL = "Fail immediately"
 RETRY_SAME_MODEL = "Retry on the same model"
-SWITCH_MODEL = "Switch models"
-SWITCH_MODEL_PROVIDER = "Switch immediately to a different model provider"
+SWITCH_MODEL = "Switch to next model in MODELS"
+SWITCH_MODEL_PROVIDER = "Switch immediately to the next model provider"
 CONTACT_SUPPORT_MESSAGE = (
-    "Please contact technical staff for assistance. "
+    "Please alert a nurse and proceed with manual regristration. "
     "Either an unexpected error has occured or all AI APIs are currently down. "
 )
 
 GEMINI_TIMEOUT_ERRORS = (httpx.TimeoutException, httpx2.TimeoutException)
-GEMINI_CONNECTION_ERRORS = (httpx.ConnectError, httpx2.ConnectError)
+GEMINI_CONNECTION_ERRORS = (httpx.TransportError, httpx2.TransportError)
+# Error message raised when the AI returns no text. classify_error checks
+# for this exact message to tell it apart from other ValueErrors.
+NO_TEXT_ERROR_MESSAGE = "AI returned no text"
 
 AI_OUTPUT_FIELDS = {
     "primary_diagnosis_ICD11_Title": {"type": "string"},
@@ -73,6 +75,56 @@ Task:
   1 likely secondary diagnosis using ICD-11 titles and their respective codes.
 - Suggest up to two suitable medicines for each diagnosis.
 
+Diagnosis rules:
+- Use the ICD-11 title exactly as written by the WHO. Do not shorten or reword titles.
+- The code must be the exact code for that title in ICD-11.
+- Your output is checked word for word against the ICD-11 MMS title list, so a single
+  missing or extra word fails the check.
+- ICD-11 titles often differ from ICD-10 titles. Never use ICD-10 wording. For example,
+  CA07.0 is 'Acute upper respiratory infection, site unspecified', not
+  'Acute upper respiratory infection, unspecified' (that is ICD-10 J06.9).
+- If one of the common titles below fits the patient, copy it and its code exactly.
+  Only use a title outside this list if you are certain of its exact ICD-11 wording.
+  If you are unsure of a more specific title, use a broader parent title you are sure of.
+
+Common primary care ICD-11 titles (code: title):
+- CA07.0: Acute upper respiratory infection, site unspecified
+- CA00: Acute nasopharyngitis
+- CA02: Acute pharyngitis
+- CA03: Acute tonsillitis
+- CA01: Acute sinusitis
+- CA08.0: Allergic rhinitis
+- 1E32: Influenza, virus not identified
+- CA42: Acute bronchitis
+- CA40: Pneumonia
+- CA23: Asthma
+- 1D20: Dengue without warning signs
+- 1D21: Dengue with warning signs
+- 1A40: Gastroenteritis or colitis without specification of infectious agent
+- DA42: Gastritis
+- DA22: Gastro-oesophageal reflux disease
+- MD92: Dyspepsia
+- GC00: Cystitis
+- GC08: Urinary tract infection, site not specified
+- 8A80: Migraine
+- 8A81: Tension-type headache
+- ME84.2: Low back pain
+- 9A60: Conjunctivitis
+- AB00: Acute otitis media
+- EA80: Atopic eczema
+- 1E90: Varicella
+
+Medicine rules:
+- Each medicine field must be exactly one generic active ingredient name, as listed
+  in the Singapore Health Sciences Authority (HSA) register of therapeutic products, or
+  the product name as listed under HSA is also allowed.
+- Use HSA spellings, e.g. 'Paracetamol' (not 'Acetaminophen'), 'Chlorpheniramine'
+  (not 'Chlorphenamine'), 'Salbutamol' (not 'Albuterol').
+- Do not include doses, strengths, salt forms, dosage forms, brand names, brackets,
+  'e.g.', slashes, or conditions such as 'if within flu window'.
+- Do not use drug classes (e.g. 'Antihistamine', 'Decongestant') or non-drug advice
+  (e.g. 'Rest', 'Fluids', 'Supportive care').
+
 Explanations:
 - Briefly explain the reasoning behind each diagnosis in
   primary_diagnosis_explanation and secondary_diagnosis_explanation.
@@ -96,16 +148,8 @@ Symptom definitions:
 - 'high fever' means a temperature at or above 39 degrees Celsius.
 - 'fever' means a temperature below 39 degrees Celsius."""
 
-DF_ICD11 = pd.read_csv(FILE_PATH_ICD11)
-DF_HSA = pd.read_csv(FILE_PATH_HSA)
-VALID_DIAGNOSES = DF_ICD11["Title"].str.strip().str.upper()
-VALID_CODES = DF_ICD11["Code"].str.strip().str.upper()
-VALID_MEDICINES = pd.concat(
-    [DF_HSA["Productname"], DF_HSA["Activeingredients"]]
-).str.strip().str.upper()
-
 # Reads API key from local .env file.
-load_dotenv()
+load_dotenv(override=True)
 
 
 # ======================================================================
@@ -131,6 +175,14 @@ def call_gemini(model: str, context: str, prompt: str, schema: dict) -> str:
             "response_json_schema": schema,
         },
     )
+    # response.text is None when Gemini returns no text, such as when a
+    # safety filter blocks the reply. Raise ValueError with
+    # NO_TEXT_ERROR_MESSAGE so the error is classified as SWITCH_MODEL.
+    # The same prompt sent to the same model is likely to be blocked
+    # again, so retrying would waste time.
+    if not response.text:
+        raise ValueError(NO_TEXT_ERROR_MESSAGE)
+
     return response.text
 
 
@@ -151,9 +203,22 @@ def call_claude(model: str, context: str, prompt: str, schema: dict) -> str:
             "format": {"type": "json_schema", "schema": schema},
         },
     )
+    # If Claude refuses, or the reply is cut off by max_tokens, there is
+    # no complete JSON reply. The last content may still be partial text,
+    # so stop_reason is checked as well as the content type. Raise
+    # ValueError with NO_TEXT_ERROR_MESSAGE so the error is classified
+    # as SWITCH_MODEL. The same prompt sent to the same model is likely
+    # to fail the same way, so retrying would waste time.
+    if (
+        response.stop_reason in ("refusal", "max_tokens")
+        or not response.content
+        or response.content[-1].type != "text"
+    ):
+        raise ValueError(NO_TEXT_ERROR_MESSAGE)
+
     # Slice [-1] to take the last content because Claude outputs its
     # 'thinking and reasoning' steps as well. The last output is the
-    # JSON schema containing its response. 
+    # JSON schema containing its response.
     return response.content[-1].text
 
 
@@ -164,52 +229,123 @@ def classify_error(error: Exception) -> str:
     """Unified function to classify all API errors from Claude and
     Gemini. It classifies the error based on either the error code or
     for errors without error codes, the error itself, and returns a
-    suitable action to take based on the error message."""
+    suitable ACTION (a constant) to take based on the error message.
 
-    # If something is wrong with json output, or AI output failed 
-    # validation then retry same model because error is likely transient.
+    Claude error codes:
+        413 (FAIL): Request is too large. Resending the same request
+            will hit the same size limit.
+        409 (RETRY_SAME_MODEL): Conflict on Anthropic's side. It is
+            transient and usually succeeds on retry.
+        500 (RETRY_SAME_MODEL): Unexpected internal error on
+            Anthropic's side. It is transient and usually succeeds
+            on retry.
+        502 (RETRY_SAME_MODEL): Bad gateway, a server between us and
+            Anthropic failed. It is transient and usually succeeds
+            on retry.
+        503 (RETRY_SAME_MODEL): Service temporarily unavailable. It
+            is transient and usually succeeds on retry.
+        404 (SWITCH_MODEL): Model not found, e.g. the model ID is
+            wrong or deprecated. That model will never work, but
+            other Claude models may.
+        504 (SWITCH_MODEL): Request timed out while being processed,
+            the model needed more time than REQUEST_TIMEOUT_SECONDS
+            allows. Retrying with the same timeout will likely time out
+            again, so it is handled the same as a client side timeout.
+        429 (SWITCH_MODEL): Rate limit reached. Anthropic rate limits
+            are set separately for each model, so another Claude model
+            may still have capacity.
+        529 (SWITCH_MODEL): API is overloaded, switch to a different
+            model API.
+        400 (SWITCH_MODEL_PROVIDER): Invalid request format or
+            content. Every Claude model gets the same request format, 
+            so they would all reject it, but other models request format
+            is built differently and may still work.
+        401 (SWITCH_MODEL_PROVIDER): Invalid API key. Every Claude
+            model uses the same key, so switch models.
+        402 (SWITCH_MODEL_PROVIDER): Billing problem, e.g. out of
+            credits. This applies to every Claude model.
+        403 (SWITCH_MODEL_PROVIDER): API key lacks permission. This
+            applies to every Claude model.
+
+    Gemini error codes:
+        413 (FAIL): Request is too large. Resending the same request
+            will hit the same size limit.
+        500 (RETRY_SAME_MODEL): Unexpected internal error on Google's
+            side. It is transient and usually succeeds on retry.
+        502 (RETRY_SAME_MODEL): Bad gateway, a server between us and
+            Google failed. It is transient and usually succeeds on
+            retry.
+        404 (SWITCH_MODEL): Model not found, e.g. the model ID is
+            wrong or deprecated. That model will never work, but
+            other Gemini models may.
+        504 (SWITCH_MODEL): Deadline exceeded, the model needed more
+            time than REQUEST_TIMEOUT_SECONDS allows. Retrying with
+            the same timeout will likely time out again, so it is
+            handled the same as a client side timeout.
+        429 (SWITCH_MODEL): Quota or rate limit exhausted. Gemini
+            quotas are per model, so another Gemini model may still
+            have quota left.
+        503 (SWITCH_MODEL): Service unavailable or overloaded.
+            Another model may not be overloaded.
+        400 (SWITCH_MODEL_PROVIDER): Invalid argument or malformed
+            request. Every Gemini model gets the same request, so
+            they would all reject it, but other model requests are built
+            differently and may still work.
+        401 (SWITCH_MODEL_PROVIDER): Invalid API key. Every Gemini
+            model uses the same key, so switch models.
+        403 (SWITCH_MODEL_PROVIDER): API key lacks permission. This
+            applies to every Gemini model.
+    """
+
+    # If the AI returned no text then switch model because the same
+    # model is likely to fail the same way again. This must be checked
+    # before the general ValueError check below.
+    if isinstance(error, ValueError) and str(error) == NO_TEXT_ERROR_MESSAGE:
+        return SWITCH_MODEL
+
+    # If something is wrong with json output or the AI output failed
+    # validation then retry same model because the error is likely
+    # transient.
     if isinstance(error, ValueError):
         return RETRY_SAME_MODEL
 
     # Claude errors
-    # APITimeoutError is a subclass of APIConnectionError
-    # So it has to be checked BEFORE APIConnectionError
     if isinstance(error, anthropic.APITimeoutError):
         return SWITCH_MODEL
-    
-    if isinstance(error, anthropic.APIConnectionError):
+
+    elif isinstance(error, anthropic.APIConnectionError):
         return RETRY_SAME_MODEL
-    
-    if isinstance(error, anthropic.APIStatusError):
+
+    elif isinstance(error, anthropic.APIStatusError):
         error_code = error.status_code
-        if error_code in (400, 413):
+        if error_code == 413:
             return FAIL
-        elif error_code in (409, 500, 504):
+        elif error_code in (409, 500, 502, 503):
             return RETRY_SAME_MODEL
-        elif error_code in (404, 529):
+        elif error_code in (404, 429, 504, 529):
             return SWITCH_MODEL
-        elif error_code in (401, 402, 403, 429):
+        elif error_code in (400, 401, 402, 403):
             return SWITCH_MODEL_PROVIDER
 
     # Gemini Errors
     if isinstance(error, GEMINI_TIMEOUT_ERRORS):
         return SWITCH_MODEL
 
-    if isinstance(error, GEMINI_CONNECTION_ERRORS):
+    elif isinstance(error, GEMINI_CONNECTION_ERRORS):
         return RETRY_SAME_MODEL
 
-    if isinstance(error, genai_errors.APIError):
+    elif isinstance(error, genai_errors.APIError):
         error_code = error.code
-        if error_code in (400, 413):
+        if error_code == 413:
             return FAIL
-        elif error_code in (500, 504):
+        elif error_code in (500, 502):
             return RETRY_SAME_MODEL
-        elif error_code in (404, 429, 503):
+        elif error_code in (404, 429, 503, 504):
             return SWITCH_MODEL
-        elif error_code in (401, 403):
+        elif error_code in (400, 401, 403):
             return SWITCH_MODEL_PROVIDER
 
-    # Unexpected errors that dont classify. In
+    # Unexpected errors that dont classify.
     return FAIL
 
 
@@ -256,11 +392,17 @@ def format_ai_output(ai_output: dict) -> dict:
 # ======================================================================
 # CORE FUNCTIONS
 # ======================================================================
-def get_ai_response(context: str, prompt: str, schema: dict) -> dict:
+def get_ai_response(
+    context: str,
+    prompt: str,
+    schema: dict,
+    icd_df: pd.DataFrame,
+    hsa_df: pd.DataFrame | None
+) -> dict:
     """Try each model in MODELS until one returns a valid JSON reply.
 
     Errors are classified to decide whether to retry, switch model,
-    switch provider or fail immediately. Returns an error dict if 
+    switch provider or fail immediately. Returns an error dict if
     nothing works before TOTAL_TIMEOUT_SECONDS runs out.
     """
     
@@ -282,8 +424,6 @@ def get_ai_response(context: str, prompt: str, schema: dict) -> dict:
 
             # Unrecognised model name means switch to next model.
             else:
-                print(f"{selected_model_provider} | {selected_model_name} "
-                      f"unknown provider '{selected_model_provider}' -> skipping")
                 current_model_index += 1
                 continue
 
@@ -292,7 +432,7 @@ def get_ai_response(context: str, prompt: str, schema: dict) -> dict:
             # ValueError is classified as RETRY_SAME_MODEL, so invalid ai output
             # fails validation and retries the same model, then switches model / provider
             # once retries run out, the same as other errors.
-            if not validate_ai_output(ai_output):
+            if not validate_ai_output(ai_output, icd_df, hsa_df):
                 raise ValueError("AI output not found in the ICD11 / HSA datasets")
 
             return ai_output
@@ -300,7 +440,6 @@ def get_ai_response(context: str, prompt: str, schema: dict) -> dict:
         except Exception as error: 
             # Take an action based on the returned error.
             action = classify_error(error)
-            print(f"{selected_model_provider} {selected_model_name} {error} -> {action}")
 
             # If fail then breaks the entire loop.
             if action == FAIL:
@@ -354,42 +493,62 @@ def create_ai_prompt(ai_output: dict) -> str:
 
     return ai_prompt
 
+def get_ai_output(
+    answers_filtered: dict,
+    icd_df: pd.DataFrame | None,
+    hsa_df: pd.DataFrame | None
+) -> dict:
+    """Build the prompt from the filtered patient answers and return the
+    validated AI output, or an error dict if every model failed.
+
+    icd_df and hsa_df are the cleaned datasets loaded by data_manager.
+    hsa_df is the same one logic_manager routes with, so every medicine
+    that passes validation has a classification."""
+
+    # Without ICD data the diagnoses cannot be checked, so the AI is not
+    # called and the patient is sent to manual registration.
+    if icd_df is None:
+        return {"error": CONTACT_SUPPORT_MESSAGE}
+
+    ai_prompt = create_ai_prompt(answers_filtered)
+    return get_ai_response(
+        AI_MEDICAL_CONTEXT, ai_prompt, AI_OUTPUT_SCHEMA, icd_df, hsa_df
+    )
+
 
 # ======================================================================
 # AI OUTPUT VALIDATION FUNCTIONS
 # ======================================================================
-def validate_diagnosis(ai_diagnosis: str, ai_code: str) -> bool:
+def validate_diagnosis(ai_diagnosis: str, ai_code: str, icd_df: pd.DataFrame) -> bool:
     """
-    Check that an AI diagnosis title and its code are in the ICD11 dataset.
+    Check that an AI diagnosis title and its code are in the cleaned
+    ICD11 dataset.
 
     Returns True only if the title and code are an exact match on the
     same row, so a real title paired with the wrong code fails.
     Expects the title and code to already be stripped and uppercased by
-    format_ai_output.
+    format_ai_output, the same as the cleaned dataset.
     """
 
-    # Go through DF_ICD11 one row at a time. The row number is used to get
-    # the "Title" and "Code" from that same row. Return True as soon as the
-    # ai_output diagnosis and code match on the same row.
-    for row in range(len(VALID_DIAGNOSES)):
-        valid_diagnosis = VALID_DIAGNOSES[row]
-        valid_code = VALID_CODES[row]
+    # Creates a mask of the rows where both the disease name and the
+    # code match, so they have to be on the same row.
+    is_match = (icd_df["DiseaseName"] == ai_diagnosis) & (icd_df["Code"] == ai_code)
 
-        if ai_diagnosis == valid_diagnosis and ai_code == valid_code:
-            return True
-
-    return False
+    return bool(is_match.any())
 
 
-def validate_medicine(ai_medicine: str) -> bool:
+def validate_medicine(ai_medicine: str, hsa_df: pd.DataFrame) -> bool:
     """
-    Check that an AI medicine is in the HSA dataset.
+    Check that an AI medicine is in the cleaned HSA dataset.
 
     Returns True if the medicine is found inside any product name or
-    active ingredient, e.g. 'Paracetamol' is found in
-    'SUNNY PARACETAMOL TABLET 500 mg'. Returns False for an empty
+    active ingredient, e.g. 'PARACETAMOL' is found in
+    'SUNNY PARACETAMOL TABLET 500 MG'. Returns False for an empty
     medicine. Expects the medicine to already be stripped and uppercased
     by format_ai_output.
+
+    Uses the same lookup as logic_manager's routing, so a medicine that
+    passes validation always has an HSA classification to route with.
     """
 
     # An empty medicine is never valid. This check is needed because ''
@@ -397,17 +556,12 @@ def validate_medicine(ai_medicine: str) -> bool:
     if ai_medicine == "":
         return False
 
-    # Return True as soon as the AI output medicine is contained in a
-    # dataset entry, e.g. 'Paracetamol' in 'SUNNY PARACETAMOL TABLET 500 mg'.
-    for medicine in VALID_MEDICINES:
-        if ai_medicine in medicine:
-            return True
-
-    # else if AI output medicine not in the dataset then return False.
-    return False
+    return logic.get_classification(ai_medicine, hsa_df) is not None
 
 
-def validate_ai_output(ai_output: dict) -> bool:
+def validate_ai_output(
+    ai_output: dict, icd_df: pd.DataFrame, hsa_df: pd.DataFrame | None
+) -> bool:
     """
     Check the AI output against the ICD11 and HSA datasets.
 
@@ -427,16 +581,24 @@ def validate_ai_output(ai_output: dict) -> bool:
     primary_diagnosis_is_valid = validate_diagnosis(
         ai_output["primary_diagnosis_ICD11_Title"],
         ai_output["primary_diagnosis_ICD11_Code"],
+        icd_df,
     )
     secondary_diagnosis_is_valid = validate_diagnosis(
         ai_output["secondary_diagnosis_ICD11_Title"],
         ai_output["secondary_diagnosis_ICD11_Code"],
+        icd_df,
     )
 
     # Return False if either doesn't match. Only pass validation when
     # both primary and secondary diagnosis are valid.
     if not primary_diagnosis_is_valid or not secondary_diagnosis_is_valid:
         return False
+
+    # Without HSA data the medicines cannot be checked. logic_manager
+    # sends the patient to a doctor in that case, so only the diagnoses
+    # need to be valid.
+    if hsa_df is None:
+        return True
 
     # Step 2: Collect the 4 medicine fields into a list so they can be
     # checked one at a time.
@@ -451,7 +613,7 @@ def validate_ai_output(ai_output: dict) -> bool:
     valid_medicine_count = 0
 
     for medicine in medicines:
-        if validate_medicine(medicine):
+        if validate_medicine(medicine, hsa_df):
             valid_medicine_count += 1
 
     # Case 1 (normal): all 4 medicines are valid and the 2 diagnosis match.

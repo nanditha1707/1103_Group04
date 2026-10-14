@@ -1,3 +1,6 @@
+# Main menu: 1. Patient Registration  2. Healthcare Professional Portal  3. Exit
+# Please enter one of the above options (1 = Patient Registration)
+1
 # Do you consent to sharing your data? Consent is required to continue with the registration process. (Y/N)
 Y
 # Enter your Name
@@ -37,3 +40,9 @@ N
 N
 # Do you have any drug allergies? (Y/N)
 N
+# Confirmation screen: options 01-16 are the answers above (17 = Confirm All Inputs)
+17
+# Back at the main menu after the AI runs, whether it succeeds or fails (3 = Exit)
+3
+# Enter the exit code here
+Password

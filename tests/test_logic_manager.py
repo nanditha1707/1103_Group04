@@ -1,87 +1,221 @@
 import sys
 from pathlib import Path
 
-# Allow imports from the main project folder
+import pandas as pd
+
 sys.path.append(
-    str(Path(__file__).parent.parent)
-)
-
-from logic_manager import (
-    get_medicines,
-    get_classification,
-    process_result
-)
-
-from validation_data import get_cleaned_datasets
-
-# Load cleaned datasets
-icd_df, hsa_df = get_cleaned_datasets()
-
-
-# Sample AI output
-ai_output = {
-    "primary_diagnosis_ICD11_Title":
-        "Influenza due to identified influenza virus",
-
-    "primary_diagnosis_ICD11_Code":
-        "1C80.0",
-
-    "secondary_diagnosis_ICD11_Title":
-        "Acute upper respiratory infection",
-
-    "secondary_diagnosis_ICD11_Code":
-        "CA00",
-
-    "primary_diagnosis_medicine_1":
-        "Oseltamivir",
-
-    "primary_diagnosis_medicine_2":
-        "Paracetamol",
-
-    "secondary_diagnosis_medicine_1":
-        "Dextromethorphan",
-
-    "secondary_diagnosis_medicine_2":
-        "Chlorpheniramine",
-
-    "ai_confidence_score": 85,
-    "refused": "false"
-}
-
-
-# Test AI bypass route
-all_user_responses = {
-    "priority": True
-}
-
-
-# Get medicines from AI output
-medicines = get_medicines(ai_output)
-
-print("\nMEDICATION CLASSIFICATIONS")
-print("--------------------------")
-
-# Check each medicine's classification
-for medicine in medicines:
-    classification = get_classification(
-        medicine,
-        hsa_df
+    str(Path(__file__).resolve().parent.parent)
     )
 
-    print(
-        medicine,
-        "->",
-        classification
+import logic_manager as logic
+
+
+# ==========================================================
+# FAKE HSA DATA
+# ==========================================================
+# This replaces the need to use live external data during testing.
+
+def get_fake_hsa_data():
+
+    return pd.DataFrame([
+        {
+            "DrugName": "PARACETAMOL",
+            "ActiveIngredients": "PARACETAMOL",
+            "Classification": "General Sale List"
+        },
+        {
+            "DrugName": "CETIRIZINE",
+            "ActiveIngredients": "CETIRIZINE",
+            "Classification": "General Sale List"
+        },
+        {
+            "DrugName": "IBUPROFEN",
+            "ActiveIngredients": "IBUPROFEN",
+            "Classification": "General Sale List"
+        },
+        {
+            "DrugName": "LOZENGES",
+            "ActiveIngredients": "LOZENGES",
+            "Classification": "General Sale List"
+        },
+        {
+            "DrugName": "CHLORPHENIRAMINE",
+            "ActiveIngredients": "CHLORPHENIRAMINE",
+            "Classification": "Pharmacy Only"
+        },
+        {
+            "DrugName": "AMOXICILLIN",
+            "ActiveIngredients": "AMOXICILLIN",
+            "Classification": "Prescription Only"
+        }
+    ])
+
+
+# ==========================================================
+# CASE 1 - ALL 4 MEDICINES ARE RETAIL
+# ==========================================================
+
+def test_all_retail_medicines():
+
+    # Hardcoded sample AI response.
+    ai_output = {
+        "primary_diagnosis_explanation":
+            "Patient has mild cold symptoms.",
+
+        "secondary_diagnosis_explanation":
+            "No emergency symptoms detected.",
+
+        "primary_diagnosis_medicine_1":
+            "PARACETAMOL",
+
+        "primary_diagnosis_medicine_2":
+            "CETIRIZINE",
+
+        "secondary_diagnosis_medicine_1":
+            "IBUPROFEN",
+
+        "secondary_diagnosis_medicine_2":
+            "LOZENGES"
+    }
+
+    result = logic.decide_route(
+        ai_output,
+        get_fake_hsa_data()
     )
 
+    print("\nCASE 1: ALL RETAIL MEDICINES")
+    print("PARACETAMOL -> Retail")
+    print("CETIRIZINE -> Retail")
+    print("IBUPROFEN -> Retail")
+    print("LOZENGES -> Retail")
+    print("Expected Route: Retail")
+    print("Actual Route:", result)
 
-# Process final routing result
-result = process_result(
-    all_user_responses,
-    ai_output,
-    hsa_df
-)
+    assert result == "Retail"
 
-print("\nFINAL RESULT")
-print("------------")
-print(result)
+
+# ==========================================================
+# CASE 2 - 3 RETAIL + 1 PHARMACY ONLY
+# ==========================================================
+
+def test_pharmacy_medicine_overrides_retail():
+
+    # Hardcoded sample AI response.
+    ai_output = {
+        "primary_diagnosis_explanation":
+            "Patient has flu-like symptoms.",
+
+        "secondary_diagnosis_explanation":
+            "No emergency symptoms detected.",
+
+        "primary_diagnosis_medicine_1":
+            "PARACETAMOL",
+
+        "primary_diagnosis_medicine_2":
+            "CETIRIZINE",
+
+        "secondary_diagnosis_medicine_1":
+            "IBUPROFEN",
+
+        "secondary_diagnosis_medicine_2":
+            "CHLORPHENIRAMINE"
+    }
+
+    result = logic.decide_route(
+        ai_output,
+        get_fake_hsa_data()
+    )
+
+    print("\nCASE 2: 3 RETAIL + 1 PHARMACY")
+    print("PARACETAMOL -> Retail")
+    print("CETIRIZINE -> Retail")
+    print("IBUPROFEN -> Retail")
+    print("CHLORPHENIRAMINE -> Pharmacy Only")
+    print("Expected Route: Pharmacist")
+    print("Actual Route:", result)
+
+    assert result == "Pharmacist"
+
+
+# ==========================================================
+# CASE 3 - PRESCRIPTION MEDICINE OVERRIDES PHARMACY/RETAIL
+# ==========================================================
+
+def test_prescription_medicine_overrides_other_routes():
+
+    # Hardcoded sample AI response.
+    ai_output = {
+        "primary_diagnosis_explanation":
+            "Patient may have a bacterial infection.",
+
+        "secondary_diagnosis_explanation":
+            "No emergency symptoms detected.",
+
+        "primary_diagnosis_medicine_1":
+            "PARACETAMOL",
+
+        "primary_diagnosis_medicine_2":
+            "CHLORPHENIRAMINE",
+
+        "secondary_diagnosis_medicine_1":
+            "AMOXICILLIN",
+
+        "secondary_diagnosis_medicine_2":
+            "CETIRIZINE"
+    }
+
+    result = logic.decide_route(
+        ai_output,
+        get_fake_hsa_data()
+    )
+
+    print("\nCASE 3: PRESCRIPTION MEDICINE PRESENT")
+    print("PARACETAMOL -> Retail")
+    print("CHLORPHENIRAMINE -> Pharmacy Only")
+    print("AMOXICILLIN -> Prescription Only")
+    print("CETIRIZINE -> Retail")
+    print("Expected Route: Doctor")
+    print("Actual Route:", result)
+
+    assert result == "Doctor"
+
+
+# ==========================================================
+# CASE 4 - EMERGENCY OVERRIDES ALL MEDICINES
+# ==========================================================
+
+def test_emergency_overrides_medicine_routing():
+
+    # Hardcoded sample AI response.
+    ai_output = {
+        "primary_diagnosis_explanation":
+            "EMERGENCY: Patient requires immediate medical attention.",
+
+        "secondary_diagnosis_explanation":
+            "Urgent assessment is required.",
+
+        "primary_diagnosis_medicine_1":
+            "PARACETAMOL",
+
+        "primary_diagnosis_medicine_2":
+            "CETIRIZINE",
+
+        "secondary_diagnosis_medicine_1":
+            "IBUPROFEN",
+
+        "secondary_diagnosis_medicine_2":
+            "LOZENGES"
+    }
+
+    result = logic.decide_route(
+        ai_output,
+        get_fake_hsa_data()
+    )
+
+    print("\nCASE 4: EMERGENCY")
+    print("All medicines are Retail.")
+    print("AI explanation contains EMERGENCY.")
+    print("Expected Route: EMERGENCY")
+    print("Actual Route:", result)
+
+    assert result == "EMERGENCY"
