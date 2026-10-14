@@ -78,10 +78,16 @@ The Data Manager is responsible for:
 - Searching for patient records.
 - Generating medicine and patient-type breakdowns.
 
-Patient records are stored in:
+Patient records generated while using the application are stored in:
 
 ```text
-datasets/patient_records.csv
+records/patient_records.csv
+```
+
+Queried CSV files are stored in:
+
+```text
+query/
 ```
 
 ## Business Rules
@@ -105,6 +111,8 @@ ai_manager.py
 logic_manager.py
 data_manager.py
 datasets/
+records/
+query/
 tests/
 requirements.txt
 dockerfile
@@ -130,14 +138,16 @@ Install the required packages:
 pip install -r requirements.txt
 ```
 
-Create a `.env` file and add the required API keys:
+Create a file named exactly `.env` in the project directory and add the required API keys:
 
 ```text
-GEMINI_API_KEY="YOUR-GEMINI-API-KEY"
-ANTHROPIC_API_KEY="YOUR-ANTHROPIC-API-KEY"
+GEMINI_API_KEY=YOUR-GEMINI-API-KEY
+ANTHROPIC_API_KEY=YOUR-ANTHROPIC-API-KEY
 ```
 
-## Running the Project
+Do not wrap the API keys in quotation marks.
+
+## Running the Project Locally
 
 Run the application using:
 
@@ -147,24 +157,102 @@ python main.py
 
 ## Running with Docker
 
-Build the Docker image:
+The recommended method is to run the pre-built Docker image.
+
+### 1. Pull the Docker Image
+
+Preferably use VS Code so that the `.env` file can be created easily.
+
+Open the terminal in the folder where you want the generated files to be stored and run:
 
 ```bash
-docker build -f dockerfile -t 1103-group04 .
+docker pull kevinwuyckens/group04-healthcare:latest
 ```
 
-Run the container:
+This downloads the latest version of the Group 4 healthcare application.
+
+### 2. Create the `.env` File
+
+Create a file named exactly:
+
+```text
+.env
+```
+
+Add the API keys:
+
+```text
+GEMINI_API_KEY=YOUR-GEMINI-API-KEY
+ANTHROPIC_API_KEY=YOUR-ANTHROPIC-API-KEY
+```
+
+Important:
+
+- Do not use quotes such as `"` or `'` around the API keys because Docker may not read them correctly.
+- Ensure the `.env` file is located in the current working directory where the Docker command is being run.
+
+### 3. Run the Docker Container
+
+Run:
 
 ```bash
-docker run --env-file .env -it 1103-group04
+docker run -it --rm --env-file .env -v "${PWD}/records:/app/records" -v "${PWD}/query:/app/query" kevinwuyckens/group04-healthcare:latest
 ```
+
+The command:
+
+- Runs the application interactively.
+- Loads the API keys from `.env`.
+- Mounts the local `records/` folder to `/app/records` inside the container.
+- Mounts the local `query/` folder to `/app/query` inside the container.
+- Automatically removes the temporary Docker container after the application exits.
+
+The following folders will be created in the directory where the command is run:
+
+```text
+records/
+query/
+```
+
+Newly generated patient records will appear under:
+
+```text
+records/patient_records.csv
+```
+
+Queried CSV files will appear under:
+
+```text
+query/
+```
+
+The `patient_records.csv` file will contain the existing records from `patient_records_seed.csv` together with any new patient records generated locally.
+
+## Docker Image Build
+
+The Docker image was built and pushed using:
+
+```bash
+docker buildx build --platform linux/amd64,linux/arm64 -t kevinwuyckens/group04-healthcare:latest --push .
+```
+
+The image supports both:
+
+```text
+linux/amd64
+linux/arm64
+```
+
+This allows the application to run on both standard Intel/AMD systems and ARM64 systems such as Apple Silicon Macs.
+
+ARM64 support allows Mac users with Apple Silicon to run the Docker image natively instead of relying on emulation, improving application performance.
 
 ## Testing
 
-Run the tests using:
+Run all tests using:
 
 ```bash
-pytest
+pytest tests/ -v -s
 ```
 
 The system can also be manually tested by checking whether:
@@ -174,6 +262,9 @@ The system can also be manually tested by checking whether:
 - Patients are routed correctly.
 - Queue numbers are generated correctly.
 - Patient records are saved properly.
+- Healthcare professionals can retrieve patient information.
+- Medicine reports are generated correctly.
+- Patient-type reports are generated correctly.
 
 ## GitHub Link
 
