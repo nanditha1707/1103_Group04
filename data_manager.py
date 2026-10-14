@@ -100,6 +100,14 @@ MEDICINE_FIELDS=[
     "secondary_diagnosis_medicine_2"
 ]
 
+# Maps the route value stored in the records to the matching label.
+ROUTE_LABELS = {
+    "EMERGENCY": "Emergency",
+    "Doctor": "Doctor",
+    "Pharmacist": "Pharmacy",
+    "Retail": "Retail",
+}
+
 
 # ======================================================================
 # DATASET LOADING FUNCTIONS
@@ -346,7 +354,16 @@ def create_records_file_if_missing() -> bool:
 
     try:
         RECORDS_DIR.mkdir(exist_ok=True)
-        shutil.copyfile(SEED_RECORDS_CSV_PATH, RECORDS_CSV_PATH)
+        # Read the seed file first, so if it is missing the records
+        # file is never created.
+        # "b" copies the bytes exactly in binary mode, so copy is
+        # identical to the seed.
+        with open(SEED_RECORDS_CSV_PATH, "rb") as seed_file:
+            seed_contents = seed_file.read()
+
+        # Create the records file and write the seed contents into it.
+        with open(RECORDS_CSV_PATH, "wb") as records_file:
+            records_file.write(seed_contents)
 
     # The seed file is missing or the records folder cannot be written.
     # The program still runs and starts with no records.
@@ -523,86 +540,36 @@ def get_medicine_count(date, medicine):
     return count
 
 
-def get_medicine_breakdown(date):
+def get_medicine_breakdown(date, records):
     """Return a dict of each medicine issued on a given date and how
     many times it was issued."""
 
-    # Dictionary to store each medicine and its count.
-    medicine_counts={}
+    # Filter to the selected date once.
+    day_records = records.loc[records["date"] == date, MEDICINE_FIELDS]
 
-    try:
-        # Open patient records.
-        records = pd.read_csv(RECORDS_CSV_PATH)
+    # Flatten all medicine columns into one Series, drop empties, and count.
+    medicine_counts = day_records.stack().value_counts()
 
-    except FileNotFoundError:
-        return medicine_counts
-
-    # Medicine fields from AI output.
-    medicine_fields =[
-        "primary_diagnosis_medicine_1",
-        "primary_diagnosis_medicine_2",
-        "secondary_diagnosis_medicine_1",
-        "secondary_diagnosis_medicine_2"
-    ]
-
-    # Check each patient.
-    for index, patient in records.iterrows():
-
-        # Only check records from the selected date.
-        if patient["date"]==date:
-
-            # Check all medicine fields.
-            for field in medicine_fields:
-
-                medicine =patient[field]
-
-                # Only count if the medicine is not empty.
-                if pd.notna(medicine):
-
-                    if medicine in medicine_counts:
-                        medicine_counts[medicine] += 1
-
-                    else:
-                        medicine_counts[medicine] = 1
-
-    return medicine_counts
+    # Returns medicine counts as a dictionary
+    return medicine_counts.to_dict()
 
 
-def get_patient_type_breakdown(date):
+def get_patient_type_breakdown(records: pd.DataFrame, date: str):
     """Return how many Emergency, Doctor, Pharmacy and Retail patients
     there were on a given date."""
 
-    # Start all counts at 0.
-    patient_types={
-        "Emergency":0,
-        "Doctor":0,
-        "Pharmacy":0,
-        "Retail":0
-    }
+    # Creates a mask to filter the df by, 
+    # and filters the df for matching rows.
+    is_on_date = records["date"] == date
+    records_on_date = records[is_on_date]
+    # Get the count for how many times each route type appears.
+    route_counts = records_on_date["route"].value_counts()
 
-    try:
-        # Open patient records.
-        records = pd.read_csv(RECORDS_CSV_PATH)
-
-    except FileNotFoundError:
-        return patient_types
-
-    # Check each patient.
-    for _, patient in records.iterrows():
-
-        # Only check records from the selected date.
-        if patient["date"]==date:
-
-            if patient["route"]=="EMERGENCY":
-                patient_types["Emergency"]+=1
-
-            elif patient["route"]=="Doctor":
-                 patient_types["Doctor"]+=1
-
-            elif patient["route"]=="Pharmacist":
-                 patient_types["Pharmacy"]+=1
-
-            elif patient["route"]=="Retail":
-                 patient_types["Retail"]+=1
+    # Put the label and matching value into the dictionary, 
+    # ignoring any entries with no value.
+    patient_types = {}
+    for route, label in ROUTE_LABELS.items():
+        if route in route_counts:
+            patient_types[label] = int(route_counts[route])
 
     return patient_types
