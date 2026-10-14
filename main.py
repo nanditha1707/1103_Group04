@@ -74,17 +74,19 @@ def healthcare_portal_routing(option:str):
             date = input("Enter the Date here. (YYYY-MM-DD): ").strip()
             date_error = io.validate_date(date)
             if date_error is None:
+                records = data.load_records()
+
                 if report_option == "1":
                     medicine = input("Enter a medicine name: ").strip().upper()
                     result = data.get_medicine_count(date,medicine)
                     print("\nSpecific Medicine Count:")
                     print(result)
                 elif report_option == "2":
-                    result = data.get_medicine_breakdown(date)
+                    result = data.get_medicine_breakdown(date, records)
                     print("\nMedicine Breakdown:")
                     print(result)
                 elif report_option == "3":
-                    result = data.get_patient_type_breakdown(date)
+                    result = data.get_patient_type_breakdown(records, date)
                     print("\nPatient Type Breakdown:")
                     print(result)
             else:
