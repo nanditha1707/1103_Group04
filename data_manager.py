@@ -469,7 +469,7 @@ def get_patient_by_queue(records:pd.DataFrame, queue_number,filter_columns: list
 
 def print_or_export(filter_columns:list):
     width_needed= len(filter_columns)*10
-    header_width_needed = total = sum(len(item) for item in filter_columns)
+    header_width_needed = sum(len(item) for item in filter_columns)
     width_needed = max(width_needed, header_width_needed)
     terminal_width=shutil.get_terminal_size().columns
     if terminal_width > width_needed:
