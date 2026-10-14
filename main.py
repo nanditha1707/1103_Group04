@@ -23,6 +23,12 @@ FILTER_OPTIONS =[
     "4. All Records"
                  ]
 
+REPORT_OPTIONS = [
+    "1. Specific Medicine Count",
+    "2. Medicine Breakdown",
+    "3. Patient Type Breakdown"
+]
+
 
 # ======================================================================
 # CORE FUNCTIONS
@@ -60,6 +66,31 @@ def healthcare_portal_routing(option:str):
         error_message = io.validate_date(datetime_answer)
         if error_message is None:
             error_message = patient_query_handler(datetime_answer)
+
+    if option == 3:
+        report_option = io.dynamic_menu_print(REPORT_OPTIONS,"Reports")
+        option_error = io.validate_option(report_option)
+        if option_error is None:
+            date = input("Enter the Date here. (YYYY-MM-DD): ").strip()
+            date_error = io.validate_date(date)
+            if date_error is None:
+                if report_option == "1":
+                    medicine = input("Enter a medicine name: ").strip().upper()
+                    result = data.get_medicine_count(date,medicine)
+                    print("\nSpecific Medicine Count:")
+                    print(result)
+                elif report_option == "2":
+                    result = data.get_medicine_breakdown(date)
+                    print("\nMedicine Breakdown:")
+                    print(result)
+                elif report_option == "3":
+                    result = data.get_patient_type_breakdown(date)
+                    print("\nPatient Type Breakdown:")
+                    print(result)
+            else:
+                error = date_error
+        else:
+            error = option_error
 
     if error:
         io.print_text(error)
