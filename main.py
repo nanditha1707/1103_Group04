@@ -56,7 +56,10 @@ def healthcare_portal_routing(option:str):
     if option == 1:
         error = patient_query_handler(today)
     if option == 2:
-        date = input("Enter the Date here. (YYYY-MM-DD)")
+        datetime_answer = str(input("Enter the Date here. (YYYY-MM-DD)"))
+        error_message = io.validate_date(datetime_answer)
+        if error_message is None:
+            error_message = patient_query_handler(datetime_answer)
 
     if error:
         io.print_text(error)
