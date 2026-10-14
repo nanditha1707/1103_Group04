@@ -157,7 +157,7 @@ VALID_MEDICINES = pd.concat(
 ).str.strip().str.upper()
 
 # Reads API key from local .env file.
-load_dotenv()
+load_dotenv(override=True)
 
 
 # ======================================================================
