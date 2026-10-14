@@ -34,7 +34,10 @@ REPORT_OPTIONS = [
 # CORE FUNCTIONS
 # ======================================================================
 
-def patient_query_handler(date) ->str | None:
+def patient_query_handler(date: str) -> str | None:
+    """Ask for a filter option and queue number, then print or export
+    that patient's record for the given date (YYYY-MM-DD).
+    Return an error message if anything fails, otherwise None."""
     error = None
     filter_option= io.dynamic_menu_print(FILTER_OPTIONS)
     option_error = io.validate_option(filter_option)
@@ -47,6 +50,8 @@ def patient_query_handler(date) ->str | None:
             # Load the latest records so patients registered this session are found.
             records = data.load_records()
             query_response= data.get_patient_by_queue(records, queue, filter_list, date)
+            # Wide results do not fit in the terminal, so they are
+            # exported to a CSV instead of printed.
             next_action = data.print_or_export(filter_list)
             if query_response is not None and not query_response.empty:
                 if next_action == "print":
@@ -59,19 +64,26 @@ def patient_query_handler(date) ->str | None:
         error = option_error
     return error
 
-def healthcare_portal_routing(option:str):
-    option = int(option)
+def healthcare_portal_routing(option: str) -> None:
+    """Run the healthcare portal option the user chose: query today's
+    patients, query a past date, or show a report. Any error message is
+    printed. Expects option to already be checked by
+    io.validate_option."""
+    option_number = int(option)
     error_message = None
     today = data.get_current_date()
-    if option == 1:
+    # Option 1: query a patient registered today.
+    if option_number == 1:
         error_message = patient_query_handler(today)
-    elif option == 2:
+    # Option 2: query a patient from a date the user enters.
+    elif option_number == 2:
         datetime_answer = input("Enter the Date here. (YYYY-MM-DD): ").strip()
         error_message = io.validate_date(datetime_answer)
         if error_message is None:
             error_message = patient_query_handler(datetime_answer)
 
-    elif option == 3:
+    # Option 3: show one of the reports for a date the user enters.
+    elif option_number == 3:
         report_option = io.dynamic_menu_print(REPORT_OPTIONS,"Reports")
         option_error = io.validate_option(report_option)
         if option_error is None:
@@ -93,6 +105,7 @@ def healthcare_portal_routing(option:str):
                     header = "Patient Type Breakdown Report"
                 else:
                     error_message = "This is not a valid option number!"
+                # An empty report means nothing matched the date.
                 if result:
                     io.print_df_and_reports(result, header)
                 elif error_message is None:
@@ -106,7 +119,12 @@ def healthcare_portal_routing(option:str):
     if error_message:
         io.print_message(error_message)
 
-def main_menu():
+def main_menu() -> dict | int | None:
+    """Show the main menu and run the option the user chose.
+
+    Returns the patient's confirmed answers after a completed
+    registration, io.QUIT_SIGNAL if the admin password was entered to
+    exit, or None for anything else so the menu is shown again."""
     header = "Main Menu"
     main_menu_option= io.dynamic_menu_print(MAIN_MENU_OPTIONS, header)
     if main_menu_option not in ["1","2","3"]:
@@ -141,6 +159,8 @@ def main_menu():
         else:
             error="This is not the right password!"
             io.print_message(error)
+
+    return None
 
 # load the ICD and HSA datasets once, when the program starts
 icd_df, hsa_df = data.get_cleaned_datasets()

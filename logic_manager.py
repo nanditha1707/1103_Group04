@@ -10,7 +10,7 @@ import data_manager as data
 # ======================================================================
 # MEDICINE FUNCTIONS
 # ======================================================================
-def get_medicines(ai_output: dict) -> list:
+def get_medicines(ai_output: dict) -> list[str]:
     """Return a list of the medicines the AI recommended, skipping any
     medicine fields that are empty."""
     ai_medicines = []
