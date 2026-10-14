@@ -589,7 +589,7 @@ def run_questions():
         # If the user needs a nurse immediately,
         # registration stops here.
         if needs_nurse(all_user_answers):
-            print_text(NURSE_ALERT_MESSAGE)
+            print_message(NURSE_ALERT_MESSAGE)
             return None
 
     return all_user_answers
@@ -847,7 +847,7 @@ def confirm_inputs(answers_dict: dict) -> bool | None:
         # If the edited answer means the user needs a nurse immediately,
         # registration stops here.
         if needs_nurse(answers_dict):
-            print_text(NURSE_ALERT_MESSAGE)
+            print_message(NURSE_ALERT_MESSAGE)
             return None
 
     # Only way to break out of the while loop,
@@ -906,9 +906,9 @@ def filter_answers(answers_dict: dict) -> dict:
 
 
 
-def print_text(text: str) -> None:
+def print_message(message: str) -> None:
     """Prints a message to the patient, such as the AI error message."""
-    print(text)
+    print(message)
 
 
 # ======================================================================

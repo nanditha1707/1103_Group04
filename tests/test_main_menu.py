@@ -96,7 +96,7 @@ def test_invalid_main_menu_option(monkeypatch):
 
     monkeypatch.setattr(
         main["io"],
-        "print_text",
+        "print_message",
         lambda message: messages.append(message)
     )
 
@@ -161,7 +161,7 @@ def test_correct_exit_password(monkeypatch):
 
     monkeypatch.setattr(
         main["io"],
-        "print_text",
+        "print_message",
         lambda message: None
     )
 
@@ -191,7 +191,7 @@ def test_wrong_exit_password(monkeypatch):
 
     monkeypatch.setattr(
         main["io"],
-        "print_text",
+        "print_message",
         lambda message: messages.append(message)
     )
 

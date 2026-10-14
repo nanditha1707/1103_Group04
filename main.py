@@ -96,7 +96,7 @@ def healthcare_portal_routing(option:str):
             error_message = option_error
 
     if error_message:
-        io.print_text(error_message)
+        io.print_message(error_message)
 
 
 
@@ -106,7 +106,7 @@ def main_menu():
     main_menu_option= io.dynamic_menu_print(MAIN_MENU_OPTIONS, header)
     if main_menu_option not in ["1","2","3"]:
         error = "This is not a valid option!"
-        io.print_text(error)
+        io.print_message(error)
     elif main_menu_option == "1":
         all_answers = io.run_questions()
         if all_answers is None:
@@ -119,23 +119,23 @@ def main_menu():
                 return all_answers
             else:
                 error = io.REG_EXIT_MESSAGE
-                io.print_text(error)
+                io.print_message(error)
     elif main_menu_option == "2":
         choice=io.dynamic_menu_print(HEALTHCARE_PORTAL_OPTIONS)
         option_error= io.validate_option(choice)
         if option_error is None:
             healthcare_portal_routing(choice)
         else:
-            io.print_text(option_error)
+            io.print_message(option_error)
 
     elif main_menu_option == "3":
         inputted_pass=input("Enter the exit code here: ")
         if inputted_pass == ADMIN_PASSWORD:
-            io.print_text(MENU_EXIT_MESSAGE)
+            io.print_message(MENU_EXIT_MESSAGE)
             return io.QUIT_SIGNAL
         else:
             error="This is not the right password!"
-            io.print_text(error)
+            io.print_message(error)
 
 # load the ICD and HSA datasets once, when the program starts
 icd_df, hsa_df = data.get_cleaned_datasets()
@@ -162,7 +162,7 @@ while True:
     # The key is "error". The value of the key is the message telling 
     # patients to seek assistance.
     if "error" in ai_output:
-        io.print_text(ai_output["error"])
+        io.print_message(ai_output["error"])
         continue
 
     # 3. Logic manager: decide and print the route and queue number
@@ -173,7 +173,7 @@ while True:
     if not is_export:
         error=("The program has encountered an error."
               "Please approach a nurse or clerk for manual registration.")
-        io.print_text(error)
+        io.print_message(error)
     else:
         # 5. I/O manager: tell the patient what to do next
         io.print_result(ai_output, logic_result)
