@@ -520,27 +520,24 @@ def export_query(query_df: pd.DataFrame) -> bool:
 # ======================================================================
 # REPORT FUNCTIONS
 # ======================================================================
-def get_medicine_count(date, medicine):
-    """Return how many times a medicine was issued on a given date."""
-    records = load_records()
-    count = 0
+def get_medicine_count(records: pd.DataFrame, medicine: str, date: str) -> pd.DataFrame:
+    """Return a one-row DataFrame with the medicine and how many times
+    it was issued on a given date."""
 
-    # Check each patient.
-    for index, patient in records.iterrows():
+    # Keep only the medicine columns for the selected date.
+    day_records = records.loc[records["date"] == date, MEDICINE_FIELDS]
 
-        # Only check records from the selected date.
-        if patient["date"]== date:
+    # Flatten to one Series (empty cells are dropped) and lowercase it.
+    medicines = day_records.stack().astype(str)
 
-            # Check all medicine fields.
-            for field in MEDICINE_FIELDS:
+    # Count the entries that match the medicine.
+    count = int((medicines == medicine).sum())
 
-                if str(patient[field]).lower()== medicine.lower():
-                    count += 1
-
-    return count
+    # Wrap the result in a one-row DataFrame.
+    return pd.DataFrame({"Medicine": [medicine], "Count": [count]})
 
 
-def get_medicine_breakdown(date, records):
+def get_medicine_breakdown(records: pd.DataFrame, date: str) -> dict:
     """Return a dict of each medicine issued on a given date and how
     many times it was issued."""
 
@@ -554,7 +551,7 @@ def get_medicine_breakdown(date, records):
     return medicine_counts.to_dict()
 
 
-def get_patient_type_breakdown(records: pd.DataFrame, date: str):
+def get_patient_type_breakdown(records: pd.DataFrame, date: str) -> dict:
     """Return how many Emergency, Doctor, Pharmacy and Retail patients
     there were on a given date."""
 

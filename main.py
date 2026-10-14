@@ -78,15 +78,15 @@ def healthcare_portal_routing(option:str):
 
                 if report_option == "1":
                     medicine = input("Enter a medicine name: ").strip().upper()
-                    result = data.get_medicine_count(medicine, date)
+                    result = data.get_medicine_count(previous_records_df,medicine, date)
                     header = "Specific Medicine Count:"
                 elif report_option == "2":
-                    result = data.get_patient_type_breakdown(previous_records_df, date)
+                    result = data.get_medicine_breakdown(previous_records_df, date)
                     header = "Medicine Breakdown Report"
                 elif report_option == "3":
                     result = data.get_patient_type_breakdown(previous_records_df, date)
                     header = "Patient Type Breakdown Report"
-                if result:
+                if result.empty and result is not None:
                     io.print_df_and_reports(result, header)
                 else:
                     error_message= "There is no matching records for the given date!"
