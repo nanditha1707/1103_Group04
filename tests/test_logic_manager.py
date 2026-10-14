@@ -1,80 +1,126 @@
 import sys
 from pathlib import Path
 
-# Allow imports from the main project folder
+import pandas as pd
+
 sys.path.append(
-    str(Path(__file__).parent.parent)
-)
-
-from logic_manager import (
-    get_medicines,
-    get_classification,
-    process_result
-)
-
-from data_manager import get_cleaned_datasets
-
-# Load cleaned datasets
-icd_df, hsa_df = get_cleaned_datasets()
-
-
-# Sample AI output
-ai_output = {
-    "primary_diagnosis_ICD11_Title":
-        "Influenza due to identified influenza virus",
-
-    "primary_diagnosis_ICD11_Code":
-        "1C80.0",
-
-    "secondary_diagnosis_ICD11_Title":
-        "Acute upper respiratory infection",
-
-    "secondary_diagnosis_ICD11_Code":
-        "CA00",
-
-    "primary_diagnosis_medicine_1":
-        "Oseltamivir",
-
-    "primary_diagnosis_medicine_2":
-        "Paracetamol",
-
-    "secondary_diagnosis_medicine_1":
-        "Dextromethorphan",
-
-    "secondary_diagnosis_medicine_2":
-        "Chlorpheniramine",
-
-    "ai_confidence_score": 85,
-    "refused": "false"
-}
-
-
-# Get medicines from AI output
-medicines = get_medicines(ai_output)
-
-print("\nMEDICATION CLASSIFICATIONS")
-print("--------------------------")
-
-# Check each medicine's classification
-for medicine in medicines:
-    classification = get_classification(
-        medicine,
-        hsa_df
+    str(Path(__file__).resolve().parent.parent)
     )
 
-    print(
-        medicine,
-        "->",
-        classification
+import logic_manager as logic
+
+
+def make_hsa_data():
+
+    return pd.DataFrame([
+        {
+            "DrugName": "AMOXICILLIN",
+            "ActiveIngredients": "AMOXICILLIN",
+            "Classification": "Prescription Only"
+        },
+        {
+            "DrugName": "CHLORPHENIRAMINE",
+            "ActiveIngredients": "CHLORPHENIRAMINE",
+            "Classification": "Pharmacy Only"
+        },
+        {
+            "DrugName": "PARACETAMOL",
+            "ActiveIngredients": "PARACETAMOL",
+            "Classification": "General Sale List"
+        }
+    ])
+
+
+def base_ai_output():
+
+    return {
+        "primary_diagnosis_explanation": "",
+        "secondary_diagnosis_explanation": "",
+        "primary_diagnosis_medicine_1": "",
+        "primary_diagnosis_medicine_2": "",
+        "secondary_diagnosis_medicine_1": "",
+        "secondary_diagnosis_medicine_2": ""
+    }
+
+
+def test_emergency_route():
+
+    ai_output = base_ai_output()
+
+    ai_output["primary_diagnosis_explanation"] = (
+        "This may be an EMERGENCY."
     )
 
+    result = logic.decide_route(
+        ai_output,
+        make_hsa_data()
+    )
 
-# Process final routing result
-result = process_result(
-    ai_output,
-    hsa_df
-)
+    print("\nSCENARIO: Emergency")
+    print("Expected: EMERGENCY")
+    print("Actual:", result)
 
-print("\nFINAL RESULT")
-print("------------")
-print(result)
+    assert result == "EMERGENCY"
+
+
+def test_doctor_route():
+
+    ai_output = base_ai_output()
+
+    ai_output["primary_diagnosis_medicine_1"] = (
+        "AMOXICILLIN"
+    )
+
+    result = logic.decide_route(
+        ai_output,
+        make_hsa_data()
+    )
+
+    print("\nSCENARIO: Prescription Medicine")
+    print("Medicine: AMOXICILLIN")
+    print("Expected: Doctor")
+    print("Actual:", result)
+
+    assert result == "Doctor"
+
+
+def test_pharmacist_route():
+
+    ai_output = base_ai_output()
+
+    ai_output["primary_diagnosis_medicine_1"] = (
+        "CHLORPHENIRAMINE"
+    )
+
+    result = logic.decide_route(
+        ai_output,
+        make_hsa_data()
+    )
+
+    print("\nSCENARIO: Pharmacy Only Medicine")
+    print("Medicine: CHLORPHENIRAMINE")
+    print("Expected: Pharmacist")
+    print("Actual:", result)
+
+    assert result == "Pharmacist"
+
+
+def test_retail_route():
+
+    ai_output = base_ai_output()
+
+    ai_output["primary_diagnosis_medicine_1"] = (
+        "PARACETAMOL"
+    )
+
+    result = logic.decide_route(
+        ai_output,
+        make_hsa_data()
+    )
+
+    print("\nSCENARIO: General Sale Medicine")
+    print("Medicine: PARACETAMOL")
+    print("Expected: Retail")
+    print("Actual:", result)
+
+    assert result == "Retail"

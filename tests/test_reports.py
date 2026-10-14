@@ -46,6 +46,8 @@ def setup_records(tmp_path, monkeypatch):
         test_file
     )
 
+    return records
+
 
 def test_medicine_count(tmp_path, monkeypatch):
     setup_records(tmp_path, monkeypatch)
@@ -55,20 +57,30 @@ def test_medicine_count(tmp_path, monkeypatch):
         "PARACETAMOL"
     )
 
-    print("\nMedicine Count:")
-    print(result)
+    print("\nSCENARIO: Specific Medicine Count")
+    print("Medicine: PARACETAMOL")
+    print("Expected: 2")
+    print("Actual:", result)
 
     assert result == 2
 
-
 def test_medicine_breakdown(tmp_path, monkeypatch):
-    setup_records(tmp_path, monkeypatch)
+
+    setup_records(
+        tmp_path,
+        monkeypatch
+    )
 
     result = data.get_medicine_breakdown(
         "2026-10-14"
     )
 
-    print("\nMedicine Breakdown:")
+    print("\nSCENARIO: Medicine Breakdown")
+    print("Expected:")
+    print("PARACETAMOL = 2")
+    print("IBUPROFEN = 1")
+    print("CETIRIZINE = 1")
+    print("Actual:")
     print(result)
 
     assert result["PARACETAMOL"] == 2
@@ -77,13 +89,22 @@ def test_medicine_breakdown(tmp_path, monkeypatch):
 
 
 def test_patient_type_breakdown(tmp_path, monkeypatch):
-    setup_records(tmp_path, monkeypatch)
+
+    setup_records(
+        tmp_path,
+        monkeypatch
+    )
 
     result = data.get_patient_type_breakdown(
         "2026-10-14"
     )
 
-    print("\nPatient Type Breakdown:")
+    print("\nSCENARIO: Patient Type Breakdown")
+    print("Expected:")
+    print("Doctor = 1")
+    print("Pharmacy = 1")
+    print("Retail = 1")
+    print("Actual:")
     print(result)
 
     assert result["Doctor"] == 1
