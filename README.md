@@ -249,11 +249,25 @@ ARM64 support allows Mac users with Apple Silicon to run the Docker image native
 
 ## Testing
 
-Run all tests using:
+### Run Tests Locally
+
+To run all automated tests locally, use:
 
 ```bash
 pytest tests/ -v -s
 ```
+
+### Run Tests Inside Docker
+
+To run the automated test suite inside the Docker container, use:
+
+```bash
+docker run --rm kevinwuyckens/group04-healthcare:latest python centralised.py
+```
+
+The `centralised.py` script runs the automated test cases inside the Docker image.
+
+These tests verify the core application logic, including `logic_manager`, using hardcoded sample AI responses so that the tests can run independently without requiring a live Gemini or Claude API connection.
 
 The system can also be manually tested by checking whether:
 
