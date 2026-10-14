@@ -65,13 +65,13 @@ def healthcare_portal_routing(option:str):
     today = data.get_current_date()
     if option == 1:
         error_message = patient_query_handler(today)
-    if option == 2:
+    elif option == 2:
         datetime_answer = input("Enter the Date here. (YYYY-MM-DD): ").strip()
         error_message = io.validate_date(datetime_answer)
         if error_message is None:
             error_message = patient_query_handler(datetime_answer)
 
-    if option == 3:
+    elif option == 3:
         report_option = io.dynamic_menu_print(REPORT_OPTIONS,"Reports")
         option_error = io.validate_option(report_option)
         if option_error is None:
@@ -79,6 +79,8 @@ def healthcare_portal_routing(option:str):
             date_error = io.validate_date(date)
             if date_error is None:
                 previous_records_df = data.load_records()
+                result = None
+                header = ""
                 if report_option == "1":
                     medicine = input("Enter a medicine name: ").strip().upper()
                     result = data.get_medicine_count(previous_records_df,medicine, date)
@@ -90,11 +92,10 @@ def healthcare_portal_routing(option:str):
                     result = data.get_patient_type_breakdown(previous_records_df, date)
                     header = "Patient Type Breakdown Report"
                 else:
-                    result = None
                     error_message = "This is not a valid option number!"
                 if result:
                     io.print_df_and_reports(result, header)
-                else:
+                elif error_message is None:
                     error_message= "There is no matching records for the given date!"
             else:
                 error_message = date_error
