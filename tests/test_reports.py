@@ -66,13 +66,14 @@ def test_medicine_count(tmp_path, monkeypatch):
 
 def test_medicine_breakdown(tmp_path, monkeypatch):
 
-    setup_records(
+    records = setup_records(
         tmp_path,
         monkeypatch
     )
 
     result = data.get_medicine_breakdown(
-        "2026-10-14"
+        "2026-10-14",
+        records
     )
 
     print("\nSCENARIO: Medicine Breakdown")
@@ -90,12 +91,13 @@ def test_medicine_breakdown(tmp_path, monkeypatch):
 
 def test_patient_type_breakdown(tmp_path, monkeypatch):
 
-    setup_records(
+    records = setup_records(
         tmp_path,
         monkeypatch
     )
 
     result = data.get_patient_type_breakdown(
+        records,
         "2026-10-14"
     )
 
