@@ -19,34 +19,34 @@ class LogicManager:
         self._hsa_df = hsa_df
 
 
-# ======================================================================
-# MEDICINE FUNCTIONS
-# ======================================================================
-def get_medicines(ai_output: dict) -> list[str]:
-    """Return a list of the medicines the AI recommended, skipping any
-    medicine fields that are empty."""
-    ai_medicines = []
+    # ==================================================================
+    # MEDICINE FUNCTIONS
+    # ==================================================================
+    def get_medicines(self, ai_output: dict) -> list[str]:
+        """Return a list of the medicines the AI recommended, skipping any
+        medicine fields that are empty."""
+        ai_medicines = []
 
-    # Keys where the medicines are stored in the AI output.
-    medicine_keys =[
-        "primary_diagnosis_medicine_1",
-        "primary_diagnosis_medicine_2",
-        "secondary_diagnosis_medicine_1",
-        "secondary_diagnosis_medicine_2"
-    ]
+        # Keys where the medicines are stored in the AI output.
+        medicine_keys =[
+            "primary_diagnosis_medicine_1",
+            "primary_diagnosis_medicine_2",
+            "secondary_diagnosis_medicine_1",
+            "secondary_diagnosis_medicine_2"
+        ]
 
-    # Go through each medicine key.
-    for key in medicine_keys:
+        # Go through each medicine key.
+        for key in medicine_keys:
 
-        # Get the medicine stored under the key.
-        ai_medicine = ai_output.get(key)
+            # Get the medicine stored under the key.
+            ai_medicine = ai_output.get(key)
 
-        # Only add it if there is an medicine.
-        if ai_medicine:
-            ai_medicines.append(ai_medicine)
+            # Only add it if there is an medicine.
+            if ai_medicine:
+                ai_medicines.append(ai_medicine)
 
-    # Return the list of medicines.
-    return ai_medicines
+        # Return the list of medicines.
+        return ai_medicines
 
 
 def get_classification(ai_medicine: str, hsa_df: pd.DataFrame) -> str | None:
