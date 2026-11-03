@@ -96,27 +96,27 @@ class LogicManager:
         return least_restrictive
 
 
-# ======================================================================
-# ROUTING FUNCTIONS
-# ======================================================================
-def is_emergency(ai_output: dict) -> bool:
-    """Return True if the AI wrote EMERGENCY in either diagnosis
-    explanation, otherwise return False."""
+    # ==================================================================
+    # ROUTING FUNCTIONS
+    # ==================================================================
+    def is_emergency(self, ai_output: dict) -> bool:
+        """Return True if the AI wrote EMERGENCY in either diagnosis
+        explanation, otherwise return False."""
 
-    # Keys where the AI explains each diagnosis.
-    explanation_keys = [
-        "primary_diagnosis_explanation",
-        "secondary_diagnosis_explanation"
-    ]
+        # Keys where the AI explains each diagnosis.
+        explanation_keys = [
+            "primary_diagnosis_explanation",
+            "secondary_diagnosis_explanation"
+        ]
 
-    # Go through each explanation.
-    for key in explanation_keys:
+        # Go through each explanation.
+        for key in explanation_keys:
 
-        # Emergency if the explanation contains the word EMERGENCY.
-        if "EMERGENCY" in str(ai_output.get(key, "")):
-            return True
+            # Emergency if the explanation contains the word EMERGENCY.
+            if "EMERGENCY" in str(ai_output.get(key, "")):
+                return True
 
-    return False
+        return False
 
 
 def decide_route(ai_output: dict, hsa_df: pd.DataFrame | None) -> str | None:
