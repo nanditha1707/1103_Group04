@@ -244,49 +244,48 @@ class LogicManager:
         return f"{prefix}{highest_number_today + 1:03d}"
 
 
-# ======================================================================
-# FINAL RESULT FUNCTION
-# ======================================================================
-def process_result(ai_output: dict, hsa_df: pd.DataFrame | None) -> dict:
-    """Create the final domain result. Routes the patient, gives them a
-    queue number and returns both with the current date and time."""
+    # ==================================================================
+    # FINAL RESULT FUNCTION
+    # ==================================================================
+    def process_result(self, ai_output: dict) -> dict:
+        """Create the final domain result. Routes the patient, gives them a
+        queue number and returns both with the current date and time."""
 
-    # Where the patient goes.
-    route=decide_route(
-        ai_output,
-        hsa_df
-    )
+        # Where the patient goes.
+        route=self.decide_route(
+            ai_output
+        )
 
-    # Get current date and time.
-    now=datetime.now()
+        # Get current date and time.
+        now=datetime.now()
 
-    # Patient was not routed, so no queue number is given.
-    if route is None:
-        queue_number = None
+        # Patient was not routed, so no queue number is given.
+        if route is None:
+            queue_number = None
 
-    # Emergency route uses the urgent queue ( U queue ).
-    elif route =="EMERGENCY":
-        queue_number = get_queue_number("Urgent")
+        # Emergency route uses the urgent queue ( U queue ).
+        elif route =="EMERGENCY":
+            queue_number = self.get_queue_number("Urgent")
 
-    # Docter route ( D queue ).
-    elif route == "Doctor":
-        queue_number =get_queue_number("Doctor")
+        # Docter route ( D queue ).
+        elif route == "Doctor":
+            queue_number =self.get_queue_number("Doctor")
 
-    # Pharmacist route ( P queue ).
-    elif route == "Pharmacist":
-        queue_number = get_queue_number("Pharmacist")
+        # Pharmacist route ( P queue ).
+        elif route == "Pharmacist":
+            queue_number = self.get_queue_number("Pharmacist")
 
-    # Retail does not get a queue number.
-    else:
-        queue_number = None
+        # Retail does not get a queue number.
+        else:
+            queue_number = None
 
-    # Store final results.
-    result ={
-        "queue_number": queue_number,
-        "date": now.strftime("%Y-%m-%d"),
-        "time": now.strftime("%H:%M:%S"),
-        "route": route
-    }
+        # Store final results.
+        result ={
+            "queue_number": queue_number,
+            "date": now.strftime("%Y-%m-%d"),
+            "time": now.strftime("%H:%M:%S"),
+            "route": route
+        }
 
-    # Return final result.
-    return result
+        # Return final result.
+        return result
