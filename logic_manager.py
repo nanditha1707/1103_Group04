@@ -119,50 +119,50 @@ class LogicManager:
         return False
 
 
-def decide_route(ai_output: dict, hsa_df: pd.DataFrame | None) -> str | None:
-    """Decide where the patient should go: EMERGENCY, Doctor, Pharmacist
-    or Retail. Returns None if the AI output failed, so the patient is
-    not routed."""
+    def decide_route(self, ai_output: dict) -> str | None:
+        """Decide where the patient should go: EMERGENCY, Doctor, Pharmacist
+        or Retail. Returns None if the AI output failed, so the patient is
+        not routed."""
 
-    # AI output failed validation, so the patient is not routed because
-    # the AI output is not reliable.
-    if "error" in ai_output:
-        return None
+        # AI output failed validation, so the patient is not routed because
+        # the AI output is not reliable.
+        if "error" in ai_output:
+            return None
 
-    # AI flagged an emergency, this overrides every other route.
-    if is_emergency(ai_output):
-        return "EMERGENCY"
+        # AI flagged an emergency, this overrides every other route.
+        if self.is_emergency(ai_output):
+            return "EMERGENCY"
 
-    # Without HSA data the medicines cannot be checked, so see a doctor.
-    if hsa_df is None:
-        return "Doctor"
-
-    # Get all medicines recomended by AI.
-    ai_medicines=get_medicines(ai_output)
-
-    # Variable to store if at least one pharmacy-only medicine is found.
-    pharmacist_needed = False
-
-    # Check each recommended medicine.
-    for ai_medicine in ai_medicines:
-
-        # Get the medicine classification from HSA data.
-        classification = get_classification(ai_medicine, hsa_df)
-
-        # Prescription only medicine requires doctor.
-        if classification == "Prescription Only":
+        # Without HSA data the medicines cannot be checked, so see a doctor.
+        if self._hsa_df is None:
             return "Doctor"
 
-        # Pharmacy only medicine requires pharmacist.
-        if classification=="Pharmacy Only":
-            pharmacist_needed=True
+        # Get all medicines recomended by AI.
+        ai_medicines=self.get_medicines(ai_output)
 
-    # If no prescription medicine but a pharmacy only medicine was found.
-    if pharmacist_needed:
-        return "Pharmacist"
+        # Variable to store if at least one pharmacy-only medicine is found.
+        pharmacist_needed = False
 
-    # Otherwise patient can go to retail.
-    return "Retail"
+        # Check each recommended medicine.
+        for ai_medicine in ai_medicines:
+
+            # Get the medicine classification from HSA data.
+            classification = self.get_classification(ai_medicine)
+
+            # Prescription only medicine requires doctor.
+            if classification == "Prescription Only":
+                return "Doctor"
+
+            # Pharmacy only medicine requires pharmacist.
+            if classification=="Pharmacy Only":
+                pharmacist_needed=True
+
+        # If no prescription medicine but a pharmacy only medicine was found.
+        if pharmacist_needed:
+            return "Pharmacist"
+
+        # Otherwise patient can go to retail.
+        return "Retail"
 
 
 # ======================================================================
