@@ -46,3 +46,15 @@ class PatientRecord:
             return pd.read_csv(self.__records_path)
         except FileNotFoundError:
             return None
+
+    @staticmethod
+    def join_symptoms(patient_record: dict) -> dict:
+        """Join the symptoms list into one string, since a CSV cell
+        cannot hold a list."""
+ 
+        symptoms = patient_record.get("current_symptoms")
+ 
+        if isinstance(symptoms, list):
+            patient_record["current_symptoms"] = ", ".join(symptoms)
+ 
+        return patient_record
