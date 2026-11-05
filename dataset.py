@@ -91,3 +91,17 @@ class Dataset(ABC):
         dataset_df = dataset_df.reset_index(drop=True)
  
         return dataset_df
+
+    @abstractmethod
+    def clean(self, dataset_df: pd.DataFrame) -> pd.DataFrame:
+        """Return the cleaned dataset. Every dataset type cleans its own
+        columns, so each subclass must provide this."""
+ 
+    def get_cleaned(self) -> pd.DataFrame | None:
+        """Load and clean the dataset. Return None if it fails to load."""
+        dataset_df = self.load()
+ 
+        if dataset_df is None:
+            return None
+ 
+        return self.clean(dataset_df) 
