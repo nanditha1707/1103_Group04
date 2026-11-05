@@ -13,6 +13,9 @@ class Dataset(ABC):
     def __init__(self, csv_path: Path):
         self._csv_path = csv_path
 
+# ======================================================================
+# DATASET LOADING FUNCTIONS
+# ======================================================================
     @staticmethod
     def read_csv(csv_path: Path) -> pd.DataFrame | None:
         """Load a dataset CSV. Return None if the file is missing or
@@ -31,4 +34,27 @@ class Dataset(ABC):
         """Load this dataset's CSV. Return None if it cannot be read."""
         return self.read_csv(self._csv_path)
 
-    
+# ======================================================================
+# DATASET CLEANING FUNCTIONS
+# ======================================================================
+    @staticmethod   
+    def replace_blank_values(dataset_df: pd.DataFrame) -> pd.DataFrame:
+        """Return the dataset with empty and dash values replaced by NaN,
+        so they can be removed with dropna."""
+ 
+        # Replace empty strings with NaN.
+        dataset_df = dataset_df.replace(
+            r"^\s*$",
+            np.nan,
+            regex=True
+        )
+ 
+        # Replace dash values with NaN.
+        dataset_df = dataset_df.replace(
+            r"^\s*[-–—]+\s*$",
+            np.nan,
+            regex=True
+        )
+ 
+        return dataset_df
+
