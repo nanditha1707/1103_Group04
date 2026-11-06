@@ -115,7 +115,7 @@ ROUTE_LABELS = {
 }
 
 # ======================================================================
-# FUNCTIONS KEPT
+# FUNCTIONS CREATING OBJECTS
 # ======================================================================
 # keep original function names, parameters and return values.
 # Apply to functions that are not class methods
@@ -147,5 +147,19 @@ def _patient_query(records: pd.DataFrame | None = None) -> PatientQuery:
 def _report_generator(records: pd.DataFrame) -> ReportGenerator:
     # underscore prefix for internal use only
     return ReportGenerator(records, MEDICINE_FIELDS, ROUTE_LABELS)
+
+
+# ======================================================================
+# FUNCTIONS USING DATASET CLASS METHODS
+# ======================================================================
+
+def load_dataset(csv_path: Path) -> pd.DataFrame | None:
+    """Load a dataset CSV. Return None if the file is missing or
+    cannot be read."""
+    return Dataset.read_csv(csv_path)
  
- 
+
+def replace_blank_values(dataset_df: pd.DataFrame) -> pd.DataFrame:
+    """Return the dataset with empty and dash values replaced by NaN,
+    so they can be removed with dropna."""
+    return Dataset.replace_blank_values(dataset_df)
