@@ -28,3 +28,23 @@ class ReportGenerator:
         # Flatten all medicine columns into one Series, drop empties,
         # and count.
         return day_records.stack().value_counts()
+
+    def get_medicine_count(self, medicine: str, date: str) -> dict[str, int]:
+        """Return a dict with how many times a specific medicine was
+        issued on a given date. Returns an empty dict if it was not
+        issued."""
+ 
+        medicine_counts = self.__count_medicines(date)
+ 
+        # Keep only the requested medicine, if it appears at all.
+        if medicine in medicine_counts.index:
+            return {medicine: int(medicine_counts[medicine])}
+ 
+        return {}
+
+    def get_medicine_breakdown(self, date: str) -> dict:
+        """Return a dict of each medicine issued on a given date and how
+        many times it was issued."""
+ 
+        # Returns medicine counts as a dictionary.
+        return self.__count_medicines(date).to_dict()
