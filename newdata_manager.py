@@ -194,3 +194,21 @@ def load_records() -> pd.DataFrame | None:
     """Load all patient records. Return None if the file does not
     exist yet."""
     return _patient_record().load()
+
+def join_symptoms(patient_record: dict) -> dict:
+    """Join the symptoms list into one string, since a CSV cell cannot
+    hold a list."""
+    return PatientRecord.join_symptoms(patient_record)
+ 
+def export_record(
+    all_user_responses: dict,
+    ai_output: dict,
+    logic_result: dict
+) -> bool:
+    """Save a completed patient record to the patient records CSV.
+    Return True if saved, False if the file could not be written."""
+    return _patient_record().save(
+        all_user_responses,
+        ai_output,
+        logic_result
+    )
