@@ -112,3 +112,19 @@ ROUTE_LABELS = {
     "Retail": "Retail",
 }
 
+# ======================================================================
+# FUNCTIONS KEPT
+# ======================================================================
+# keep original function names, parameters and return values.
+# Apply to functions that are not class methods
+
+# create a PatientRecord object with the following constants as its attributes.
+def _patient_record() -> PatientRecord:
+    # underscore prefix for internal use only
+    return PatientRecord(
+        RECORDS_CSV_PATH,
+        SEED_RECORDS_CSV_PATH,
+        RECORD_COLUMNS
+    )
+
+
