@@ -268,3 +268,16 @@ def get_medicine_count(
     """Return a dict with how many times a specific medicine was issued
     on a given date. Returns an empty dict if it was not issued."""
     return _report_generator(records).get_medicine_count(medicine, date)
+
+def get_medicine_breakdown(records: pd.DataFrame, date: str) -> dict:
+    """Return a dict of each medicine issued on a given date and how
+    many times it was issued."""
+    return _report_generator(records).get_medicine_breakdown(date)
+ 
+def get_patient_type_breakdown(
+    records: pd.DataFrame,
+    date: str
+) -> dict[str, int]:
+    """Return how many Emergency, Doctor, Pharmacy and Retail patients
+    there were on a given date."""
+    return _report_generator(records).get_patient_type_breakdown(date)
