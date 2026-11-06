@@ -214,7 +214,7 @@ def export_record(
     )
 
 # ======================================================================
-# FUNCTIONS USING PATIENTRECORD CLASS METHODS
+# FUNCTIONS USING PATIENTQUERY CLASS METHODS
 # ======================================================================
 def get_patient_filter(option: str) -> list[str] | None:
     """Return the record columns for a filter menu option (1 to 4).
@@ -236,4 +236,16 @@ def get_patient_by_queue(
         filter_columns,
         today
     )
+
+def print_or_export(filter_columns: list[str]) -> str:
+    """Return "print" if a table with these columns fits in the
+    terminal, otherwise "export" so it is saved to a CSV instead."""
+    return _patient_query().choose_output(filter_columns)
+ 
+ 
+def export_query(query_df: pd.DataFrame) -> bool:
+    """Save the query results to a new timestamped CSV in the query
+    folder. Return True if saved, False if the file could not be
+    written."""
+    return _patient_query().export(query_df)
  
