@@ -10,6 +10,7 @@ from dataset import Dataset
 from hsa_dataset import HsaDataset
 from icd_dataset import IcdDataset
 from patient_record import PatientRecord
+from patient_query import PatientQuery
 
 # Folder paths, based on where this file is, not where the program is run from.
 # Every module gets its file paths from here.
@@ -127,4 +128,16 @@ def _patient_record() -> PatientRecord:
         RECORD_COLUMNS
     )
 
-
+# create a PatientQuery object.
+def _patient_query(records: pd.DataFrame | None = None) -> PatientQuery:
+    # underscore untilised for internal use 
+    return PatientQuery(
+        records,
+        QUERY_DIR,
+        {
+            1: PATIENT_COLUMNS,
+            2: MEDICAL_COLUMNS,
+            3: AI_OUTPUT_COLUMN,
+            4: RECORD_COLUMNS
+        }
+    )
