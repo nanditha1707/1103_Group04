@@ -181,3 +181,16 @@ def get_cleaned_datasets() -> tuple[pd.DataFrame | None, pd.DataFrame | None]:
         HsaDataset(HSA_CSV_PATH).get_cleaned()
     )
 
+# ======================================================================
+# FUNCTIONS USING PATIENTRECORD CLASS METHODS
+# ======================================================================
+def create_records_file_if_missing() -> None:
+    """Copy the starter records into the records folder if there is no
+    patient records CSV yet. Existing records are never overwritten."""
+    _patient_record().create_file_if_missing()
+ 
+ 
+def load_records() -> pd.DataFrame | None:
+    """Load all patient records. Return None if the file does not
+    exist yet."""
+    return _patient_record().load()
