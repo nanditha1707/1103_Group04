@@ -4,9 +4,12 @@
 from datetime import datetime
 from pathlib import Path
 import shutil
+from zoneinfo import ZoneInfo
 
 import numpy as np
 import pandas as pd
+
+SGT = ZoneInfo("Asia/Singapore")
 
 # Folder paths, based on where this file is, not where the program is run from.
 # Every module gets its file paths from here.
@@ -444,7 +447,7 @@ def get_current_date() -> str:
     """Return today's date as YYYY-MM-DD, the same format as the date
     column in the patient records."""
     # grabs the current date
-    today = datetime.now().strftime("%Y-%m-%d")
+    today = datetime.now(SGT).strftime("%Y-%m-%d")
     return today
 
 def get_patient_by_queue(
@@ -485,7 +488,7 @@ def export_query(query_df: pd.DataFrame) -> bool:
     """Save the query results to a new timestamped CSV in the query
     folder. Return True if saved, False if the file could not be
     written."""
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    timestamp = datetime.now(SGT).strftime("%Y%m%d_%H%M%S")
     query_csv_path = QUERY_DIR / f"query_{timestamp}.csv"
     try:
         # Creates the query folder if it does not exist yet.

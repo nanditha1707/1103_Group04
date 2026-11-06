@@ -174,8 +174,8 @@ def get_queue_number(queue_type: str) -> str | None:
     if prefix is None:
         return None
 
-    # Get todays date.
-    today=datetime.now().strftime("%Y-%m-%d")
+    # Get todays date in Singapore time.
+    today=datetime.now(data.SGT).strftime("%Y-%m-%d")
 
     # Highest number already given out in this queue today.
     highest_number_today = 0
@@ -236,8 +236,8 @@ def process_result(ai_output: dict, hsa_df: pd.DataFrame | None) -> dict:
         hsa_df
     )
 
-    # Get current date and time.
-    now=datetime.now()
+    # Get current date and time in Singapore time.
+    now=datetime.now(data.SGT)
 
     # Patient was not routed, so no queue number is given.
     if route is None:
