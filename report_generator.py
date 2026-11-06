@@ -48,3 +48,24 @@ class ReportGenerator:
  
         # Returns medicine counts as a dictionary.
         return self.__count_medicines(date).to_dict()
+
+    def get_patient_type_breakdown(self, date: str) -> dict[str, int]:
+        """Return how many Emergency, Doctor, Pharmacy and Retail
+        patients there were on a given date."""
+ 
+        # Creates a mask to filter the df by,
+        # and filters the df for matching rows.
+        is_on_date = self.__records["date"] == date
+        records_on_date = self.__records[is_on_date]
+        # Get the count for how many times each route type appears.
+        route_counts = records_on_date["route"].value_counts()
+ 
+        # Put the label and matching value into the dictionary,
+        # ignoring any entries with no value.
+        patient_types = {}
+        for route, label in self.__route_labels.items():
+            if route in route_counts:
+                patient_types[label] = int(route_counts[route])
+ 
+        return patient_types
+ 
