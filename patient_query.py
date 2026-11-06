@@ -49,3 +49,20 @@ class PatientQuery:
  
         # If there are no records, return None.
         return None
+
+    @staticmethod
+    def choose_output(filter_columns: list[str]) -> str:
+        """Return "print" if a table with these columns fits in the
+        terminal, otherwise "export" so it is saved to a CSV instead."""
+        # Each column is at least 10 characters wide (the table's
+        # maxcolwidths), but a long column name needs more than that.
+        width_needed = len(filter_columns) * 10
+        header_width_needed = sum(len(item) for item in filter_columns)
+        width_needed = max(width_needed, header_width_needed)
+ 
+        terminal_width = shutil.get_terminal_size().columns
+ 
+        if terminal_width >= width_needed:
+            return "print"
+ 
+        return "export"
