@@ -150,16 +150,34 @@ def _report_generator(records: pd.DataFrame) -> ReportGenerator:
 
 
 # ======================================================================
-# FUNCTIONS USING DATASET CLASS METHODS
+# FUNCTIONS USING DATASET, ICDDATASET AND HSADATASET CLASS METHODS
 # ======================================================================
 
 def load_dataset(csv_path: Path) -> pd.DataFrame | None:
     """Load a dataset CSV. Return None if the file is missing or
     cannot be read."""
     return Dataset.read_csv(csv_path)
- 
 
 def replace_blank_values(dataset_df: pd.DataFrame) -> pd.DataFrame:
     """Return the dataset with empty and dash values replaced by NaN,
     so they can be removed with dropna."""
     return Dataset.replace_blank_values(dataset_df)
+
+def clean_icd_data(icd_df: pd.DataFrame) -> pd.DataFrame:
+    """Return the ICD-11 dataset with only the disease codes and names,
+    cleaned and without duplicates."""
+    return IcdDataset(ICD_CSV_PATH).clean(icd_df)
+ 
+def clean_hsa_data(hsa_df: pd.DataFrame) -> pd.DataFrame:
+    """Return the HSA dataset with only the required drug columns,
+    cleaned and without duplicates."""
+    return HsaDataset(HSA_CSV_PATH).clean(hsa_df)
+ 
+def get_cleaned_datasets() -> tuple[pd.DataFrame | None, pd.DataFrame | None]:
+    """Load and clean the ICD-11 and HSA datasets. Either one is None if
+    its file fails to load."""
+    return (
+        IcdDataset(ICD_CSV_PATH).get_cleaned(),
+        HsaDataset(HSA_CSV_PATH).get_cleaned()
+    )
+
