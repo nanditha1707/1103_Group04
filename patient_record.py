@@ -15,6 +15,9 @@ class PatientRecord:
         self.__seed_path = seed_path
         self.__columns = columns
 
+# ======================================================================
+# PATIENT RECORD FUNCTIONS
+# ======================================================================
     def create_file_if_missing(self) -> None:
         """Copy the starter records into the records folder if there is no
         patient records CSV yet. Existing records are never overwritten."""
