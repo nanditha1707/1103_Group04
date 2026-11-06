@@ -26,3 +26,26 @@ class PatientQuery:
         already be checked as a positive whole number by
         io_manager.validate_option."""
         return self.__filter_columns.get(int(option))
+
+    def find_by_queue(
+        self,
+        queue_number: str,
+        filter_columns: list[str],
+        today: str
+    ) -> pd.DataFrame | None:
+        """Find the patient with the given queue number on the given
+        date. Return a DataFrame of their record with only the
+        filter_columns, which is empty if no patient matches, or None if
+        there are no records."""
+ 
+        # Checks if records exist. If they do,
+        # continues with the block.
+        if self.__records is not None and not self.__records.empty:
+            # @ lets query use the local variables queue_number and today.
+            patient = self.__records.query(
+                "queue_number == @queue_number and date == @today"
+            )
+            return patient[filter_columns]
+ 
+        # If there are no records, return None.
+        return None
