@@ -248,4 +248,9 @@ def export_query(query_df: pd.DataFrame) -> bool:
     folder. Return True if saved, False if the file could not be
     written."""
     return _patient_query().export(query_df)
- 
+
+# Does not use class method but is kept here for consistency
+def get_current_date() -> str:
+    """Return today's date as YYYY-MM-DD, the same format as the date
+    column in the patient records."""
+    return datetime.now().strftime("%Y-%m-%d")
