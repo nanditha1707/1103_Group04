@@ -15,3 +15,16 @@ class ReportGenerator:
         self.__medicine_fields = medicine_fields
         # Maps each stored route value to its report label.
         self.__route_labels = route_labels
+
+    def __count_medicines(self, date: str) -> pd.Series:
+        """Return how many times each medicine was issued on a date."""
+ 
+        # Filter to the selected date once.
+        day_records = self.__records.loc[
+            self.__records["date"] == date,
+            self.__medicine_fields
+        ]
+
+        # Flatten all medicine columns into one Series, drop empties,
+        # and count.
+        return day_records.stack().value_counts()
