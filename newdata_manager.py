@@ -3,14 +3,15 @@
 # ======================================================================
 from datetime import datetime
 from pathlib import Path
-import shutil
- 
+
 import pandas as pd
+
 from dataset import Dataset
 from hsa_dataset import HsaDataset
 from icd_dataset import IcdDataset
 from patient_record import PatientRecord
 from patient_query import PatientQuery
+from report_generator import ReportGenerator
 
 # Folder paths, based on where this file is, not where the program is run from.
 # Every module gets its file paths from here.
@@ -141,3 +142,10 @@ def _patient_query(records: pd.DataFrame | None = None) -> PatientQuery:
             4: RECORD_COLUMNS
         }
     )
+
+# create a ReportGenerator object with the following constants as its attributes.
+def _report_generator(records: pd.DataFrame) -> ReportGenerator:
+    # underscore prefix for internal use only
+    return ReportGenerator(records, MEDICINE_FIELDS, ROUTE_LABELS)
+ 
+ 
