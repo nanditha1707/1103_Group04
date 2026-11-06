@@ -212,3 +212,28 @@ def export_record(
         ai_output,
         logic_result
     )
+
+# ======================================================================
+# FUNCTIONS USING PATIENTRECORD CLASS METHODS
+# ======================================================================
+def get_patient_filter(option: str) -> list[str] | None:
+    """Return the record columns for a filter menu option (1 to 4).
+    Return None for any other option number."""
+    return _patient_query().get_filter(option)
+ 
+def get_patient_by_queue(
+    records: pd.DataFrame | None,
+    queue_number: str,
+    filter_columns: list[str],
+    today: str
+) -> pd.DataFrame | None:
+    """Find the patient with the given queue number on the given date.
+    Return a DataFrame of their record with only the filter_columns,
+    which is empty if no patient matches, or None if there are no
+    records."""
+    return _patient_query(records).find_by_queue(
+        queue_number,
+        filter_columns,
+        today
+    )
+ 
