@@ -184,6 +184,7 @@ def get_cleaned_datasets() -> tuple[pd.DataFrame | None, pd.DataFrame | None]:
 # ======================================================================
 # FUNCTIONS USING PATIENTRECORD CLASS METHODS
 # ======================================================================
+
 def create_records_file_if_missing() -> None:
     """Copy the starter records into the records folder if there is no
     patient records CSV yet. Existing records are never overwritten."""
@@ -216,6 +217,7 @@ def export_record(
 # ======================================================================
 # FUNCTIONS USING PATIENTQUERY CLASS METHODS
 # ======================================================================
+
 def get_patient_filter(option: str) -> list[str] | None:
     """Return the record columns for a filter menu option (1 to 4).
     Return None for any other option number."""
@@ -242,7 +244,6 @@ def print_or_export(filter_columns: list[str]) -> str:
     terminal, otherwise "export" so it is saved to a CSV instead."""
     return _patient_query().choose_output(filter_columns)
  
- 
 def export_query(query_df: pd.DataFrame) -> bool:
     """Save the query results to a new timestamped CSV in the query
     folder. Return True if saved, False if the file could not be
@@ -254,3 +255,16 @@ def get_current_date() -> str:
     """Return today's date as YYYY-MM-DD, the same format as the date
     column in the patient records."""
     return datetime.now().strftime("%Y-%m-%d")
+
+# ======================================================================
+# FUNCTIONS USING REPORTGENERATOR CLASS METHODS
+# ======================================================================
+
+def get_medicine_count(
+    records: pd.DataFrame,
+    medicine: str,
+    date: str
+) -> dict[str, int]:
+    """Return a dict with how many times a specific medicine was issued
+    on a given date. Returns an empty dict if it was not issued."""
+    return _report_generator(records).get_medicine_count(medicine, date)
