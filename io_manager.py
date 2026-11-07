@@ -18,9 +18,7 @@ QUIT_COMMAND = "QUIT"
 BACK_COMMAND = "BACK"
 REG_EXIT_MESSAGE = "Exiting The Registration Process!"
 
-# Symptom names used to match the user's symptoms.
-# main.py fills this once at start up with data.load_symptoms()
-SYMPTOMS_DIFFLIB_LIST: list[str] = []
+SYMPTOMS_DIFFLIB_LIST= []
 # Answering Y to any of these questions means the user needs a nurse
 # immediately, so registration stops straight away.
 EMERGENCY_KEYS = [

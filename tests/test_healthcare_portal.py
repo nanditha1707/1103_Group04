@@ -91,14 +91,8 @@ def test_current_patient_found(monkeypatch):
 
     monkeypatch.setattr(
         main["data"],
-        "load_records",
-        lambda: pd.DataFrame()
-    )
-
-    monkeypatch.setattr(
-        main["data"],
         "get_patient_by_queue",
-        lambda records, queue, filters, date: fake_patient
+        lambda queue, filters, date: fake_patient
     )
 
     printed = []
@@ -156,14 +150,8 @@ def test_patient_not_found(monkeypatch):
 
     monkeypatch.setattr(
         main["data"],
-        "load_records",
-        lambda: pd.DataFrame()
-    )
-
-    monkeypatch.setattr(
-        main["data"],
         "get_patient_by_queue",
-        lambda records, queue, filters, date: None
+        lambda queue, filters, date: pd.DataFrame()
     )
 
     result = main["patient_query_handler"](
@@ -241,3 +229,39 @@ def test_past_patient_uses_selected_date(monkeypatch):
     print("Actual:", dates)
 
     assert dates == ["2026-10-10"]
+
+def test_patient_query_database_down(monkeypatch):
+
+    monkeypatch.setattr(
+        main["io"],
+        "dynamic_menu_print",
+        lambda *args: "1"
+    )
+
+    monkeypatch.setattr(
+        main["io"],
+        "validate_option",
+        lambda option: None
+    )
+
+    monkeypatch.setattr(
+        "builtins.input",
+        lambda prompt="": "D001"
+    )
+
+    # get_patient_by_queue returns None when the database cannot be reached.
+    monkeypatch.setattr(
+        main["data"],
+        "get_patient_by_queue",
+        lambda queue, filters, date: None
+    )
+
+    result = main["patient_query_handler"](
+        "2026-10-14"
+    )
+
+    print("\nSCENARIO: Database Cannot Be Reached")
+    print("Expected: Database error message")
+    print("Actual:", result)
+
+    assert result == main["DATABASE_ERROR_MESSAGE"]

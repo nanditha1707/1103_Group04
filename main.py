@@ -8,6 +8,7 @@ import logic_manager as logic
 
 ADMIN_PASSWORD = "Password"
 MENU_EXIT_MESSAGE = "Admin Password Inputted, Exiting Program Now!"
+DATABASE_ERROR_MESSAGE = "The patient records database could not be reached, please try again later!"
 MAIN_MENU_OPTIONS = ["1. Patient Registration",
                      "2. Healthcare Professional Portal",
                      "3. Exit"]
@@ -47,13 +48,15 @@ def patient_query_handler(date: str) -> str | None:
             error = "This is not a valid option number!"
         else:
             queue = input("Enter the Patient's Queue Number here: ").strip().upper()
-            # Load the latest records so patients registered this session are found.
-            records = data.load_records()
-            query_response= data.get_patient_by_queue(records, queue, filter_list, date)
+            # Queries the database directly, so patients registered by
+            # other users are found too.
+            query_response= data.get_patient_by_queue(queue, filter_list, date)
             # Wide results do not fit in the terminal, so they are
             # exported to a CSV instead of printed.
             next_action = data.print_or_export(filter_list)
-            if query_response is not None and not query_response.empty:
+            if query_response is None:
+                error = DATABASE_ERROR_MESSAGE
+            elif not query_response.empty:
                 if next_action == "print":
                     io.print_df_and_reports(query_response)
                 elif next_action == "export" and not data.export_query(query_response):
@@ -90,23 +93,25 @@ def healthcare_portal_routing(option: str) -> None:
             date = input("Enter the Date here. (YYYY-MM-DD): ").strip()
             date_error = io.validate_date(date)
             if date_error is None:
-                previous_records_df = data.load_records()
                 result = None
                 header = ""
                 if report_option == "1":
                     medicine = input("Enter a medicine name: ").strip().upper()
-                    result = data.get_medicine_count(previous_records_df,medicine, date)
+                    result = data.get_medicine_count(medicine, date)
                     header = ""
                 elif report_option == "2":
-                    result = data.get_medicine_breakdown(previous_records_df, date)
+                    result = data.get_medicine_breakdown(date)
                     header = "Medicine Breakdown Report"
                 elif report_option == "3":
-                    result = data.get_patient_type_breakdown(previous_records_df, date)
+                    result = data.get_patient_type_breakdown(date)
                     header = "Patient Type Breakdown Report"
                 else:
                     error_message = "This is not a valid option number!"
+                # A valid report returns None only if the database failed.
+                if result is None and error_message is None:
+                    error_message = DATABASE_ERROR_MESSAGE
                 # An empty report means nothing matched the date.
-                if result:
+                elif result:
                     io.print_df_and_reports(result, header)
                 elif error_message is None:
                     error_message= "There is no matching records for the given date!"
@@ -164,10 +169,7 @@ def main_menu() -> dict | int | None:
 
 # load the ICD and HSA datasets once, when the program starts
 icd_df, hsa_df = data.get_cleaned_datasets()
-# Load the symptoms list once, used by io_manager to match symptoms
 io.SYMPTOMS_DIFFLIB_LIST = data.load_symptoms()
-# Copy the starter patient records on the first run
-data.create_records_file_if_missing()
 
 while True:
     # 1. I/O manager: collect the patient's answers

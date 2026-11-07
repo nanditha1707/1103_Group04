@@ -8,6 +8,7 @@ from zoneinfo import ZoneInfo
 import numpy as np
 import pandas as pd
 import psycopg
+from psycopg import sql
 import os
 from dotenv import load_dotenv
 
@@ -24,8 +25,6 @@ DATABASE_URL = os.getenv("POSTGRESQL_CLOUD_DATABASE_URL")
 PROJECT_DIR = Path(__file__).resolve().parent
 # Read-only datasets that ship with the app.
 DATASETS_DIR = PROJECT_DIR / "datasets"
-# Saved patient records.
-RECORDS_DIR = PROJECT_DIR / "records"
 # Exported query results.
 QUERY_DIR = PROJECT_DIR / "query"
 
@@ -34,16 +33,9 @@ ICD_CSV_PATH = DATASETS_DIR / "icd11.csv"
 HSA_CSV_PATH = DATASETS_DIR / "hsa.csv"
 SYMPTOMS_CSV_PATH = DATASETS_DIR / "symptoms_umls.csv"
 
-# CSV file used to store patient records.
-# Same file logic_manager reads to work out queue numbers.
-RECORDS_CSV_PATH = RECORDS_DIR / "patient_records.csv"
-
-# Starter patient records, copied to RECORDS_CSV_PATH on the first run.
-SEED_RECORDS_CSV_PATH = DATASETS_DIR / "patient_records_seed.csv"
-
-# Fixed column order for patient_records.csv.
-# Every row uses this same list, so a failed AI response (which only
-# has an "error" key) leaves its columns blank instead of shifting them.
+# Fixed column order for a patient record, as shown to staff.
+# The database stores these names in lowercase (Postgres lowercases
+# unquoted names), so queries use column.lower() for the real name.
 RECORD_COLUMNS = [
     "date",
     "time",
@@ -104,14 +96,6 @@ AI_OUTPUT_COLUMN=[
         "secondary_diagnosis_medicine_2",
         "ai_confidence_score"
             ]
-# Medicine fields from AI output.
-MEDICINE_FIELDS=[
-    "primary_diagnosis_medicine_1",
-    "primary_diagnosis_medicine_2",
-    "secondary_diagnosis_medicine_1",
-    "secondary_diagnosis_medicine_2"
-]
-
 # Maps the route value stored in the records to the matching label.
 ROUTE_LABELS = {
     "EMERGENCY": "Emergency",
@@ -341,45 +325,29 @@ def get_cleaned_datasets() -> tuple[pd.DataFrame | None, pd.DataFrame | None]:
 
 
 # ======================================================================
-# PATIENT RECORD FUNCTIONS
+# DATABASE FUNCTIONS
 # ======================================================================
-def create_records_file_if_missing() -> None:
-    """Copy the starter records into the records folder if there is no
-    patient records CSV yet. Existing records are never overwritten."""
-    if RECORDS_CSV_PATH.exists():
-        return
-
+def fetch_rows(sql_statement: str | sql.Composed, parameters: tuple) -> list[tuple] | None:
+    """Run a SELECT on the cloud database and return every row it found.
+    Each call opens a new connection, so the rows always include records
+    saved by other users. Return None if the database could not be
+    reached or the query failed."""
     try:
-        RECORDS_DIR.mkdir(exist_ok=True)
-        # Read the seed file first, so if it is missing the records
-        # file is never created.
-        # "b" copies the bytes exactly in binary mode, so copy is
-        # identical to the seed.
-        with open(SEED_RECORDS_CSV_PATH, "rb") as seed_file:
-            seed_contents = seed_file.read()
-
-        # Create the records file and write the seed contents into it.
-        with open(RECORDS_CSV_PATH, "wb") as records_file:
-            records_file.write(seed_contents)
-
-    # The seed file is missing or the records folder cannot be written.
-    # The program still runs and starts with no records.
-    except OSError:
-        pass
-
-
-def load_records() -> pd.DataFrame | None:
-    """Load all patient records. Return None if the file does not
-    exist yet."""
-    try:
-        return pd.read_csv(RECORDS_CSV_PATH)
-    except FileNotFoundError:
+        with psycopg.connect(DATABASE_URL) as connection, connection.cursor() as cursor:
+            # psycopg fills in each %s with the matching parameter safely,
+            # so user input is never pasted into the SQL itself.
+            cursor.execute(sql_statement, parameters)
+            return cursor.fetchall()
+    except psycopg.Error:
         return None
 
 
+# ======================================================================
+# PATIENT RECORD FUNCTIONS
+# ======================================================================
 def join_symptoms(patient_record: dict) -> dict:
-    """Join the symptoms list into one string, since a CSV cell cannot
-    hold a list."""
+    """Join the symptoms list into one string, since the database
+    column holds text, not a list."""
 
     symptoms = patient_record.get("current_symptoms")
 
@@ -507,24 +475,33 @@ def get_current_date() -> str:
     return today
 
 def get_patient_by_queue(
-    records: pd.DataFrame | None,
     queue_number: str,
     filter_columns: list[str],
-    today: str
+    date: str
 ) -> pd.DataFrame | None:
-    """Find the patient with the given queue number on the given date.
-    Return a DataFrame of their record with only the filter_columns,
-    which is empty if no patient matches, or None if there are no
-    records."""
+    """Find the patient with the given queue number on the given date
+    (YYYY-MM-DD) in the database. Return a DataFrame of their record
+    with only the filter_columns, which is empty if no patient matches,
+    or None if the database could not be reached."""
 
-    # Checks if records exist. If they do,
-    # continues with the block.
-    if records is not None and not records.empty:
-        # @ lets query use the local variables queue_number and today.
-        patient=records.query("queue_number == @queue_number and date == @today")
-        return patient[filter_columns]
-    # If there is no such patient, return None.
-    return None
+    # Build "SELECT name AS "name", ..." for only the chosen columns.
+    # The AS keeps the original names (e.g. primary_diagnosis_ICD11_Code)
+    # as the table headers instead of the lowercase database names.
+    # sql.Identifier quotes each name safely.
+    selected_columns = sql.SQL(", ").join(
+        sql.SQL("{} AS {}").format(sql.Identifier(column.lower()), sql.Identifier(column))
+        for column in filter_columns
+    )
+    sql_statement = sql.SQL(
+        "SELECT {} FROM patient_records WHERE queue_number = %s AND date = %s"
+    ).format(selected_columns)
+
+    rows = fetch_rows(sql_statement, (queue_number, date))
+    if rows is None:
+        return None
+
+    # The DataFrame is only used to print the table or export it to CSV.
+    return pd.DataFrame(rows, columns=filter_columns)
 
 def print_or_export(filter_columns: list[str]) -> str:
     """Return "print" if a table with these columns fits in the
@@ -569,53 +546,85 @@ def export_query(query_df: pd.DataFrame) -> bool:
 # ======================================================================
 # REPORT FUNCTIONS
 # ======================================================================
-def get_medicine_count(records: pd.DataFrame, medicine: str, date: str) -> dict[str, int]:
+# Each record has 4 medicine columns. unnest() turns them into 4 rows,
+# one medicine per row, so they can be counted as a single column.
+# Used in the FROM part of the medicine reports.
+MEDICINES_PER_RECORD = """
+    patient_records,
+    unnest(ARRAY[
+        primary_diagnosis_medicine_1,
+        primary_diagnosis_medicine_2,
+        secondary_diagnosis_medicine_1,
+        secondary_diagnosis_medicine_2
+    ]) AS medicine
+"""
+
+
+def get_medicine_count(medicine: str, date: str) -> dict[str, int] | None:
     """Return a dict with how many times a specific medicine was issued
-    on a given date. Returns an empty dict if it was not issued."""
+    on a given date. Returns an empty dict if it was not issued, or None
+    if the database could not be reached."""
 
-    # Filter to the selected date once.
-    day_records = records.loc[records["date"] == date, MEDICINE_FIELDS]
+    sql_statement = f"""
+        SELECT COUNT(*)
+        FROM {MEDICINES_PER_RECORD}
+        WHERE date = %s AND medicine = %s
+    """
+    rows = fetch_rows(sql_statement, (date, medicine))
+    if rows is None:
+        return None
 
-    # Flatten all medicine columns into one Series, drop empties, and count.
-    medicine_counts = day_records.stack().value_counts()
-
-    # Keep only the requested medicine, if it appears at all.
-    if medicine in medicine_counts.index:
-        return {medicine: int(medicine_counts[medicine])}
-
-    return {}
+    # COUNT(*) always returns exactly one row with one value.
+    times_issued = rows[0][0]
+    if times_issued == 0:
+        return {}
+    return {medicine: times_issued}
 
 
-def get_medicine_breakdown(records: pd.DataFrame, date: str) -> dict:
+def get_medicine_breakdown(date: str) -> dict[str, int] | None:
     """Return a dict of each medicine issued on a given date and how
-    many times it was issued."""
+    many times it was issued, most issued first. Returns None if the
+    database could not be reached."""
 
-    # Filter to the selected date once.
-    day_records = records.loc[records["date"] == date, MEDICINE_FIELDS]
+    # Empty medicine columns are skipped so they are not counted.
+    sql_statement = f"""
+        SELECT medicine, COUNT(*) AS times_issued
+        FROM {MEDICINES_PER_RECORD}
+        WHERE date = %s AND medicine IS NOT NULL AND medicine <> ''
+        GROUP BY medicine
+        ORDER BY times_issued DESC, medicine
+    """
+    rows = fetch_rows(sql_statement, (date,))
+    if rows is None:
+        return None
 
-    # Flatten all medicine columns into one Series, drop empties, and count.
-    medicine_counts = day_records.stack().value_counts()
-
-    # Returns medicine counts as a dictionary
-    return medicine_counts.to_dict()
+    # Each row is (medicine, times_issued).
+    return dict(rows)
 
 
-def get_patient_type_breakdown(records: pd.DataFrame, date: str) -> dict[str, int]:
+def get_patient_type_breakdown(date: str) -> dict[str, int] | None:
     """Return how many Emergency, Doctor, Pharmacy and Retail patients
-    there were on a given date."""
+    there were on a given date. Returns None if the database could not
+    be reached."""
 
-    # Creates a mask to filter the df by, 
-    # and filters the df for matching rows.
-    is_on_date = records["date"] == date
-    records_on_date = records[is_on_date]
-    # Get the count for how many times each route type appears.
-    route_counts = records_on_date["route"].value_counts()
+    sql_statement = """
+        SELECT route, COUNT(*)
+        FROM patient_records
+        WHERE date = %s
+        GROUP BY route
+    """
+    rows = fetch_rows(sql_statement, (date,))
+    if rows is None:
+        return None
 
-    # Put the label and matching value into the dictionary, 
-    # ignoring any entries with no value.
+    # Each row is (route, count).
+    route_counts = dict(rows)
+
+    # Put the label and matching value into the dictionary, in the
+    # order of ROUTE_LABELS, ignoring routes with no patients.
     patient_types = {}
     for route, label in ROUTE_LABELS.items():
         if route in route_counts:
-            patient_types[label] = int(route_counts[route])
+            patient_types[label] = route_counts[route]
 
     return patient_types
