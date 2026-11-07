@@ -70,12 +70,11 @@ NAME_ERROR = (
     "only alphabets, spaces, hyphens and apostrophes are allowed."
 )
 GENDER_ERROR = "This is not a valid input, please only enter either M or F."
-WHOLE_NUMBER_ERROR = "This is not a valid input, please only enter whole numbers."
 POSITIVE_WHOLE_NUMBER_ERROR = (
     "This is not a valid input, please only enter positive whole numbers."
 )
-# {maximum} is filled in by RegistrationForm with the upper bound used.
-AGE_ERROR = "This is not a valid age, please enter a whole number from 1 to {maximum}."
+# {maximum} is filled in by RegistrationFactory with the upper bound used.
+AGE_ERROR = "This is not a valid age, please enter a whole number from 0 to {maximum}."
 ONSET_DAYS_ERROR = (
     "This is not a valid number of days, "
     "please enter a whole number from 0 to {maximum}."
@@ -117,7 +116,11 @@ SYMPTOM_NOT_FOUND = (
 SYMPTOM_CONFIRM_PROMPT = "Did you mean '{symptom}'? (Y/N): "
 CURRENT_SYMPTOMS = "Your symptoms: {symptoms}"
 NO_SYMPTOMS_TO_REMOVE = "You have not entered any symptoms to remove."
-REMOVE_SYMPTOM_PROMPT = "Please enter the symptom you wish to remove: "
+REMOVE_SYMPTOM_PROMPT = (
+    "Please enter the symptom you wish to remove, "
+    "or {remove_all} to remove every symptom: "
+)
+ALL_SYMPTOMS_REMOVED = "All your symptoms have been removed."
 SYMPTOM_NOT_IN_LIST = "'{symptom}' is not in your list."
 
 # ======================================================================
@@ -125,6 +128,7 @@ SYMPTOM_NOT_IN_LIST = "'{symptom}' is not in your list."
 # ======================================================================
 CONFIRMATION_HEADER = "Confirmation Screen"
 CONFIRM_ALL_LABEL = "Confirm All Inputs"
+CONFIRMATION_MENU_HINT = "You can also input quit"
 INVALID_MENU_OPTION = "Invalid input. Please enter a valid menu option!"
 CANNOT_EDIT = "That item cannot be edited."
 CANNOT_GO_BACK = (
