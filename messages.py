@@ -115,10 +115,6 @@ SYMPTOM_NOT_FOUND = (
     "or approach a nurse or clerk for assistance!"
 )
 SYMPTOM_CONFIRM_PROMPT = "Did you mean '{symptom}'? (Y/N): "
-SYMPTOM_LIST_UNAVAILABLE = (
-    "The symptom list is currently unavailable. Please choose one of the "
-    "other options or approach a nurse or clerk for assistance."
-)
 CURRENT_SYMPTOMS = "Your symptoms: {symptoms}"
 NO_SYMPTOMS_TO_REMOVE = "You have not entered any symptoms to remove."
 REMOVE_SYMPTOM_PROMPT = "Please enter the symptom you wish to remove: "
