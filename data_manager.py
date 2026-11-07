@@ -5,11 +5,19 @@ from datetime import datetime
 from pathlib import Path
 import shutil
 from zoneinfo import ZoneInfo
-
 import numpy as np
 import pandas as pd
+import psycopg
+import os
+from dotenv import load_dotenv
 
+load_dotenv(override=True)
+
+# Docker runs by default use UTC, so this is used to make Docker use SGT
+# This matters for time and date generation for patient records 
 SGT = ZoneInfo("Asia/Singapore")
+
+DATABASE_URL = os.getenv("POSTGRESQL_CLOUD_DATABASE_URL")
 
 # Folder paths, based on where this file is, not where the program is run from.
 # Every module gets its file paths from here.
@@ -373,54 +381,94 @@ def join_symptoms(patient_record: dict) -> dict:
     return patient_record
 
 
-def export_record(
-    all_user_responses: dict,
-    ai_output: dict,
-    logic_result: dict
-) -> bool:
-    """Save a completed patient record to the patient records CSV.
-    Return True if saved, False if the file could not be written."""
-    # Put all the patient information together.
+def export_record(all_user_responses: dict, ai_output: dict, logic_result: dict) -> str | None:
+    """Save a completed patient record to the database.
+    Return None if saved, or the error message if it could not be written."""
+
+    # Step 1: Put all the patient information into one dict.
+    all_patient_information = {}
+    all_patient_information.update(all_user_responses)
+    all_patient_information.update(ai_output)
+    all_patient_information.update(logic_result)
+
+    # Step 2: Turn the symptoms list into one string,
+    all_patient_information = join_symptoms(all_patient_information)
+
+    # Step 3: Build the record to save, one entry per column.
+    # Only columns in RECORD_COLUMNS are kept, so extra keys like
+    # (consent, refused, error) are left out.
+    # A missing column is set to None, which the database saves as NULL.
     patient_record = {}
-
-    patient_record.update(all_user_responses)
-    patient_record.update(ai_output)
-    patient_record.update(logic_result)
-
-    # Join the symptoms list into one cell.
-    patient_record = join_symptoms(patient_record)
-
-    # Build the CSV row from RECORD_COLUMNS only, in that order.
-    # Extra keys (consent, refused, error) are left out.
-    # Missing columns are set to None so the cell stays blank.
-    csv_row = {}
-
     for column in RECORD_COLUMNS:
-        csv_row[column] = patient_record.get(column)
+        patient_record[column] = all_patient_information.get(column)
 
-    # Change the row into a one-row dataframe.
-    new_record_df = pd.DataFrame([csv_row])
+    # Step 4: export to cloud Database
+    sql_statement = """
+        INSERT INTO patient_records (
+            date,
+            time,
+            queue_number,
+            name,
+            nric,
+            gender,
+            age,
+            phone_number,
+            pregnancy,
+            current_symptoms,
+            symptom_onset_days,
+            chronic_conditions,
+            current_medications,
+            drug_allergies,
+            primary_diagnosis_icd11_code,
+            primary_diagnosis_icd11_title,
+            primary_diagnosis_explanation,
+            primary_diagnosis_medicine_1,
+            primary_diagnosis_medicine_2,
+            secondary_diagnosis_icd11_code,
+            secondary_diagnosis_icd11_title,
+            secondary_diagnosis_explanation,
+            secondary_diagnosis_medicine_1,
+            secondary_diagnosis_medicine_2,
+            ai_confidence_score,
+            route
+        )
+        VALUES (
+            %(date)s,
+            %(time)s,
+            %(queue_number)s,
+            %(name)s,
+            %(nric)s,
+            %(gender)s,
+            %(age)s,
+            %(phone_number)s,
+            %(pregnancy)s,
+            %(current_symptoms)s,
+            %(symptom_onset_days)s,
+            %(chronic_conditions)s,
+            %(current_medications)s,
+            %(drug_allergies)s,
+            %(primary_diagnosis_ICD11_Code)s,
+            %(primary_diagnosis_ICD11_Title)s,
+            %(primary_diagnosis_explanation)s,
+            %(primary_diagnosis_medicine_1)s,
+            %(primary_diagnosis_medicine_2)s,
+            %(secondary_diagnosis_ICD11_Code)s,
+            %(secondary_diagnosis_ICD11_Title)s,
+            %(secondary_diagnosis_explanation)s,
+            %(secondary_diagnosis_medicine_1)s,
+            %(secondary_diagnosis_medicine_2)s,
+            %(ai_confidence_score)s,
+            %(route)s
+        )
+    """
 
     try:
-        # Creates the records folder if it does not exist yet.
-        RECORDS_DIR.mkdir(exist_ok=True)
+        with psycopg.connect(DATABASE_URL) as connection, connection.cursor() as cursor:
+            cursor.execute(sql_statement, patient_record)
+    except psycopg.Error as error:
+        return f"{type(error).__name__} - {error}"
 
-        # Appends the df to the CSV,
-        # only writing the header if the file is new.
-        # 'a' append mode in pandas creates a new csv file if none exists.
-        new_record_df.to_csv(
-            RECORDS_CSV_PATH,
-            mode="a",
-            header=not RECORDS_CSV_PATH.exists(),
-            index=False,
-            encoding="utf-8"
-        )
-
-    # The file is open in another program (e.g. Excel) or cannot be written.
-    except OSError:
-        return False
-
-    return True
+    return None
 
 # ======================================================================
 # PATIENT LOOKUP FUNCTIONS

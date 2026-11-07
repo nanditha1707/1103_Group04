@@ -191,11 +191,13 @@ while True:
     # 3. Logic manager: decide and print the route and queue number
     logic_result = logic.process_result(ai_output, hsa_df)
 
-    # 4. Data manager: save the completed record to patient_records.csv
-    is_export=data.export_record(answers, ai_output, logic_result)
-    if not is_export:
-        error=("The program has encountered an error."
-              "Please approach a nurse or clerk for manual registration.")
+    # 4. Data manager: save the completed record to the database.
+    # export_record returns None if saved, or the error message if not.
+    export_error = data.export_record(answers, ai_output, logic_result)
+    if export_error is not None:
+        error = ("The program has encountered an error. "
+                 "Please approach a nurse or clerk for manual registration.\n"
+                 f"Error: {export_error}")
         io.print_message(error)
     else:
         # 5. I/O manager: tell the patient what to do next
