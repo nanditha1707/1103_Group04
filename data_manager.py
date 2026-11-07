@@ -474,6 +474,17 @@ def get_current_date() -> str:
     today = datetime.now(SGT).strftime("%Y-%m-%d")
     return today
 
+def build_selected_columns(columns: list[str]) -> sql.Composed:
+    """Build the column list of a SELECT, e.g. name AS "name", ...
+    The AS keeps the original names (e.g. primary_diagnosis_ICD11_Code)
+    as the table headers instead of the lowercase database names.
+    sql.Identifier quotes each name safely."""
+    return sql.SQL(", ").join(
+        sql.SQL("{} AS {}").format(sql.Identifier(column.lower()), sql.Identifier(column))
+        for column in columns
+    )
+
+
 def get_patient_by_queue(
     queue_number: str,
     filter_columns: list[str],
@@ -484,17 +495,9 @@ def get_patient_by_queue(
     with only the filter_columns, which is empty if no patient matches,
     or None if the database could not be reached."""
 
-    # Build "SELECT name AS "name", ..." for only the chosen columns.
-    # The AS keeps the original names (e.g. primary_diagnosis_ICD11_Code)
-    # as the table headers instead of the lowercase database names.
-    # sql.Identifier quotes each name safely.
-    selected_columns = sql.SQL(", ").join(
-        sql.SQL("{} AS {}").format(sql.Identifier(column.lower()), sql.Identifier(column))
-        for column in filter_columns
-    )
     sql_statement = sql.SQL(
         "SELECT {} FROM patient_records WHERE queue_number = %s AND date = %s"
-    ).format(selected_columns)
+    ).format(build_selected_columns(filter_columns))
 
     rows = fetch_rows(sql_statement, (queue_number, date))
     if rows is None:
@@ -502,6 +505,33 @@ def get_patient_by_queue(
 
     # The DataFrame is only used to print the table or export it to CSV.
     return pd.DataFrame(rows, columns=filter_columns)
+
+
+def get_patients_by_date(filter_columns: list[str], date: str) -> pd.DataFrame | None:
+    """Find every patient registered on the given date (YYYY-MM-DD) in
+    the database, earliest first. Return a DataFrame with one row per
+    patient, which is empty if there were no patients, or None if the
+    database could not be reached."""
+
+    # Each patient gets their own row, so the time and queue number are
+    # added in front to tell the rows apart, unless the filter already
+    # has them.
+    identifier_columns = []
+    for column in ["time", "queue_number"]:
+        if column not in filter_columns:
+            identifier_columns.append(column)
+    columns = identifier_columns + filter_columns
+
+    sql_statement = sql.SQL(
+        "SELECT {} FROM patient_records WHERE date = %s ORDER BY time"
+    ).format(build_selected_columns(columns))
+
+    rows = fetch_rows(sql_statement, (date,))
+    if rows is None:
+        return None
+
+    # The DataFrame is only used to print the table or export it to CSV.
+    return pd.DataFrame(rows, columns=columns)
 
 def print_or_export(filter_columns: list[str]) -> str:
     """Return "print" if a table with these columns fits in the

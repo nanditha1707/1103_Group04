@@ -358,3 +358,63 @@ def test_database_down(monkeypatch):
 
     assert fetch_result is None
     assert "connection refused" in export_result
+
+
+# ==========================================================
+# TEST 9 - ALL PATIENTS ON A DATE
+# ==========================================================
+
+def test_get_patients_by_date(monkeypatch):
+
+    sent_parameters = []
+
+    # The database returns one row per patient, columns in the order asked.
+    def fake_fetch_rows(sql_statement, parameters):
+        sent_parameters.append(parameters)
+        return [
+            ("09:00:00", "D001", "Alex Tan"),
+            ("09:30:00", "P001", "Betty Lim")
+        ]
+
+    monkeypatch.setattr(
+        data,
+        "fetch_rows",
+        fake_fetch_rows
+    )
+
+    result = data.get_patients_by_date(
+        ["name"],
+        "2026-10-14"
+    )
+
+    print("\nSCENARIO: All Patients On A Date")
+    print("Expected Patients: Alex Tan, Betty Lim")
+    print("Actual:")
+    print(result)
+
+    # Time and queue number are added in front to tell the rows apart.
+    assert list(result.columns) == ["time", "queue_number", "name"]
+    assert list(result["name"]) == ["Alex Tan", "Betty Lim"]
+    assert sent_parameters == [("2026-10-14",)]
+
+
+def test_get_patients_by_date_keeps_existing_columns(monkeypatch):
+
+    monkeypatch.setattr(
+        data,
+        "fetch_rows",
+        lambda sql_statement, parameters: []
+    )
+
+    result = data.get_patients_by_date(
+        data.RECORD_COLUMNS,
+        "2026-10-14"
+    )
+
+    print("\nSCENARIO: All Records Filter, No Patients")
+    print("Expected: Empty result with no repeated columns")
+    print("Actual:", list(result.columns)[:4], "...")
+
+    # RECORD_COLUMNS already has time and queue_number, so nothing is added.
+    assert list(result.columns) == data.RECORD_COLUMNS
+    assert result.empty

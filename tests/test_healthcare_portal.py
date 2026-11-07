@@ -265,3 +265,98 @@ def test_patient_query_database_down(monkeypatch):
     print("Actual:", result)
 
     assert result == main["DATABASE_ERROR_MESSAGE"]
+
+
+def answer_menus(monkeypatch, filter_option, scope_option):
+    """Make the filter menu return filter_option, then the one patient
+    or all patients menu return scope_option."""
+
+    answers = iter([filter_option, scope_option])
+
+    monkeypatch.setattr(
+        main["io"],
+        "dynamic_menu_print",
+        lambda *args: next(answers)
+    )
+
+
+def test_all_patients_on_date(monkeypatch):
+
+    fake_patients = pd.DataFrame([
+        {"time": "09:00:00", "queue_number": "D001", "name": "NANI"},
+        {"time": "09:30:00", "queue_number": "P001", "name": "ALEX"}
+    ])
+
+    answer_menus(monkeypatch, "1", "2")
+
+    dates = []
+
+    monkeypatch.setattr(
+        main["data"],
+        "get_patients_by_date",
+        lambda filters, date: dates.append(date) or fake_patients
+    )
+
+    monkeypatch.setattr(
+        main["data"],
+        "print_or_export",
+        lambda columns: "print"
+    )
+
+    printed = []
+
+    monkeypatch.setattr(
+        main["io"],
+        "print_df_and_reports",
+        lambda df, *args: printed.append(df)
+    )
+
+    result = main["patient_query_handler"](
+        "2026-10-14"
+    )
+
+    print("\nSCENARIO: All Patients On A Date")
+    print("Expected: Both patients printed, no error")
+    print("Actual:", result)
+    print(fake_patients)
+
+    assert result is None
+    assert dates == ["2026-10-14"]
+    assert len(printed) == 1
+    assert len(printed[0]) == 2
+
+
+def test_all_patients_none_on_date(monkeypatch):
+
+    answer_menus(monkeypatch, "1", "2")
+
+    monkeypatch.setattr(
+        main["data"],
+        "get_patients_by_date",
+        lambda filters, date: pd.DataFrame()
+    )
+
+    result = main["patient_query_handler"](
+        "2026-10-14"
+    )
+
+    print("\nSCENARIO: No Patients On The Date")
+    print("Expected: No records message")
+    print("Actual:", result)
+
+    assert result == "There are no patient records for this date!"
+
+
+def test_invalid_query_scope(monkeypatch):
+
+    answer_menus(monkeypatch, "1", "3")
+
+    result = main["patient_query_handler"](
+        "2026-10-14"
+    )
+
+    print("\nSCENARIO: Invalid One Patient / All Patients Option")
+    print("Expected: Invalid option message")
+    print("Actual:", result)
+
+    assert result == "This is not a valid option number!"

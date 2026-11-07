@@ -1,6 +1,8 @@
 # ======================================================================
 # IMPORT FUNCTIONS AND CONSTANTS
 # ======================================================================
+import pandas as pd
+
 import ai_manager as ai
 import data_manager as data
 import io_manager as io
@@ -23,6 +25,11 @@ FILTER_OPTIONS =[
     "3. AI Ouput Information", 
     "4. All Records"
                  ]
+# Asked after the filter: look up one patient, or every patient on the date.
+QUERY_SCOPE_OPTIONS = [
+    "1. One Patient (by Queue Number)",
+    "2. All Patients on This Date"
+]
 
 REPORT_OPTIONS = [
     "1. Specific Medicine Count",
@@ -35,9 +42,29 @@ REPORT_OPTIONS = [
 # CORE FUNCTIONS
 # ======================================================================
 
+def show_query_results(query_response: pd.DataFrame | None, not_found_error: str) -> str | None:
+    """Print the query results, or export them to a CSV if they are too
+    wide for the terminal. Return an error message if the database
+    failed, nothing was found or the export failed, otherwise None."""
+    error = None
+    if query_response is None:
+        error = DATABASE_ERROR_MESSAGE
+    elif query_response.empty:
+        error = not_found_error
+    else:
+        # Wide results do not fit in the terminal, so they are
+        # exported to a CSV instead of printed.
+        next_action = data.print_or_export(list(query_response.columns))
+        if next_action == "print":
+            io.print_df_and_reports(query_response)
+        elif next_action == "export" and not data.export_query(query_response):
+            error = "The query results could not be exported!"
+    return error
+
 def patient_query_handler(date: str) -> str | None:
-    """Ask for a filter option and queue number, then print or export
-    that patient's record for the given date (YYYY-MM-DD).
+    """Ask for a filter option, then whether to look up one patient by
+    queue number or every patient, and print or export the matching
+    records for the given date (YYYY-MM-DD).
     Return an error message if anything fails, otherwise None."""
     error = None
     filter_option= io.dynamic_menu_print(FILTER_OPTIONS)
@@ -47,22 +74,24 @@ def patient_query_handler(date: str) -> str | None:
         if filter_list is None:
             error = "This is not a valid option number!"
         else:
-            queue = input("Enter the Patient's Queue Number here: ").strip().upper()
-            # Queries the database directly, so patients registered by
-            # other users are found too.
-            query_response= data.get_patient_by_queue(queue, filter_list, date)
-            # Wide results do not fit in the terminal, so they are
-            # exported to a CSV instead of printed.
-            next_action = data.print_or_export(filter_list)
-            if query_response is None:
-                error = DATABASE_ERROR_MESSAGE
-            elif not query_response.empty:
-                if next_action == "print":
-                    io.print_df_and_reports(query_response)
-                elif next_action == "export" and not data.export_query(query_response):
-                    error = "The query results could not be exported!"
+            # Both options query the database directly, so patients
+            # registered by other users are found too.
+            scope_option = io.dynamic_menu_print(QUERY_SCOPE_OPTIONS)
+            if scope_option == "1":
+                queue = input("Enter the Patient's Queue Number here: ").strip().upper()
+                query_response= data.get_patient_by_queue(queue, filter_list, date)
+                error = show_query_results(
+                    query_response,
+                    "There is no such patient, please enter a valid queue number!"
+                )
+            elif scope_option == "2":
+                query_response = data.get_patients_by_date(filter_list, date)
+                error = show_query_results(
+                    query_response,
+                    "There are no patient records for this date!"
+                )
             else:
-                error ="There is no such patient, please enter a valid queue number!"
+                error = "This is not a valid option number!"
     else:
         error = option_error
     return error
