@@ -1,6 +1,7 @@
 from typing import override
 
-from io_manager.console import Console
+from io_manager.console.console import Console
+
 
 class TerminalConsole(Console):
     """Console that reads from and writes to the terminal.
@@ -8,9 +9,6 @@ class TerminalConsole(Console):
     This is the only class in the IO package that actually calls input() or
     print() and gives the console interface its implementation.
     """
-
-    def __init__(self) -> None:
-        self._input_closed = False
 
     @override
     def ask(self, prompt: str) -> str:
