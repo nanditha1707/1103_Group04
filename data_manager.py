@@ -138,6 +138,14 @@ def load_dataset(csv_path: Path) -> pd.DataFrame | None:
         return None
 
 
+def load_symptoms() -> list[str]:
+    """Reads the symptoms dataset. Returns all symptom names in
+    uppercase since user input is uppercased before matching."""
+    symptoms_dataframe = pd.read_csv(SYMPTOMS_CSV_PATH)
+    symptoms_column = symptoms_dataframe["term"].str.upper()
+    return symptoms_column.tolist()
+
+
 # ======================================================================
 # DATASET CLEANING FUNCTIONS
 # ======================================================================

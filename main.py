@@ -164,6 +164,8 @@ def main_menu() -> dict | int | None:
 
 # load the ICD and HSA datasets once, when the program starts
 icd_df, hsa_df = data.get_cleaned_datasets()
+# Load the symptoms list once, used by io_manager to match symptoms
+io.SYMPTOMS_DIFFLIB_LIST = data.load_symptoms()
 # Copy the starter patient records on the first run
 data.create_records_file_if_missing()
 

@@ -11,8 +11,6 @@ from typing import Any
 import pandas as pd
 import phonenumbers
 
-import data_manager as data
-
 # Returned instead of a state or answers when the user quits.
 QUIT_SIGNAL = -99
 # Commands the user can type at any question, compared after uppercasing.
@@ -20,15 +18,9 @@ QUIT_COMMAND = "QUIT"
 BACK_COMMAND = "BACK"
 REG_EXIT_MESSAGE = "Exiting The Registration Process!"
 
-def load_symptoms() -> list[str]:
-    """Reads the symptoms dataset. Returns all symptom names in
-    uppercase since user input is uppercased before matching."""
-    symptoms_dataframe = pd.read_csv(data.SYMPTOMS_CSV_PATH)
-    symptoms_column = symptoms_dataframe["term"].str.upper()
-    return symptoms_column.tolist()
-
-# Loaded once on import so every symptom lookup uses the same list.
-SYMPTOMS_DIFFLIB_LIST = load_symptoms()
+# Symptom names used to match the user's symptoms.
+# main.py fills this once at start up with data.load_symptoms()
+SYMPTOMS_DIFFLIB_LIST: list[str] = []
 # Answering Y to any of these questions means the user needs a nurse
 # immediately, so registration stops straight away.
 EMERGENCY_KEYS = [
