@@ -338,3 +338,18 @@ def validate_diagnosis(ai_diagnosis: str, ai_code: str, icd_df: pd.DataFrame) ->
     format_ai_output, the same as the cleaned dataset.
     """
     return _ai_output(icd_df).validate_diagnosis(ai_diagnosis, ai_code)
+
+def validate_medicine(ai_medicine: str, hsa_df: pd.DataFrame) -> bool:
+    """
+    Check that an AI medicine is in the cleaned HSA dataset.
+
+    Returns True if the medicine is found inside any product name or
+    active ingredient, e.g. 'PARACETAMOL' is found in
+    'SUNNY PARACETAMOL TABLET 500 MG'. Returns False for an empty
+    medicine. Expects the medicine to already be stripped and uppercased
+    by format_ai_output.
+
+    Uses the same lookup as logic_manager's routing, so a medicine that
+    passes validation always has an HSA classification to route with.
+    """
+    return _ai_output(hsa_df=hsa_df).validate_medicine(ai_medicine)
