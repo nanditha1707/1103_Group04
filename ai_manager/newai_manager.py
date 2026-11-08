@@ -311,6 +311,19 @@ def create_ai_prompt(answers_filtered: dict) -> str:
     with one "- key: value" line per answer."""
     return AiPipeline.create_prompt(answers_filtered)
 
+def get_ai_output(
+    answers_filtered: dict,
+    icd_df: pd.DataFrame | None,
+    hsa_df: pd.DataFrame | None
+) -> dict:
+    """Build the prompt from the filtered patient answers and return the
+    validated AI output, or an error dict if every model failed.
+
+    icd_df and hsa_df are the cleaned datasets loaded by data_manager.
+    hsa_df is the same one logic_manager routes with, so every medicine
+    that passes validation has a classification."""
+    return _ai_pipeline(icd_df, hsa_df).get_output(answers_filtered)
+
 # ======================================================================
 # FUNCTIONS USING AIOUTPUT CLASS METHODS
 # ======================================================================
