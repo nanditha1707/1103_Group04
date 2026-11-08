@@ -7,6 +7,13 @@ import pandas as pd
 from dotenv import load_dotenv
 
 import logic_manager as logic
+from ai_output import AiOutput
+from ai_pipeline import AiPipeline
+from claude_provider import ClaudeProvider
+from error_classifier import ErrorClassifier
+from gemini_provider import GeminiProvider
+
+import logic_manager as logic
 
 # Timeout for 1 AI API request.
 REQUEST_TIMEOUT_SECONDS = 20
@@ -167,3 +174,25 @@ EXPLANATION_FIELDS = [
 
 # Reads API key from local .env file.
 load_dotenv(override=True)
+
+# ======================================================================
+# FUNCTIONS CREATING OBJECTS
+# ======================================================================
+# keep original function names, parameters and return values.
+# Apply to functions that are not class methods
+
+# ======================================================================
+# FUNCTIONS USING CLAUDEPROVIDER AND GEMINIPROVIDER CLASS METHODS
+# ======================================================================
+
+# ======================================================================
+# FUNCTIONS USING ERRORCLASSIFIER, AIPIPELINE AND AIOUTPUT CLASS METHODS
+# ======================================================================
+
+# ======================================================================
+# FUNCTIONS USING AIPIPELINE CLASS METHODS
+# ======================================================================
+
+# ======================================================================
+# FUNCTIONS USING AIOUTPUT CLASS METHODS
+# ======================================================================
