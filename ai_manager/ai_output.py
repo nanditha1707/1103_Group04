@@ -42,4 +42,45 @@ class AiOutput:
             if key not in self.__explanation_fields and isinstance(value, str):
                 ai_output[key] = value.strip().upper()
 
-        return ai_output        
+        return ai_output    
+       
+    def validate_diagnosis(self, ai_diagnosis: str, ai_code: str) -> bool:
+        """
+        Check that an AI diagnosis title and its code are in the cleaned
+        ICD11 dataset.
+
+        Returns True only if the title and code are an exact match on the
+        same row, so a real title paired with the wrong code fails.
+        Expects the title and code to already be stripped and uppercased by
+        format_ai_output, the same as the cleaned dataset.
+        """
+
+        # Creates a mask of the rows where both the disease name and the
+        # code match, so they have to be on the same row.
+        is_match = (
+            (self.__icd_df["DiseaseName"] == ai_diagnosis)
+            & (self.__icd_df["Code"] == ai_code)
+        )
+
+        return bool(is_match.any())
+
+    def validate_medicine(self, ai_medicine: str) -> bool:
+        """
+        Check that an AI medicine is in the cleaned HSA dataset.
+
+        Returns True if the medicine is found inside any product name or
+        active ingredient, e.g. 'PARACETAMOL' is found in
+        'SUNNY PARACETAMOL TABLET 500 MG'. Returns False for an empty
+        medicine. Expects the medicine to already be stripped and uppercased
+        by format_ai_output.
+
+        Uses the same lookup as logic_manager's routing, so a medicine that
+        passes validation always has an HSA classification to route with.
+        """
+
+        # An empty medicine is never valid. This check is needed because ''
+        # is found inside every dataset entry, so it would wrongly return True.
+        if ai_medicine == "":
+            return False
+
+        return self.__classify_medicine(ai_medicine, self.__hsa_df) is not None     
