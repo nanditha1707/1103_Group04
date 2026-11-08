@@ -279,6 +279,15 @@ def next_provider_index(current_model_index: int, selected_model_provider: str) 
 def parse_ai_response(text: str) -> dict:
     """Parse the AI's JSON text output into a Python dictionary."""
     return AiOutput.parse(text)
+
+def format_ai_output(ai_output: dict) -> dict:
+    """Strip and uppercase every string field in the AI output except the
+    2 explanations.
+
+    Stripping turns blank emergency medicines (' ') into empty strings.
+    Non string fields like ai_confidence_score are left unchanged.
+    """
+    return _ai_output().format(ai_output)
 # ======================================================================
 # FUNCTIONS USING AIPIPELINE CLASS METHODS
 # ======================================================================
