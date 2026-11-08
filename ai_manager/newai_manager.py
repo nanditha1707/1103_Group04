@@ -353,3 +353,21 @@ def validate_medicine(ai_medicine: str, hsa_df: pd.DataFrame) -> bool:
     passes validation always has an HSA classification to route with.
     """
     return _ai_output(hsa_df=hsa_df).validate_medicine(ai_medicine)
+
+def validate_ai_output(
+    ai_output: dict, icd_df: pd.DataFrame, hsa_df: pd.DataFrame | None
+) -> bool:
+    """
+    Check the AI output against the ICD11 and HSA datasets.
+
+    Validation passes in only 2 cases:
+    1. Normal case: both diagnoses match the ICD-11 dataset AND all 4
+       medicines match the HSA dataset.
+    2. Emergency case: both diagnoses match the ICD11 dataset AND at
+       least one explanation contains the word "EMERGENCY". The
+       medicines are not checked because the AI is instructed to 
+       leave them empty since its better for a doctor to decide in a
+       real emergency as emergencies are complex.
+    Everything else fails validation.
+    """
+    return _ai_output(icd_df, hsa_df).validate(ai_output)
