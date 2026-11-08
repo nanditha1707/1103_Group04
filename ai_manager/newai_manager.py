@@ -238,7 +238,15 @@ def _ai_pipeline(
 # ======================================================================
 # FUNCTIONS USING CLAUDEPROVIDER AND GEMINIPROVIDER CLASS METHODS
 # ======================================================================
+def call_gemini(model: str, context: str, prompt: str, schema: dict) -> str:
+    """Send a prompt to Gemini and return its JSON reply as text.
 
+    Gemini's timeout is in milliseconds, so timeout multiplied by 1000.
+
+    'attempts' is set to 1 (the original request only, no retries)
+    because it is better for the retries to be handled by the pipeline.
+    """
+    return _gemini_provider().call(model, context, prompt, schema)
 # ======================================================================
 # FUNCTIONS USING ERRORCLASSIFIER, AIPIPELINE AND AIOUTPUT CLASS METHODS
 # ======================================================================
