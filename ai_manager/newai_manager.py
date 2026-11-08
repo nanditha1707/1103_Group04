@@ -305,6 +305,12 @@ def get_ai_response(
     nothing works before TOTAL_TIMEOUT_SECONDS runs out.
     """
     return _ai_pipeline(icd_df, hsa_df, context, schema).get_response(prompt)
+
+def create_ai_prompt(answers_filtered: dict) -> str:
+    """Build the patient intake prompt from the already filtered answers,
+    with one "- key: value" line per answer."""
+    return AiPipeline.create_prompt(answers_filtered)
+
 # ======================================================================
 # FUNCTIONS USING AIOUTPUT CLASS METHODS
 # ======================================================================
