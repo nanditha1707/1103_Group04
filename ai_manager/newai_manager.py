@@ -291,7 +291,20 @@ def format_ai_output(ai_output: dict) -> dict:
 # ======================================================================
 # FUNCTIONS USING AIPIPELINE CLASS METHODS
 # ======================================================================
+def get_ai_response(
+    context: str,
+    prompt: str,
+    schema: dict,
+    icd_df: pd.DataFrame,
+    hsa_df: pd.DataFrame | None
+) -> dict:
+    """Try each model in MODELS until one returns a valid JSON reply.
 
+    Errors are classified to decide whether to retry, switch model,
+    switch provider or fail immediately. Returns an error dict if
+    nothing works before TOTAL_TIMEOUT_SECONDS runs out.
+    """
+    return _ai_pipeline(icd_df, hsa_df, context, schema).get_response(prompt)
 # ======================================================================
 # FUNCTIONS USING AIOUTPUT CLASS METHODS
 # ======================================================================
