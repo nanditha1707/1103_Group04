@@ -41,14 +41,35 @@ class Question(ABC):
     def should_skip(self, answers: AnswerSheet) -> bool:
         """Return True if this question does not apply to the patient
         based on the user answers given so far.
+
+        A question without a skip rule is never skipped. Otherwise the
+        skip rule checks the earlier answers, e.g. the pregnancy question
+        is skipped if the patient answered "M" for gender.
         """
         return self.__skip_rule is not None and self.__skip_rule.should_skip(answers)
 
     @abstractmethod
     def ask(self, console: Console, previous: Answer) -> QuestionResult:
-        """
+        """Ask the question through the console and return a
+        QuestionResult saying what the user did.
+
+        previous is the answer the user gave earlier, or None if the
+        question has not been answered yet. It lets a question continue
+        from the earlier answer when the user comes back to it, e.g. the
+        symptom menu starts with the symptoms already chosen.
+
+        The result is ANSWERED with the validated value, INVALID with an
+        error message, or BACK/QUIT if the user typed that command.
+        Invalid input is returned as an INVALID result instead of being
+        raised as an exception, so the caller can show the error and ask
+        again.
         """
 
     @abstractmethod
     def display_value(self, value: Answer) -> str:
-        """Return the user answer as text for the confirmation screen."""
+        """Return the user answer as text for the confirmation screen.
+
+        Each subclass formats its own type of answer, e.g. a list of
+        symptoms can be joined into one line. This lets the confirmation
+        screen show every answer the same way without checking its type.
+        """
