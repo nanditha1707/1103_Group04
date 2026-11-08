@@ -1,6 +1,6 @@
 from typing import override
 
-from io_manager.answer_sheet import Answer, AnswerSheet
+from io_manager.patient_answers import PatientAnswers, AnswerSheet
 from io_manager.rules.skip_rule import SkipRule
 
 
@@ -16,5 +16,5 @@ class SkipIfAnswerEquals(SkipRule):
         self.__value = value
 
     @override
-    def should_skip(self, answers: AnswerSheet) -> bool:
+    def should_skip(self, answers: PatientAnswers) -> bool:
         return answers.get_answer(self.__key) == self.__value

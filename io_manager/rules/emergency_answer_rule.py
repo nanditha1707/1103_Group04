@@ -2,7 +2,7 @@ from collections.abc import Iterable
 from typing import override
 
 from io_manager import messages
-from io_manager.answer_sheet import AnswerSheet
+from io_manager.patient_answers import PatientAnswers
 from io_manager.rules.stop_rule import StopRule
 
 
@@ -22,7 +22,7 @@ class EmergencyAnswerRule(StopRule):
         self.__keys = tuple(keys)
 
     @override
-    def stop_message(self, answers: AnswerSheet) -> str | None:
+    def stop_message(self, answers: PatientAnswers) -> str | None:
         for key in self.__keys:
             if answers.get_answer(key) == "Y":
                 return messages.NURSE_ALERT_MESSAGE

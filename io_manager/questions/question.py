@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from io_manager.answer_sheet import Answer, AnswerSheet
+from io_manager.patient_answers import Answer, PatientAnswers
 from io_manager.console.console import Console
 from io_manager.navigation.question_result import QuestionResult
 from io_manager.rules.skip_rule import SkipRule
@@ -38,7 +38,7 @@ class Question(ABC):
         will return a False value so they are never fed into the AI."""
         return self.__share_with_ai
 
-    def should_skip(self, answers: AnswerSheet) -> bool:
+    def should_skip(self, answers: PatientAnswers) -> bool:
         """Return True if this question does not apply to the patient
         based on the user answers given so far.
 

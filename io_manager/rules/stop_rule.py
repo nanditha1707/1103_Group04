@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from io_manager.answer_sheet import AnswerSheet
+from io_manager.patient_answers import PatientAnswers
 
 
 class StopRule(ABC):
@@ -8,6 +8,6 @@ class StopRule(ABC):
     based on the answers given."""
 
     @abstractmethod
-    def stop_message(self, answers: AnswerSheet) -> str | None:
+    def stop_message(self, answers: PatientAnswers) -> str | None:
         """Returns the stop message to show if registration must stop,
         otherwise it returns None."""

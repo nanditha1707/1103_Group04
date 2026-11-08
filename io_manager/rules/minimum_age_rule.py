@@ -1,7 +1,7 @@
 from typing import override
 
 from io_manager import messages
-from io_manager.answer_sheet import AnswerSheet
+from io_manager.patient_answers import PatientAnswers
 from io_manager.rules.stop_rule import StopRule
 
 
@@ -19,7 +19,7 @@ class MinimumAgeRule(StopRule):
         self.__key = key
 
     @override
-    def stop_message(self, answers: AnswerSheet) -> str | None:
+    def stop_message(self, answers: PatientAnswers) -> str | None:
         age = answers.get_answer(self.__key)
         # None means the age question has not been answered yet.
         if age is None:

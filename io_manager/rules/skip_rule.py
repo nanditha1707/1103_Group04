@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from io_manager.answer_sheet import AnswerSheet
+from io_manager.patient_answers import PatientAnswers
 
 
 class SkipRule(ABC):
@@ -10,5 +10,5 @@ class SkipRule(ABC):
     """
 
     @abstractmethod
-    def should_skip(self, answers: AnswerSheet) -> bool:
+    def should_skip(self, answers: PatientAnswers) -> bool:
         """Return True if the question should be skipped."""

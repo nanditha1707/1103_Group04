@@ -1,4 +1,4 @@
-from io_manager.answer_sheet import Answer
+from io_manager.patient_answers import Answer
 from io_manager.navigation.navigation import Navigation
 
 
