@@ -200,6 +200,19 @@ def _error_classifier() -> ErrorClassifier:
         GEMINI_TIMEOUT_ERRORS,
         GEMINI_CONNECTION_ERRORS
     )
+
+# create an AiOutput object.
+def _ai_output(
+    icd_df: pd.DataFrame | None = None,
+    hsa_df: pd.DataFrame | None = None
+) -> AiOutput:
+    # underscore prefix for internal use only
+    return AiOutput(
+        icd_df,
+        hsa_df,
+        logic.get_classification,
+        EXPLANATION_FIELDS
+    )
 # ======================================================================
 # FUNCTIONS USING CLAUDEPROVIDER AND GEMINIPROVIDER CLASS METHODS
 # ======================================================================
