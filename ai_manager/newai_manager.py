@@ -268,6 +268,13 @@ def classify_error(error: Exception) -> str:
     ErrorClassifier.classify.
     """
     return _error_classifier().classify(error)
+
+def next_provider_index(current_model_index: int, selected_model_provider: str) -> int:
+    """Return the index of the next model from a different provider."""
+    return _ai_pipeline().next_provider_index(
+        current_model_index,
+        selected_model_provider
+    )
 # ======================================================================
 # FUNCTIONS USING AIPIPELINE CLASS METHODS
 # ======================================================================
