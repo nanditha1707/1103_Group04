@@ -22,3 +22,24 @@ class AiOutput:
         self.__classify_medicine = classify_medicine
         # The 2 explanation fields, which are not stripped or uppercased.
         self.__explanation_fields = explanation_fields
+
+    @staticmethod
+    def parse(text: str) -> dict:
+        """Parse the AI's JSON text output into a Python dictionary."""
+        return json.loads(text)
+
+    def format(self, ai_output: dict) -> dict:
+        """Strip and uppercase every string field in the AI output except the
+        2 explanations.
+
+        Stripping turns blank emergency medicines (' ') into empty strings.
+        Non string fields like ai_confidence_score are left unchanged.
+        """
+        # For each field in AI output.
+        for key, value in ai_output.items():
+            # If the field is not an explanation field and is of type string,
+            # then remove spaces at the start and end and uppercase them.
+            if key not in self.__explanation_fields and isinstance(value, str):
+                ai_output[key] = value.strip().upper()
+
+        return ai_output        
