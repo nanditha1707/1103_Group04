@@ -190,6 +190,16 @@ def _claude_provider() -> ClaudeProvider:
 def _gemini_provider() -> GeminiProvider:
     # underscore prefix for internal use only
     return GeminiProvider(REQUEST_TIMEOUT_SECONDS, NO_TEXT_ERROR_MESSAGE)
+
+# create an ErrorClassifier object with the following constants as its attributes.
+def _error_classifier() -> ErrorClassifier:
+    # underscore prefix for internal use only
+    return ErrorClassifier(
+        ACTIONS,
+        NO_TEXT_ERROR_MESSAGE,
+        GEMINI_TIMEOUT_ERRORS,
+        GEMINI_CONNECTION_ERRORS
+    )
 # ======================================================================
 # FUNCTIONS USING CLAUDEPROVIDER AND GEMINIPROVIDER CLASS METHODS
 # ======================================================================
