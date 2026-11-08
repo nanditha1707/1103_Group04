@@ -1,3 +1,4 @@
+from collections.abc import Sequence
 from typing import override
 
 from io_manager.answer_sheet import AnswerSheet
@@ -9,7 +10,7 @@ class ChainStopRule(StopRule):
     Runs several stop rules in order and returns the earliest matched error message.
     """
 
-    def __init__(self, rules: list[StopRule]) -> None:
+    def __init__(self, rules: Sequence[StopRule]) -> None:
         self.__rules = tuple(rules)
 
     @override
