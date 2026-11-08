@@ -211,6 +211,30 @@ def _ai_output(
         logic.get_classification,
         EXPLANATION_FIELDS
     )
+
+# create an AiPipeline object with the following constants as its attributes.
+def _ai_pipeline(
+    icd_df: pd.DataFrame | None = None,
+    hsa_df: pd.DataFrame | None = None,
+    context: str = AI_MEDICAL_CONTEXT,
+    schema: dict = AI_OUTPUT_SCHEMA
+) -> AiPipeline:
+    # underscore prefix for internal use only
+    return AiPipeline(
+        MODELS,
+        {
+            "claude": _claude_provider(),
+            "gemini": _gemini_provider()
+        },
+        _error_classifier(),
+        _ai_output(icd_df, hsa_df),
+        context,
+        schema,
+        ACTIONS,
+        TOTAL_TIMEOUT_SECONDS,
+        MAX_RETRIES_PER_MODEL,
+        CONTACT_SUPPORT_MESSAGE
+    )
 # ======================================================================
 # FUNCTIONS USING CLAUDEPROVIDER AND GEMINIPROVIDER CLASS METHODS
 # ======================================================================
