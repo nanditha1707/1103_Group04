@@ -23,6 +23,11 @@ class AiOutput:
         # The 2 explanation fields, which are not stripped or uppercased.
         self.__explanation_fields = explanation_fields
 
+    def has_icd_data(self) -> bool:
+        """Return True if the ICD-11 dataset loaded. Without it the
+        diagnoses cannot be checked."""
+        return self.__icd_df is not None
+
     @staticmethod
     def parse(text: str) -> dict:
         """Parse the AI's JSON text output into a Python dictionary."""
