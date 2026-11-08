@@ -83,4 +83,73 @@ class AiOutput:
         if ai_medicine == "":
             return False
 
-        return self.__classify_medicine(ai_medicine, self.__hsa_df) is not None     
+        return self.__classify_medicine(ai_medicine, self.__hsa_df) is not None
+    
+    def validate(self, ai_output: dict) -> bool:
+        """
+        Check the AI output against the ICD11 and HSA datasets.
+
+        Validation passes in only 2 cases:
+        1. Normal case: both diagnoses match the ICD-11 dataset AND all 4
+           medicines match the HSA dataset.
+        2. Emergency case: both diagnoses match the ICD11 dataset AND at
+           least one explanation contains the word "EMERGENCY". The
+           medicines are not checked because the AI is instructed to 
+           leave them empty since its better for a doctor to decide in a
+           real emergency as emergencies are complex.
+        Everything else fails validation.
+        """
+
+        # Step 1: Check that both diagnoses and codes match the ICD11 dataset.
+        # They return True if valid and False otherwise.
+        primary_diagnosis_is_valid = self.validate_diagnosis(
+            ai_output["primary_diagnosis_ICD11_Title"],
+            ai_output["primary_diagnosis_ICD11_Code"],
+        )
+        secondary_diagnosis_is_valid = self.validate_diagnosis(
+            ai_output["secondary_diagnosis_ICD11_Title"],
+            ai_output["secondary_diagnosis_ICD11_Code"],
+        )
+
+        # Return False if either doesn't match. Only pass validation when
+        # both primary and secondary diagnosis are valid.
+        if not primary_diagnosis_is_valid or not secondary_diagnosis_is_valid:
+            return False
+
+        # Without HSA data the medicines cannot be checked. logic_manager
+        # sends the patient to a doctor in that case, so only the diagnoses
+        # need to be valid.
+        if self.__hsa_df is None:
+            return True
+
+        # Step 2: Collect the 4 medicine fields into a list so they can be
+        # checked one at a time.
+        medicines = [
+            ai_output["primary_diagnosis_medicine_1"],
+            ai_output["primary_diagnosis_medicine_2"],
+            ai_output["secondary_diagnosis_medicine_1"],
+            ai_output["secondary_diagnosis_medicine_2"],
+        ]
+
+        # Step 3: Count how many medicines match the HSA dataset.
+        valid_medicine_count = 0
+
+        for medicine in medicines:
+            if self.validate_medicine(medicine):
+                valid_medicine_count += 1
+
+        # Case 1 (normal): all 4 medicines are valid and the 2 diagnosis match.
+        if valid_medicine_count == 4:
+            return True
+
+        # Step 4: Check if either explanation contains the word "EMERGENCY".
+        primary_explanation = ai_output["primary_diagnosis_explanation"]
+        secondary_explanation = ai_output["secondary_diagnosis_explanation"]
+
+        # Case 2 (emergency): the medicines didn't all match, but it is an
+        # emergency so they are not needed.
+        if "EMERGENCY" in primary_explanation or "EMERGENCY" in secondary_explanation:
+            return True
+
+        # Any other combination fails validation.
+        return False
