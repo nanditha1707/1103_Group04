@@ -181,6 +181,10 @@ load_dotenv(override=True)
 # keep original function names, parameters and return values.
 # Apply to functions that are not class methods
 
+# create a ClaudeProvider object with the following constants as its attributes.
+def _claude_provider() -> ClaudeProvider:
+    # underscore prefix for internal use only
+    return ClaudeProvider(REQUEST_TIMEOUT_SECONDS, NO_TEXT_ERROR_MESSAGE)
 # ======================================================================
 # FUNCTIONS USING CLAUDEPROVIDER AND GEMINIPROVIDER CLASS METHODS
 # ======================================================================
