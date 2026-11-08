@@ -258,7 +258,16 @@ def call_claude(model: str, context: str, prompt: str, schema: dict) -> str:
 # ======================================================================
 # FUNCTIONS USING ERRORCLASSIFIER, AIPIPELINE AND AIOUTPUT CLASS METHODS
 # ======================================================================
+def classify_error(error: Exception) -> str:
+    """Unified function to classify all API errors from Claude and
+    Gemini. It classifies the error based on either the error code or
+    for errors without error codes, the error itself, and returns a
+    suitable ACTION (a constant) to take based on the error message.
 
+    The Claude and Gemini error codes and their actions are listed in
+    ErrorClassifier.classify.
+    """
+    return _error_classifier().classify(error)
 # ======================================================================
 # FUNCTIONS USING AIPIPELINE CLASS METHODS
 # ======================================================================
