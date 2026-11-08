@@ -327,3 +327,14 @@ def get_ai_output(
 # ======================================================================
 # FUNCTIONS USING AIOUTPUT CLASS METHODS
 # ======================================================================
+def validate_diagnosis(ai_diagnosis: str, ai_code: str, icd_df: pd.DataFrame) -> bool:
+    """
+    Check that an AI diagnosis title and its code are in the cleaned
+    ICD11 dataset.
+
+    Returns True only if the title and code are an exact match on the
+    same row, so a real title paired with the wrong code fails.
+    Expects the title and code to already be stripped and uppercased by
+    format_ai_output, the same as the cleaned dataset.
+    """
+    return _ai_output(icd_df).validate_diagnosis(ai_diagnosis, ai_code)
