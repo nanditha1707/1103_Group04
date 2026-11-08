@@ -13,8 +13,6 @@ from claude_provider import ClaudeProvider
 from error_classifier import ErrorClassifier
 from gemini_provider import GeminiProvider
 
-import logic_manager as logic
-
 # Timeout for 1 AI API request.
 REQUEST_TIMEOUT_SECONDS = 20
 # Timeout for all API requests to return a valid answer. 
