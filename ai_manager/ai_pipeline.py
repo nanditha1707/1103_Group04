@@ -55,7 +55,7 @@ class AiPipeline:
         # when theres no other model to switch to.
         return len(self.__models)
     
-     @staticmethod
+    @staticmethod
     def create_prompt(answers_filtered: dict) -> str:
         """Build the patient intake prompt from the already filtered answers,
         with one "- key: value" line per answer."""
