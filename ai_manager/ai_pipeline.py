@@ -38,3 +38,19 @@ class AiPipeline:
         # Retry number for retrying on same the same model.
         self.__max_retries_per_model = max_retries_per_model
         self.__support_message = support_message
+
+    def next_provider_index(
+        self,
+        current_model_index: int,
+        selected_model_provider: str
+    ) -> int:
+        """Return the index of the next model from a different provider."""
+
+        for next_model_index in range(current_model_index + 1, len(self.__models)):
+            if self.__models[next_model_index]["provider"] != selected_model_provider:
+                # return the index of the next model
+                return next_model_index
+
+        # Return length of models so the while loop in get_ai_response stops 
+        # when theres no other model to switch to.
+        return len(self.__models)
