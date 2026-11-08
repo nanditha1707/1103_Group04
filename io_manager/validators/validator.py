@@ -6,8 +6,8 @@ class Validator(ABC):
 
     Every validator inherits from this class and implements validate() 
     with its own check. Code that reads and checks user input only needs
-    to know about Validator, not the specific subclass, so any validator
-    can be used in its place.
+    to know about Validator and not the specific subclass. Therefore any
+    validator can be used in its place.
 
     validate method returns None when user input is valid, and the 
     error message string when user input is invalid for the question. 
