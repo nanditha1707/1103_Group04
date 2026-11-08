@@ -275,6 +275,10 @@ def next_provider_index(current_model_index: int, selected_model_provider: str) 
         current_model_index,
         selected_model_provider
     )
+
+def parse_ai_response(text: str) -> dict:
+    """Parse the AI's JSON text output into a Python dictionary."""
+    return AiOutput.parse(text)
 # ======================================================================
 # FUNCTIONS USING AIPIPELINE CLASS METHODS
 # ======================================================================
