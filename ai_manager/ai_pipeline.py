@@ -167,3 +167,19 @@ class AiPipeline:
 
         # Unexpected error message
         return {"error": self.__support_message}
+    
+    def get_output(self, answers_filtered: dict) -> dict:
+        """Build the prompt from the filtered patient answers and return the
+        validated AI output, or an error dict if every model failed.
+
+        icd_df and hsa_df are the cleaned datasets loaded by data_manager.
+        hsa_df is the same one logic_manager routes with, so every medicine
+        that passes validation has a classification."""
+
+        # Without ICD data the diagnoses cannot be checked, so the AI is not
+        # called and the patient is sent to manual registration.
+        if not self.__ai_output.has_icd_data():
+            return {"error": self.__support_message}
+
+        ai_prompt = self.create_prompt(answers_filtered)
+        return self.get_response(ai_prompt)
