@@ -2,11 +2,44 @@ from collections.abc import Sequence
 
 
 class BoxRenderer:
-    """Takes a list of lines (for e.g lines = ["1. Register", "2. Exit"])
-    and returns them as a single string with a box drawn around them. 
-    It can also be given a title (the header), which goes centred at 
-    the top. It only builds the text and does not print anything. The 
-    Console will print it.
+    """This is used for drawing a box around text.
+
+    Used for:
+        - Main Menu
+        - Healthcare Professional Portal menu
+        - Query filter menu
+        - Reports menu
+        - Symptom menu
+        - Confirmation menu (checking answers before submitting)
+        - Patient results screen (queue number and diagnosis)
+
+    Takes a list or tuple of lines and returns them as a single string
+    with a box drawn around them. It can also be given a title (the
+    header), which goes centred at the top. It only builds the text and
+    does not print anything. The Console will print it.
+
+    For e.g the main menu options:
+
+        lines = ["1. Patient Registration",
+                 "2. Healthcare Professional Portal",
+                 "3. Exit"]
+        render(lines, "Main Menu")
+
+    returns this box:
+
+        -------------------------------------
+        |             Main Menu             |
+        -------------------------------------
+        | 1. Patient Registration           |
+        | 2. Healthcare Professional Portal |
+        | 3. Exit                           |
+        -------------------------------------
+
+    The report tables and patient query results use TableRenderer
+    instead. This is because reports and query results are data and have 
+    headers so a table with properly aligned headers has to be drawn.
+    Menus are just lines of text, with no headings or columns to line up
+    so they are generated differently.
     """
 
     # Space for "| " on the left and " |" on the right of each line.
