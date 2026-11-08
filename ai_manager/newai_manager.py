@@ -247,6 +247,14 @@ def call_gemini(model: str, context: str, prompt: str, schema: dict) -> str:
     because it is better for the retries to be handled by the pipeline.
     """
     return _gemini_provider().call(model, context, prompt, schema)
+
+def call_claude(model: str, context: str, prompt: str, schema: dict) -> str:
+    """Send a prompt to Claude and return its JSON reply as text.
+
+    'max_retries' is set to 0 because it is better for the retries to
+    be handled by the pipeline.
+    """
+    return _claude_provider().call(model, context, prompt, schema)
 # ======================================================================
 # FUNCTIONS USING ERRORCLASSIFIER, AIPIPELINE AND AIOUTPUT CLASS METHODS
 # ======================================================================
