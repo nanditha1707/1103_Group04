@@ -4,7 +4,7 @@
 type Answer = str | list[str] | None
 
 
-class AnswerSheet:
+class PatientAnswers:
     """
     Holds the patient's answers, in a private dict. 
     The dict is hidden so answers can only change through record_answer and mark_not_applicable.
