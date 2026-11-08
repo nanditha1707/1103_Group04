@@ -54,3 +54,14 @@ class AiPipeline:
         # Return length of models so the while loop in get_ai_response stops 
         # when theres no other model to switch to.
         return len(self.__models)
+    
+     @staticmethod
+    def create_prompt(answers_filtered: dict) -> str:
+        """Build the patient intake prompt from the already filtered answers,
+        with one "- key: value" line per answer."""
+        ai_prompt = "Presenting patient answers:\n"
+
+        for key, value in answers_filtered.items():
+            ai_prompt += f"- {key}: {value}\n"
+
+        return ai_prompt
