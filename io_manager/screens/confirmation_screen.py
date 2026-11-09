@@ -4,6 +4,7 @@ from io_manager.form.registration_form import RegistrationForm
 from io_manager.navigation.navigation import Navigation
 from io_manager.navigation.question_result import QuestionResult
 from io_manager.patient_answers import PatientAnswers
+from io_manager.questions.question import Question
 from io_manager.rendering.box_renderer import BoxRenderer
 from io_manager.rules.stop_rule import StopRule
 from io_manager.validators.validator import Validator
@@ -122,43 +123,43 @@ class ConfirmationScreen:
         return len(self.__form.questions) + 1
 
     def __menu_lines(self, answers: PatientAnswers) -> tuple[list[str], set[int]]:
-            """Build one line per question, so each menu number always
-            matches the question's position, plus Confirm All Inputs. Also
-            return the positions the patient may edit.
-    
-            Example: if the RegistrationForm only had three questions
-            (gender, pregnancy and chest pain), and the patient answered M
-            for gender and N for chest pain, this returns the tuple:
-    
-                (
-                    [
-                        "01. Enter your Gender [M/F]: M",
-                        "02. Are you currently pregnant? (Y/N): Not Applicable",
-                        "03. Are you currently experiencing chest pain? (Y/N): N",
-                        "04. Confirm All Inputs",
-                        "You can also input quit",
-                    ],
-                    {0, 2},
-                )
-    
-            The list is the menu lines. The set is the positions that can be
-            edited.Pregnancy is not in the set because it is skipped for M.
-            """
-            lines: list[str] = []
-            editable: set[int] = set()
-    
-            for index, question in enumerate(self.__form.questions):
-                # Skipped questions do not apply, so they cannot be edited.
-                if question.should_skip(answers):
-                    value = messages.NOT_APPLICABLE
-                else:
-                    value = question.display_value(answers.get_answer(question.key))
-                    editable.add(index)
-                lines.append(f"{index + 1:02d}. {question.prompt}{value}")
-    
-            lines.append(f"{self.__confirm_option:02d}. {messages.CONFIRM_ALL_LABEL}")
-            lines.append(messages.CONFIRMATION_MENU_HINT)
-            return lines, editable
+        """Build one line per question, so each menu number always
+        matches the question's position, plus Confirm All Inputs. Also
+        return the positions the patient may edit.
+
+        Example: if the RegistrationForm only had three questions
+        (gender, pregnancy and chest pain), and the patient answered M
+        for gender and N for chest pain, this returns the tuple:
+
+            (
+                [
+                    "01. Enter your Gender [M/F]: M",
+                    "02. Are you currently pregnant? (Y/N): Not Applicable",
+                    "03. Are you currently experiencing chest pain? (Y/N): N",
+                    "04. Confirm All Inputs",
+                    "You can also input quit",
+                ],
+                {0, 2},
+            )
+
+        The list is the menu lines. The set is the positions that can be
+        edited.Pregnancy is not in the set because it is skipped for M.
+        """
+        lines: list[str] = []
+        editable: set[int] = set()
+
+        for index, question in enumerate(self.__form.questions):
+            # Skipped questions do not apply, so they cannot be edited.
+            if question.should_skip(answers):
+                value = messages.NOT_APPLICABLE
+            else:
+                value = question.display_value(answers.get_answer(question.key))
+                editable.add(index)
+            lines.append(f"{index + 1:02d}. {question.prompt}{value}")
+
+        lines.append(f"{self.__confirm_option:02d}. {messages.CONFIRM_ALL_LABEL}")
+        lines.append(messages.CONFIRMATION_MENU_HINT)
+        return lines, editable
 
     def __edit(self, question: Question, answers: PatientAnswers) -> Navigation:
         """Ask one question again and store the new answer if valid.
@@ -186,12 +187,25 @@ class ConfirmationScreen:
 
         if result.navigation is Navigation.BACK:
             self.__console.show(messages.CANNOT_GO_BACK)
-        # An INVALID result always has an error message.
+
         elif result.navigation is Navigation.INVALID:
             self.__console.show(result.error)
+
         elif result.navigation is Navigation.ANSWERED:
             answers.record_answer(question.key, result.value)
             # e.g. gender changed to M makes pregnancy not applicable.
             self.__form.mark_skipped(answers)
 
         return result.navigation
+
+    def __is_complete(self, answers: PatientAnswers) -> bool:
+        """Return True if every question that applies has an answer. A
+        question may have started to apply after an edit (gender M to
+        F), so it must be answered first."""
+        missing = self.__form.first_unanswered(answers)
+        if missing is None:
+            return True
+        self.__console.show(
+            messages.UNANSWERED_QUESTION.format(prompt=missing.prompt.strip())
+        )
+        return False
