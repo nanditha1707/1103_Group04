@@ -111,3 +111,42 @@ class ConfirmationScreen:
             if stop_message:
                 self.__console.show(stop_message)
                 return False
+
+    def __menu_lines(self, answers: PatientAnswers) -> tuple[list[str], set[int]]:
+            """Build one line per question, so each menu number always
+            matches the question's position, plus Confirm All Inputs. Also
+            return the positions the patient may edit.
+    
+            Example: if the RegistrationForm only had three questions
+            (gender, pregnancy and chest pain), and the patient answered M
+            for gender and N for chest pain, this returns the tuple:
+    
+                (
+                    [
+                        "01. Enter your Gender [M/F]: M",
+                        "02. Are you currently pregnant? (Y/N): Not Applicable",
+                        "03. Are you currently experiencing chest pain? (Y/N): N",
+                        "04. Confirm All Inputs",
+                        "You can also input quit",
+                    ],
+                    {0, 2},
+                )
+    
+            The list is the menu lines. The set is the positions that can be
+            edited.Pregnancy is not in the set because it is skipped for M.
+            """
+            lines: list[str] = []
+            editable: set[int] = set()
+    
+            for index, question in enumerate(self.__form.questions):
+                # Skipped questions do not apply, so they cannot be edited.
+                if question.should_skip(answers):
+                    value = messages.NOT_APPLICABLE
+                else:
+                    value = question.display_value(answers.get_answer(question.key))
+                    editable.add(index)
+                lines.append(f"{index + 1:02d}. {question.prompt}{value}")
+    
+            lines.append(f"{self.__confirm_option:02d}. {messages.CONFIRM_ALL_LABEL}")
+            lines.append(messages.CONFIRMATION_MENU_HINT)
+            return lines, editable
