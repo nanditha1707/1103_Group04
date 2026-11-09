@@ -180,3 +180,16 @@ class RegistrationFactory:
             ),
         ])
 
+    def build_stop_rule(self) -> StopRule:
+        """
+        Build the chain of rules that determine whether registration should stop, 
+        to be utilised in both the registration questionnaire and the confirmation screen.
+        The order is followed, meaning if multiple conditions are somehow broken at once, 
+        the first messgae will still win. 
+        Currently, this is impossible.
+        """
+        return ChainStopRule([
+            ConsentRequiredRule("consent"),
+            EmergencyAnswerRule(self.EMERGENCY_KEYS),
+            MinimumAgeRule("age", self.MINIMUM_SELF_REGISTRATION_AGE),
+        ])
