@@ -18,7 +18,9 @@ class ConfirmationScreen:
     checks the user answer, Question re-asks itself and StopRule decides
     whether registration ends.
 
-    Only 
+    Only the method run() is public since it is used by IOManager class.
+    The other methods are private since they are used within run() itself
+    and does not need to be accessed from the outside.
     """
 
     def __init__(
@@ -157,3 +159,39 @@ class ConfirmationScreen:
             lines.append(f"{self.__confirm_option:02d}. {messages.CONFIRM_ALL_LABEL}")
             lines.append(messages.CONFIRMATION_MENU_HINT)
             return lines, editable
+
+    def __edit(self, question: Question, answers: PatientAnswers) -> Navigation:
+        """Ask one question again and store the new answer if valid.
+        Used when user chooses a valid question to edit. Returns the
+        Navigation of the result so run() knows if the patient quit.
+
+        Example: user selected the gender question to edit, and current 
+        answers holds F for gender and N for pregnancy. For the new user
+        answers below:
+
+            M     answers becomes gender M, pregnancy None.
+                  returns Navigation.ANSWERED
+
+            X     shows "This is not a valid input, please only enter
+                  either M or F."
+                  answers unchanged, returns Navigation.INVALID
+
+            BACK  shows the CANNOT_GO_BACK message
+                  answers unchanged, returns Navigation.BACK
+
+            QUIT  shows nothing here (run() shows the exit message)
+                  answers unchanged, returns Navigation.QUIT
+        """
+        result = question.ask(self.__console, answers.get_answer(question.key))
+
+        if result.navigation is Navigation.BACK:
+            self.__console.show(messages.CANNOT_GO_BACK)
+        # An INVALID result always has an error message.
+        elif result.navigation is Navigation.INVALID:
+            self.__console.show(result.error)
+        elif result.navigation is Navigation.ANSWERED:
+            answers.record_answer(question.key, result.value)
+            # e.g. gender changed to M makes pregnancy not applicable.
+            self.__form.mark_skipped(answers)
+
+        return result.navigation
