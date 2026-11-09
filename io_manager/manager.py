@@ -123,3 +123,23 @@ class IOManager:
         if not self.__confirmation.run(patient_answers):
             return None
         return patient_answers.to_dict()
+    
+    # ------------------------------------------------------------------
+    # OUTPUT
+    # ------------------------------------------------------------------
+    def show_message(self, message: str) -> None:
+        self.__console.show(message)
+
+    def show_result(
+        self, ai_output: Mapping[str, object], logic_result: Mapping[str, str | None]
+    ) -> None:
+        # Show the patient the result of their registration. 
+        # Such as their queue number and furhter instructions
+        lines = self.__result_view.build_lines(ai_output, logic_result)
+        self.__console.show(self.__box_renderer.render(lines, messages.RESULT_HEADER))
+
+    def show_table(
+        self, report: pd.DataFrame | Mapping[str, object], title: str = ""
+    ) -> None:
+        # Shows a report or query in the form of a table.
+        self.__console.show(self.__table_renderer.render(report, title))
