@@ -163,9 +163,11 @@ ROUTE_MESSAGES = {
         "Please proceed to the pharmacy and wait for your queue number "
         "to be called."
     ),
+    # Retail patients are also sent to the pharmacy with a queue number,
+    # so they get the same message as Pharmacist patients.
     "Retail": (
-        "You do not need to see a doctor or pharmacist. "
-        "The medicines below can be bought from any retail store."
+        "Please proceed to the pharmacy and wait for your queue number "
+        "to be called."
     ),
 }
 RETAIL_DISCLAIMER = (
