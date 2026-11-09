@@ -1,6 +1,6 @@
 from typing import override
 
-from io_manager.patient_answers import PatientAnswers, AnswerSheet
+from io_manager.patient_answers import PatientAnswers
 from io_manager.rules.skip_rule import SkipRule
 
 
