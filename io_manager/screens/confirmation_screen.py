@@ -17,6 +17,8 @@ class ConfirmationScreen:
     actions are in separate classes. BoxRenderer draws the menu, Validator
     checks the user answer, Question re-asks itself and StopRule decides
     whether registration ends.
+
+    Only 
     """
 
     def __init__(
@@ -97,7 +99,7 @@ class ConfirmationScreen:
             # If user choice is a question that cannot be edited.
             # This is if gender is 'M' and the user selects pregancy
             # question to edit. Prevent the user from editing by showing
-            # cannot edit message and re-ask for input
+            # cannot edit message and re-ask for input.
             if index not in editable:
                 self.__console.show(messages.CANNOT_EDIT)
                 continue
@@ -111,6 +113,11 @@ class ConfirmationScreen:
             if stop_message:
                 self.__console.show(stop_message)
                 return False
+
+    @property
+    def __confirm_option(self) -> int:
+        """Confirm All Inputs is the menu line after the last question."""
+        return len(self.__form.questions) + 1
 
     def __menu_lines(self, answers: PatientAnswers) -> tuple[list[str], set[int]]:
             """Build one line per question, so each menu number always
