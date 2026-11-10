@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from io_manager.console.console import Console
+from io_manager.console import Console
 
 class SymptomMenuAction(ABC):
     """

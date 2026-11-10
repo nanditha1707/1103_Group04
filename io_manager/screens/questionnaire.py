@@ -1,9 +1,9 @@
 from io_manager import messages
-from io_manager.console.console import Console
-from io_manager.form.registration_form import RegistrationForm
-from io_manager.navigation.navigation import Navigation
+from io_manager.console import Console
+from io_manager.form import RegistrationForm
+from io_manager.navigation import Navigation
 from io_manager.patient_answers import PatientAnswers
-from io_manager.rules.stop_rule import StopRule
+from io_manager.rules import StopRule
 
 
 class Questionnaire:

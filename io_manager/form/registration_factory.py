@@ -1,25 +1,19 @@
 from io_manager import messages
 from io_manager.form.registration_form import RegistrationForm
-from io_manager.questions.symptom_question import SymptomQuestion
-from io_manager.questions.text_question import TextQuestion
-from io_manager.rendering.box_renderer import BoxRenderer
-from io_manager.rules.chain_stop_rule import ChainStopRule
-from io_manager.rules.consent_required_rule import ConsentRequiredRule
-from io_manager.rules.emergency_answer_rule import EmergencyAnswerRule
-from io_manager.rules.minimum_age_rule import MinimumAgeRule
-from io_manager.rules.skip_if_answer_equals import SkipIfAnswerEquals
-from io_manager.rules.stop_rule import StopRule
-from io_manager.symptoms.catalogue_symptom_action import CatalogueSymptomAction
-from io_manager.symptoms.fever_symptom_action import FeverSymptomAction
-from io_manager.symptoms.preset_symptom_action import PresetSymptomAction
-from io_manager.symptoms.symptom_catalogue import SymptomCatalogue
-from io_manager.symptoms.symptom_menu import SymptomMenu
-from io_manager.symptoms.yes_no_prompt import YesNoPrompt
-from io_manager.validators.choice_validator import ChoiceValidator
-from io_manager.validators.non_negative_integer_validator import NonNegativeIntegerValidator
-from io_manager.validators.phone_number_validator import PhoneNumberValidator
-from io_manager.validators.regex_validator import RegexValidator
-from io_manager.validators.yes_no_validator import YesNoValidator
+from io_manager.questions import SymptomQuestion, TextQuestion
+from io_manager.rendering import BoxRenderer
+from io_manager.rules import (
+    ChainStopRule, ConsentRequiredRule, EmergencyAnswerRule, MinimumAgeRule, SkipIfAnswerEquals,
+    StopRule
+)
+from io_manager.symptoms import (
+    CatalogueSymptomAction, FeverSymptomAction, PresetSymptomAction, SymptomCatalogue, SymptomMenu,
+    YesNoPrompt
+)
+from io_manager.validators import (
+    ChoiceValidator, NonNegativeIntegerValidator, PhoneNumberValidator, RegexValidator,
+    YesNoValidator
+)
 
 
 class RegistrationFactory:

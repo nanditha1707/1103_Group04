@@ -1,15 +1,14 @@
 from collections.abc import Sequence
 
 from io_manager import messages
-from io_manager.console.console import Console
-from io_manager.navigation.navigation import Navigation
-from io_manager.navigation.question_result import QuestionResult
-from io_manager.rendering.box_renderer import BoxRenderer
+from io_manager.console import Console
+from io_manager.navigation import Navigation, QuestionResult
+from io_manager.rendering import BoxRenderer
 from io_manager.symptoms.add_symptom_action import AddSymptomAction
 from io_manager.symptoms.done_action import DoneAction
 from io_manager.symptoms.remove_symptom_action import RemoveSymptomAction
 from io_manager.symptoms.symptom_menu_action import SymptomMenuAction
-from io_manager.validators.menu_option_validator import MenuOptionValidator
+from io_manager.validators import MenuOptionValidator
 
 class SymptomMenu:
     """

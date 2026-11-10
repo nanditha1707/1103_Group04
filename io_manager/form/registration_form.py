@@ -1,7 +1,7 @@
 from collections.abc import Mapping, Sequence
 
 from io_manager.patient_answers import Answer, PatientAnswers
-from io_manager.questions.question import Question
+from io_manager.questions import Question
 
 
 class RegistrationForm:

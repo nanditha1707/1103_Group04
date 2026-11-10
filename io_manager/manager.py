@@ -3,18 +3,13 @@ from collections.abc import Iterable, Mapping
 import pandas as pd
 
 from io_manager import messages
-from io_manager.console.console import Console
-from io_manager.console.terminal_console import TerminalConsole
-from io_manager.form.registration_factory import RegistrationFactory
+from io_manager.console import Console, TerminalConsole
+from io_manager.form import RegistrationFactory
 from io_manager.patient_answers import Answer, PatientAnswers
-from io_manager.rendering.box_renderer import BoxRenderer
-from io_manager.rendering.table_renderer import TableRenderer
-from io_manager.screens.confirmation_screen import ConfirmationScreen
-from io_manager.screens.questionnaire import Questionnaire
-from io_manager.screens.result_view import ResultView
-from io_manager.symptoms.symptom_catalogue import SymptomCatalogue
-from io_manager.validators.date_validator import DateValidator
-from io_manager.validators.menu_option_validator import MenuOptionValidator
+from io_manager.rendering import BoxRenderer, TableRenderer
+from io_manager.screens import ConfirmationScreen, Questionnaire, ResultView
+from io_manager.symptoms import SymptomCatalogue
+from io_manager.validators import DateValidator, MenuOptionValidator
 
 
 class IOManager:

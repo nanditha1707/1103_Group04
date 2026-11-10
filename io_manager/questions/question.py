@@ -1,9 +1,9 @@
 from abc import ABC, abstractmethod
 
+from io_manager.console import Console
+from io_manager.navigation import QuestionResult
 from io_manager.patient_answers import Answer, PatientAnswers
-from io_manager.console.console import Console
-from io_manager.navigation.question_result import QuestionResult
-from io_manager.rules.skip_rule import SkipRule
+from io_manager.rules import SkipRule
 
 
 class Question(ABC):

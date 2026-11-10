@@ -1,13 +1,12 @@
 from io_manager import messages
-from io_manager.console.console import Console
-from io_manager.form.registration_form import RegistrationForm
-from io_manager.navigation.navigation import Navigation
-from io_manager.navigation.question_result import QuestionResult
+from io_manager.console import Console
+from io_manager.form import RegistrationForm
+from io_manager.navigation import Navigation, QuestionResult
 from io_manager.patient_answers import PatientAnswers
-from io_manager.questions.question import Question
-from io_manager.rendering.box_renderer import BoxRenderer
-from io_manager.rules.stop_rule import StopRule
-from io_manager.validators.menu_option_validator import MenuOptionValidator
+from io_manager.questions import Question
+from io_manager.rendering import BoxRenderer
+from io_manager.rules import StopRule
+from io_manager.validators import MenuOptionValidator
 
 
 class ConfirmationScreen:

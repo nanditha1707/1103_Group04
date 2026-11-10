@@ -1,5 +1,5 @@
-from io_manager.console.console import Console
-from io_manager.validators.yes_no_validator import YesNoValidator
+from io_manager.console import Console
+from io_manager.validators import YesNoValidator
 
 
 class YesNoPrompt:
