@@ -1,4 +1,4 @@
-from io_manager import messages
+from io_manager import constants
 
 from .choice_validator import ChoiceValidator
 
@@ -15,4 +15,4 @@ class YesNoValidator(ChoiceValidator):
     def __init__(
         self
     ) -> None:
-        super().__init__((self.YES, self.NO), messages.YES_NO_ERROR)
+        super().__init__((self.YES, self.NO), constants.YES_NO_ERROR)

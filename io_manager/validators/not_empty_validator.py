@@ -1,6 +1,6 @@
 from typing import override
 
-from io_manager import messages
+from io_manager import constants
 
 from .validator import Validator
 
@@ -11,7 +11,7 @@ class NotEmptyValidator(Validator):
     """
 
     def __init__(
-        self, error: str = messages.EMPTY_INPUT_ERROR
+        self, error: str = constants.EMPTY_INPUT_ERROR
     ) -> None:
         self.__error = error
 

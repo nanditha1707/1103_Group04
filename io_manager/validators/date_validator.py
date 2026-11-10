@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import override
 
-from io_manager import messages
+from io_manager import constants
 
 from .regex_validator import RegexValidator
 
@@ -19,7 +19,7 @@ class DateValidator(RegexValidator):
     def __init__(
         self
     ) -> None:
-        super().__init__(self.PATTERN, messages.DATE_ERROR)
+        super().__init__(self.PATTERN, constants.DATE_ERROR)
 
     @override
     def validate(self, answer: str) -> str | None:

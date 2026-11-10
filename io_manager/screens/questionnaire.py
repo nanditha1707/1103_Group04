@@ -1,4 +1,4 @@
-from io_manager import messages
+from io_manager import constants
 from io_manager.console import Console
 from io_manager.form import RegistrationForm
 from io_manager.navigation import Navigation
@@ -62,7 +62,7 @@ class Questionnaire:
             # First checks if the user typed QUIT. Stop registration
             # straight away and show the exit message.
             if result.navigation is Navigation.QUIT:
-                self.__console.show(messages.REG_EXIT_MESSAGE)
+                self.__console.show(constants.REG_EXIT_MESSAGE)
                 return None
 
             # Secondly checks if the user typed BACK. Unlike the
@@ -122,7 +122,7 @@ class Questionnaire:
         # The first question has nothing before it, so show the message
         # and stay on the same question.
         if index == 0:
-            self.__console.show(messages.NO_PREVIOUS_QUESTION)
+            self.__console.show(constants.NO_PREVIOUS_QUESTION)
             return index
 
         # RegistrationForm finds the previous question that applies.

@@ -1,4 +1,4 @@
-from io_manager import messages
+from io_manager import constants
 
 from .chain_validator import ChainValidator
 from .non_negative_integer_validator import NonNegativeIntegerValidator
@@ -18,12 +18,12 @@ class MenuOptionValidator(ChainValidator):
     """
 
     def __init__(
-        self, *, maximum: int, blank_error: str = messages.EMPTY_INPUT_ERROR, error: str | None = None
+        self, *, maximum: int, blank_error: str = constants.EMPTY_INPUT_ERROR, error: str | None = None
     ) -> None:
         # The default error needs the maximum filled in, which is only
         # known here. An error passed in by a menu is used as it is.
         if error is None:
-            error = messages.INVALID_MENU_OPTION.format(maximum=maximum)
+            error = constants.INVALID_MENU_OPTION.format(maximum=maximum)
         super().__init__([
             NotEmptyValidator(blank_error),
             NonNegativeIntegerValidator(minimum=1, maximum=maximum, error=error),

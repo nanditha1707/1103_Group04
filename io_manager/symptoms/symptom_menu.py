@@ -1,6 +1,6 @@
 from collections.abc import Sequence
 
-from io_manager import messages
+from io_manager import constants
 from io_manager.console import Console
 from io_manager.navigation import Navigation, QuestionResult
 from io_manager.rendering import BoxRenderer
@@ -47,12 +47,12 @@ class SymptomMenu:
         so typing back leaves the previous symptoms unchanged.
         """
         symptoms = list(initial_symptoms)
-        menu = self.__renderer.render(self.__menu_lines(), messages.SYMPTOM_MENU_HEADER)
+        menu = self.__renderer.render(self.__menu_lines(), constants.SYMPTOM_MENU_HEADER)
 
         while True:
             # Show the menu and ask for an option.
             console.show(menu)
-            option = console.ask_normalised(messages.MENU_OPTION_PROMPT)
+            option = console.ask_normalised(constants.MENU_OPTION_PROMPT)
 
             result = QuestionResult.from_input(option, self.__option_validator)
 
@@ -82,5 +82,5 @@ class SymptomMenu:
             for number, action in enumerate(self.__actions, start=1)
         ]
         # The hint tells the user how to exit the menu
-        lines.append(messages.SYMPTOM_MENU_HINT)
+        lines.append(constants.SYMPTOM_MENU_HINT)
         return lines

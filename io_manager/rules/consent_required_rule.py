@@ -1,6 +1,6 @@
 from typing import override
 
-from io_manager import messages
+from io_manager import constants
 from io_manager.patient_answers import PatientAnswers
 
 from .stop_rule import StopRule
@@ -26,5 +26,5 @@ class ConsentRequiredRule(StopRule):
     @override
     def stop_message(self, answers: PatientAnswers) -> str | None:
         if answers.get_answer(self.__key) == "N":
-            return messages.REG_EXIT_MESSAGE
+            return constants.REG_EXIT_MESSAGE
         return None

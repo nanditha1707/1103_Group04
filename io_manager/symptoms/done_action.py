@@ -1,6 +1,6 @@
 from typing import override
 
-from io_manager import messages
+from io_manager import constants
 from io_manager.console import Console
 from .symptom_menu_action import SymptomMenuAction
 
@@ -14,13 +14,13 @@ class DoneAction(SymptomMenuAction):
     def __init__(
         self
     ) -> None:
-        super().__init__(messages.DONE_LABEL)
+        super().__init__(constants.DONE_LABEL)
 
     @override
     def execute(self, console: Console, symptoms: list[str]) -> bool:
         # Check if there are any symptoms entered
         if not symptoms:
-            console.show(messages.NO_SYMPTOMS_ERROR)
+            console.show(constants.NO_SYMPTOMS_ERROR)
             return False
         # Return True to indicate that the symptom menu should be exited
         return True

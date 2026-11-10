@@ -1,6 +1,6 @@
 from typing import override
 
-from io_manager import messages
+from io_manager import constants
 from io_manager.console import Console
 from io_manager.navigation import QuestionResult
 from io_manager.patient_answers import Answer
@@ -29,13 +29,13 @@ class TextQuestion(Question):
         # Checked first: an empty answer can never be BACK or QUIT,
         # so the order does not change the result.
         if not raw:
-            return QuestionResult.invalid(messages.EMPTY_INPUT_ERROR)
+            return QuestionResult.invalid(constants.EMPTY_INPUT_ERROR)
 
         return QuestionResult.from_input(raw, self.__validator)
 
     @override
     def display_value(self, value: Answer) -> str:
         if value is None:
-            return messages.NOT_ANSWERED
+            return constants.NOT_ANSWERED
         # A typed answer is always text.
         return value

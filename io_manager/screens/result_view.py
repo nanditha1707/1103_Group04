@@ -1,7 +1,7 @@
 import textwrap
 from collections.abc import Mapping
 
-from io_manager import messages
+from io_manager import constants
 
 
 class ResultView:
@@ -62,11 +62,11 @@ class ResultView:
 
         # First add the queue number, followed by a blank line.
         if queue_number:
-            lines.append(messages.QUEUE_NUMBER_LINE.format(queue_number=queue_number))
+            lines.append(constants.QUEUE_NUMBER_LINE.format(queue_number=queue_number))
             lines.append("")
 
         # Then add what the patient should do next for their route.
-        route_message = messages.ROUTE_MESSAGES[route]
+        route_message = constants.ROUTE_MESSAGES[route]
         lines.extend(self.__wrap(route_message))
 
         return lines

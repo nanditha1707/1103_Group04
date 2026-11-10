@@ -2,7 +2,7 @@ from collections.abc import Iterable, Mapping
 
 import pandas as pd
 
-from io_manager import messages
+from io_manager import constants
 from io_manager.console import Console, TerminalConsole
 from io_manager.form import RegistrationFactory
 from io_manager.patient_answers import Answer, PatientAnswers
@@ -58,7 +58,7 @@ class IOManager:
     def prompt_menu(self, options: list[str], header: str | None = None) -> str:
         # Print the boxed menu, and return the normalised input.
         self.__console.show(self.__box_renderer.render(options, header))
-        return self.__console.ask_normalised(messages.MENU_OPTION_PROMPT)
+        return self.__console.ask_normalised(constants.MENU_OPTION_PROMPT)
 
     def ask(self, prompt: str) -> str:
         # Ask a questiion and return raw input.
@@ -87,7 +87,7 @@ class IOManager:
             return None
         confirmed = self.__confirm(patient_answers)
         if confirmed is not None:
-            self.show_message(messages.CONFIRMED_MESSAGE)
+            self.show_message(constants.CONFIRMED_MESSAGE)
         # If program gets to this step, it means None is returned
         return confirmed
 
@@ -119,7 +119,7 @@ class IOManager:
         # Show the patient the result of their registration. 
         # Such as their queue number and furhter instructions
         lines = self.__result_view.build_lines(ai_output, logic_result)
-        self.__console.show(self.__box_renderer.render(lines, messages.RESULT_HEADER))
+        self.__console.show(self.__box_renderer.render(lines, constants.RESULT_HEADER))
 
     def show_table(
         self, report: pd.DataFrame | Mapping[str, object], title: str = ""

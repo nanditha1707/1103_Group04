@@ -2,7 +2,7 @@ from typing import override
 
 import phonenumbers
 
-from io_manager import messages
+from io_manager import constants
 
 from .validator import Validator
 
@@ -26,8 +26,8 @@ class PhoneNumberValidator(Validator):
         try:
             parsed_number = phonenumbers.parse(answer, self.DEFAULT_REGION)
         except phonenumbers.NumberParseException:
-            return messages.PHONE_FORMAT_ERROR
+            return constants.PHONE_FORMAT_ERROR
 
         if phonenumbers.is_valid_number(parsed_number):
             return None
-        return messages.PHONE_INVALID_ERROR
+        return constants.PHONE_INVALID_ERROR

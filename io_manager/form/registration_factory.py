@@ -1,4 +1,4 @@
-from io_manager import messages
+from io_manager import constants
 from io_manager.questions import SymptomQuestion, TextQuestion
 from io_manager.rendering import BoxRenderer
 from io_manager.rules import (
@@ -72,9 +72,9 @@ class RegistrationFactory:
         # Constructs the Symptom Menu for use as a local variable.
         symptom_menu = SymptomMenu(
             [
-                PresetSymptomAction(messages.COUGH_LABEL, "COUGH"),
-                PresetSymptomAction(messages.FLU_LABEL, "FLU"),
-                PresetSymptomAction(messages.HEADACHE_LABEL, "HEADACHE"),
+                PresetSymptomAction(constants.COUGH_LABEL, "COUGH"),
+                PresetSymptomAction(constants.FLU_LABEL, "FLU"),
+                PresetSymptomAction(constants.HEADACHE_LABEL, "HEADACHE"),
                 FeverSymptomAction(yes_no_prompt),
                 CatalogueSymptomAction(catalogue, yes_no_prompt),
             ],
@@ -89,88 +89,88 @@ class RegistrationFactory:
         return RegistrationForm([
             TextQuestion(
                 "consent",
-                messages.CONSENT_PROMPT, 
+                constants.CONSENT_PROMPT, 
                 yes_no
             ),
             TextQuestion(
                 "name",
-                messages.NAME_PROMPT,
-                RegexValidator(self.NAME_PATTERN, messages.NAME_ERROR),
+                constants.NAME_PROMPT,
+                RegexValidator(self.NAME_PATTERN, constants.NAME_ERROR),
             ),
             TextQuestion(
                 "nric",
-                messages.NRIC_PROMPT,
-                RegexValidator(self.NRIC_PATTERN, messages.NRIC_ERROR),
+                constants.NRIC_PROMPT,
+                RegexValidator(self.NRIC_PATTERN, constants.NRIC_ERROR),
             ),
             TextQuestion(
                 "gender",
-                messages.GENDER_PROMPT,
-                ChoiceValidator(("M", "F"), messages.GENDER_ERROR),
+                constants.GENDER_PROMPT,
+                ChoiceValidator(("M", "F"), constants.GENDER_ERROR),
                 share_with_ai=True,
             ),
             TextQuestion(
                 "age",
-                messages.AGE_PROMPT,
+                constants.AGE_PROMPT,
                 # 0 is a real age (an infant registered by a parent), so it
                 # is accepted here and the minimum age rule sends them to
                 # manual registration.
                 NonNegativeIntegerValidator(
                     minimum=0,
                     maximum=self.MAXIMUM_AGE,
-                    error=messages.AGE_ERROR.format(maximum=self.MAXIMUM_AGE),
+                    error=constants.AGE_ERROR.format(maximum=self.MAXIMUM_AGE),
                 ),
                 share_with_ai=True,
             ),
-            TextQuestion("phone_number", messages.PHONE_PROMPT, PhoneNumberValidator()),
+            TextQuestion("phone_number", constants.PHONE_PROMPT, PhoneNumberValidator()),
             TextQuestion(
                 "pregnancy",
-                messages.PREGNANCY_PROMPT,
+                constants.PREGNANCY_PROMPT,
                 yes_no,
                 share_with_ai=True,
                 skip_rule=skip_if_male,
             ),
             TextQuestion(
-                "chest_pain", messages.CHEST_PAIN_PROMPT, yes_no,
+                "chest_pain", constants.CHEST_PAIN_PROMPT, yes_no,
                 share_with_ai=True,
             ),
             TextQuestion(
-                "breathing_difficulties", messages.BREATHING_PROMPT, yes_no,
+                "breathing_difficulties", constants.BREATHING_PROMPT, yes_no,
                 share_with_ai=True,
             ),
             TextQuestion(
-                "signs_of_stroke", messages.STROKE_PROMPT, yes_no,
+                "signs_of_stroke", constants.STROKE_PROMPT, yes_no,
                 share_with_ai=True,
             ),
             TextQuestion(
-                "self_harm", messages.SELF_HARM_PROMPT, yes_no,
+                "self_harm", constants.SELF_HARM_PROMPT, yes_no,
                 share_with_ai=True,
             ),
             SymptomQuestion(
-                "current_symptoms", messages.SYMPTOMS_PROMPT, symptom_menu,
+                "current_symptoms", constants.SYMPTOMS_PROMPT, symptom_menu,
                 share_with_ai=True,
             ),
             TextQuestion(
                 "symptom_onset_days",
-                messages.ONSET_PROMPT,
+                constants.ONSET_PROMPT,
                 NonNegativeIntegerValidator(
                     minimum=0,
                     maximum=self.MAXIMUM_ONSET_DAYS,
-                    error=messages.ONSET_DAYS_ERROR.format(
+                    error=constants.ONSET_DAYS_ERROR.format(
                         maximum=self.MAXIMUM_ONSET_DAYS
                     ),
                 ),
                 share_with_ai=True,
             ),
             TextQuestion(
-                "chronic_conditions", messages.CHRONIC_PROMPT, yes_no,
+                "chronic_conditions", constants.CHRONIC_PROMPT, yes_no,
                 share_with_ai=True,
             ),
             TextQuestion(
-                "current_medications", messages.MEDICATIONS_PROMPT, yes_no,
+                "current_medications", constants.MEDICATIONS_PROMPT, yes_no,
                 share_with_ai=True,
             ),
             TextQuestion(
-                "drug_allergies", messages.ALLERGIES_PROMPT, yes_no,
+                "drug_allergies", constants.ALLERGIES_PROMPT, yes_no,
                 share_with_ai=True,
             ),
         ])

@@ -1,4 +1,4 @@
-from io_manager import messages
+from io_manager import constants
 from io_manager.console import Console
 from io_manager.form import RegistrationForm
 from io_manager.navigation import Navigation, QuestionResult
@@ -50,11 +50,11 @@ class ConfirmationScreen:
 
             # shows the confirmation screen box
             self.__console.show(
-                self.__renderer.render(lines, messages.CONFIRMATION_HEADER)
+                self.__renderer.render(lines, constants.CONFIRMATION_HEADER)
             )
             # prompt user for choice: Enter either a number to edit the
             # respective question or enter 17 for done / confirm inputs
-            choice = self.__console.ask_normalised(messages.MENU_OPTION_PROMPT)
+            choice = self.__console.ask_normalised(constants.MENU_OPTION_PROMPT)
 
             # from_input first checks if the user choice is a command (QUIT
             # or BACK), then validates it. The validator rejects a choice
@@ -64,7 +64,7 @@ class ConfirmationScreen:
             result = QuestionResult.from_input(choice, self.__option_validator)
 
             if result.navigation is Navigation.QUIT:
-                self.__console.show(messages.REG_EXIT_MESSAGE)
+                self.__console.show(constants.REG_EXIT_MESSAGE)
                 return False
 
             # Prevent the user from going back and show message.
@@ -72,7 +72,7 @@ class ConfirmationScreen:
             # because no point: user can already edit all questions
             # from confirmation screen.
             if result.navigation is Navigation.BACK:
-                self.__console.show(messages.CANNOT_GO_BACK)
+                self.__console.show(constants.CANNOT_GO_BACK)
                 continue
 
             # If error then print error message and re-ask user for input.
@@ -100,12 +100,12 @@ class ConfirmationScreen:
             # question to edit. Prevent the user from editing by showing
             # cannot edit message and re-ask for input.
             if index not in editable:
-                self.__console.show(messages.CANNOT_EDIT)
+                self.__console.show(constants.CANNOT_EDIT)
                 continue
 
             
             if self.__edit(questions[index], answers) is Navigation.QUIT:
-                self.__console.show(messages.REG_EXIT_MESSAGE)
+                self.__console.show(constants.REG_EXIT_MESSAGE)
                 return False
 
             stop_message = self.__stop_rule.stop_message(answers)
@@ -150,14 +150,14 @@ class ConfirmationScreen:
         for index, question in enumerate(self.__form.questions):
             # Skipped questions do not apply, so they cannot be edited.
             if question.should_skip(answers):
-                value = messages.NOT_APPLICABLE
+                value = constants.NOT_APPLICABLE
             else:
                 value = question.display_value(answers.get_answer(question.key))
                 editable.add(index)
             lines.append(f"{index + 1:02d}. {question.prompt}{value}")
 
-        lines.append(f"{self.__confirm_option:02d}. {messages.CONFIRM_ALL_LABEL}")
-        lines.append(messages.CONFIRMATION_MENU_HINT)
+        lines.append(f"{self.__confirm_option:02d}. {constants.CONFIRM_ALL_LABEL}")
+        lines.append(constants.CONFIRMATION_MENU_HINT)
         return lines, editable
 
     def __edit(self, question: Question, answers: PatientAnswers) -> Navigation:
@@ -186,7 +186,7 @@ class ConfirmationScreen:
         result = question.ask(self.__console, answers.get_answer(question.key))
 
         if result.navigation is Navigation.BACK:
-            self.__console.show(messages.CANNOT_GO_BACK)
+            self.__console.show(constants.CANNOT_GO_BACK)
 
         elif result.navigation is Navigation.INVALID:
             self.__console.show(result.error)
@@ -210,6 +210,6 @@ class ConfirmationScreen:
         if missing is None:
             return True
         self.__console.show(
-            messages.UNANSWERED_QUESTION.format(prompt=missing.prompt.strip())
+            constants.UNANSWERED_QUESTION.format(prompt=missing.prompt.strip())
         )
         return False

@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import override
 
-from io_manager import messages
+from io_manager import constants
 from io_manager.console import Console
 from .symptom_menu_action import SymptomMenuAction
 
@@ -36,6 +36,6 @@ class AddSymptomAction(SymptomMenuAction, ABC):
     def __add_unique(console: Console, symptoms: list[str], symptom: str) -> None:
     # Guards against adding duplicate symptoms to the list.
         if symptom in symptoms:
-            console.show(messages.DUPLICATE_SYMPTOM_ERROR)
+            console.show(constants.DUPLICATE_SYMPTOM_ERROR)
             return
         symptoms.append(symptom)

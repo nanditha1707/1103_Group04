@@ -1,6 +1,6 @@
 from typing import override
 
-from io_manager import messages
+from io_manager import constants
 from io_manager.patient_answers import PatientAnswers
 
 from .stop_rule import StopRule
@@ -31,5 +31,5 @@ class MinimumAgeRule(StopRule):
         # the patient's age is less than the minimum, 
         # return the manual registration message.
         if int(age) < self.__minimum:
-            return messages.MANUAL_REGISTRATION_MESSAGE
+            return constants.MANUAL_REGISTRATION_MESSAGE
         return None

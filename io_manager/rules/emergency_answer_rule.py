@@ -1,7 +1,7 @@
 from collections.abc import Iterable
 from typing import override
 
-from io_manager import messages
+from io_manager import constants
 from io_manager.patient_answers import PatientAnswers
 
 from .stop_rule import StopRule
@@ -28,5 +28,5 @@ class EmergencyAnswerRule(StopRule):
     def stop_message(self, answers: PatientAnswers) -> str | None:
         for key in self.__keys:
             if answers.get_answer(key) == "Y":
-                return messages.NURSE_ALERT_MESSAGE
+                return constants.NURSE_ALERT_MESSAGE
         return None
