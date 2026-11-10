@@ -11,7 +11,8 @@ from io_manager.validators.menu_option_validator import MenuOptionValidator
 
 
 class ConfirmationScreen:
-    """Shows every answer so the patient can edit any of them before
+    """
+    Shows every answer so the patient can edit any of them before
     confirming.
 
     It only coordinates all the actions. The code that actually does the
@@ -26,7 +27,7 @@ class ConfirmationScreen:
 
     def __init__(
         self, console: Console, form: RegistrationForm, stop_rule: StopRule, renderer: BoxRenderer
-        ) -> None:
+    ) -> None:
         self.__console = console
         self.__form = form
         self.__stop_rule = stop_rule
@@ -37,9 +38,11 @@ class ConfirmationScreen:
         )
 
     def run(self, answers: PatientAnswers) -> bool:
-        """Return True once the answers are confirmed, or False if the
+        """
+        Return True once the answers are confirmed, or False if the
         patient quit or a stop rule ended registration (e.g. consent
-        changed to N). Edits are made to answers in place."""
+        changed to N). Edits are made to answers in place.
+        """
         questions = self.__form.questions
 
         while True:
@@ -113,11 +116,14 @@ class ConfirmationScreen:
 
     @property
     def __confirm_option(self) -> int:
-        """Confirm All Inputs is the menu line after the last question."""
+        """
+        Confirm All Inputs is the menu line after the last question.
+        """
         return len(self.__form.questions) + 1
 
     def __menu_lines(self, answers: PatientAnswers) -> tuple[list[str], set[int]]:
-        """Build one line per question, so each menu number always
+        """
+        Build one line per question, so each menu number always
         matches the question's position, plus Confirm All Inputs. Also
         return the positions the patient may edit.
 
@@ -156,7 +162,8 @@ class ConfirmationScreen:
         return lines, editable
 
     def __edit(self, question: Question, answers: PatientAnswers) -> Navigation:
-        """Ask one question again and store the new answer if valid.
+        """
+        Ask one question again and store the new answer if valid.
         Used when user chooses a valid question to edit. Returns the
         Navigation of the result so run() knows if the patient quit.
 
@@ -195,9 +202,11 @@ class ConfirmationScreen:
         return result.navigation
 
     def __is_complete(self, answers: PatientAnswers) -> bool:
-        """Return True if every question that applies has an answer. A
+        """
+        Return True if every question that applies has an answer. A
         question may have started to apply after an edit (gender M to
-        F), so it must be answered first."""
+        F), so it must be answered first.
+        """
         missing = self.__form.first_unanswered(answers)
         if missing is None:
             return True

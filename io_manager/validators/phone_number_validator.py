@@ -7,12 +7,14 @@ from io_manager.validators.validator import Validator
 
 
 class PhoneNumberValidator(Validator):
-    """Checks a phone number with Google's libphonenumber. Numbers
+    """
+    Checks a phone number with Google's libphonenumber. Numbers
     without a country code are read as the default region.
     
     Form libphonenumber, .parse() is to first parse the user input, and
     .is_valid_number() checks whether the parsed number is a theoretically
-    valid phone number based on the country code entered."""
+    valid phone number based on the country code entered.
+    """
 
     DEFAULT_REGION = "SG"
 

@@ -17,11 +17,7 @@ class MenuOptionValidator(ChainValidator):
     """
 
     def __init__(
-        self,
-        *,
-        maximum: int,
-        blank_error: str = messages.EMPTY_INPUT_ERROR,
-        error: str | None = None,
+        self, *, maximum: int, blank_error: str = messages.EMPTY_INPUT_ERROR, error: str | None = None
     ) -> None:
         # The default error needs the maximum filled in, which is only
         # known here. An error passed in by a menu is used as it is.

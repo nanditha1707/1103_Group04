@@ -13,10 +13,7 @@ class QuestionResult:
     """
 
     def __init__(
-        self,
-        navigation: Navigation,
-        value: Answer = None,
-        error: str | None = None,
+        self, navigation: Navigation, value: Answer = None, error: str | None = None
     ) -> None:
         self.__navigation = navigation
         self.__value = value

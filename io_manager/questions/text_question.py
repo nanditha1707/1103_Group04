@@ -10,12 +10,14 @@ from io_manager.validators.validator import Validator
 
 
 class TextQuestion(Question):
-    """A question answered by typing one line, checked by a Validator
-    passed in from outside (aggregation)."""
+    """
+    A question answered by typing one line, checked by a Validator
+    passed in from outside (aggregation).
+    """
 
     def __init__(
         self, key: str, prompt: str, validator: Validator, share_with_ai: bool = False, skip_rule: SkipRule | None = None
-        ) -> None:
+    ) -> None:
         super().__init__(key, prompt, share_with_ai, skip_rule)
         self.__validator = validator
 

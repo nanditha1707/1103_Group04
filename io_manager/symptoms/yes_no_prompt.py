@@ -3,14 +3,17 @@ from io_manager.validators.yes_no_validator import YesNoValidator
 
 
 class YesNoPrompt:
-    """Asks a Y/N follow-up question until the patient types Y or N.
+    """
+    Asks a Y/N follow-up question until the patient types Y or N.
 
     Used by the symptom actions, so an invalid answer such as "yes" is
     explained and asked again instead of being silently treated as No
     or dropping the patient back to the menu.
     """
 
-    def __init__(self, validator: YesNoValidator) -> None:
+    def __init__(
+        self, validator: YesNoValidator
+    ) -> None:
         self.__validator = validator
 
     def confirm(self, console: Console, prompt: str) -> bool:

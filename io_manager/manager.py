@@ -29,11 +29,7 @@ class IOManager:
     """
 
     def __init__(
-        self,
-        console: Console | None = None,
-        *,
-        symptom_terms: Iterable[str],
-        factory: RegistrationFactory | None = None,
+        self, console: Console | None = None, *, symptom_terms: Iterable[str], factory: RegistrationFactory | None = None
     ) -> None:
         # Sets the default console to TerminalConsole, unless a separate console is fed to it during init.
         # Currently doesnt occur, will only come into play if other custom GUI's are created.
@@ -105,8 +101,10 @@ class IOManager:
         return self.__form.filter_for_ai(answers)
 
     def __confirm(self, patient_answers: PatientAnswers) -> dict[str, Answer] | None:
-        """Run the confirmation screen on the patient's answers and return the
-        confirmed answers as a dict, or None if it did not finish."""
+        """
+        Run the confirmation screen on the patient's answers and return the
+        confirmed answers as a dict, or None if it did not finish.
+        """
         # Runs the confirmation screen for patient's answers.
         # Returns the confirmed answer as a dict, 
         # unless the confirmation was interrupted or halted, in which it will return None.

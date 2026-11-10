@@ -4,7 +4,8 @@ from io_manager.validators.validator import Validator
 
 
 class NonNegativeIntegerValidator(Validator):
-    """Validates user inputs for integers >=0 between a minimum and an 
+    """
+    Validates user inputs for integers >=0 between a minimum and an 
     optional maximum (both inclusive). We use it mainly for 3 different
     validations:
 

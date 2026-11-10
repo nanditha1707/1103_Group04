@@ -18,7 +18,9 @@ class EmergencyAnswerRule(StopRule):
     """
 
     # Uses iterable as order does not matter.
-    def __init__(self, keys: Iterable[str]) -> None:
+    def __init__(
+        self, keys: Iterable[str]
+    ) -> None:
         self.__keys = tuple(keys)
 
     @override

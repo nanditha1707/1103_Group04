@@ -28,7 +28,9 @@ class AddSymptomAction(SymptomMenuAction, ABC):
 
     @abstractmethod
     def _choose(self, console: Console) -> str | None:
-        """Returns the symptom to add, or None if no symptom was selected."""
+        """
+        Returns the symptom to add, or None if no symptom was selected.
+        """
 
     @staticmethod
     def __add_unique(console: Console, symptoms: list[str], symptom: str) -> None:

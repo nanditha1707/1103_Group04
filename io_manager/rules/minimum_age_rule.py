@@ -14,7 +14,9 @@ class MinimumAgeRule(StopRule):
     to end the registration process if the patient is too young to self register.
     """
 
-    def __init__(self, key: str, minimum: int) -> None:
+    def __init__(
+        self, key: str, minimum: int
+    ) -> None:
         self.__minimum = minimum
         self.__key = key
 

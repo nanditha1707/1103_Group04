@@ -20,7 +20,9 @@ class SymptomCatalogue:
 
     # Iterable as terms are only read once, 
     # and order does not play a role in the matching process.
-    def __init__(self, terms: Iterable[str]) -> None:
+    def __init__(
+        self, terms: Iterable[str]
+    ) -> None:
         self.__terms = tuple(terms)
         # Freezes the list of terms to speed up lookups.
         # The dataset does not change after being loaded so this is safe to do.

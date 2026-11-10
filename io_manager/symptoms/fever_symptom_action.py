@@ -17,7 +17,9 @@ class FeverSymptomAction(AddSymptomAction):
     HIGH_FEVER = "HIGH FEVER"
     FEVER = "FEVER"
 
-    def __init__(self, yes_no_prompt: YesNoPrompt) -> None:
+    def __init__(
+        self, yes_no_prompt: YesNoPrompt
+    ) -> None:
         super().__init__(messages.FEVER_LABEL)
         self.__yes_no_prompt = yes_no_prompt
 

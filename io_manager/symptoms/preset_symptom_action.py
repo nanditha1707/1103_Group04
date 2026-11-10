@@ -11,7 +11,9 @@ class PresetSymptomAction(AddSymptomAction):
     such as Cough or Heaadache.
     """
     
-    def __init__(self, label: str, symptom: str) -> None:
+    def __init__(
+        self, label: str, symptom: str
+    ) -> None:
         super().__init__(label)
         self.__symptom = symptom
 

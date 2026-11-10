@@ -2,7 +2,8 @@ from collections.abc import Sequence
 
 
 class BoxRenderer:
-    """This is used for drawing a box around text.
+    """
+    This is used for drawing a box around text.
 
     Used for:
         - Main Menu
@@ -46,15 +47,19 @@ class BoxRenderer:
     __PADDING = 4
 
     def __width(self, lines: Sequence[str], header: str | None = None) -> int:
-        """Return the full box width: the longest line (or the header,
-        if it is longer) plus the padding."""
+        """
+        Return the full box width: the longest line (or the header,
+        if it is longer) plus the padding.
+        """
         longest = max(len(line) for line in lines)
         if header:
             longest = max(longest, len(header))
         return longest + self.__PADDING
 
     def render(self, lines: Sequence[str], header: str | None = None) -> str:
-        """Return the lines in a box, with an optional centered header."""
+        """
+        Return the lines in a box, with an optional centered header.
+        """
         box_width = self.__width(lines, header)
         separator = "-" * box_width
         rows = [separator]

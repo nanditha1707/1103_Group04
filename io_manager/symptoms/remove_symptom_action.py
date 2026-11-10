@@ -14,7 +14,9 @@ class RemoveSymptomAction(SymptomMenuAction):
     # Sets what the user can type to remove all symptoms at once.
     REMOVE_ALL = "ALL"
 
-    def __init__(self) -> None:
+    def __init__(
+        self
+    ) -> None:
         super().__init__(messages.REMOVE_SYMPTOM_LABEL)
 
     @override

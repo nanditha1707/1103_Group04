@@ -19,7 +19,9 @@ class RegistrationForm:
     """
 
     # Sequences is used for type hint as the question order matters.
-    def __init__(self, questions: Sequence[Question]) -> None:
+    def __init__(
+        self, questions: Sequence[Question]
+    ) -> None:
         self.__questions = tuple(questions)
 
     @property

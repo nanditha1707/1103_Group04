@@ -11,7 +11,9 @@ class SkipIfAnswerEquals(SkipRule):
     if the patient has answered "M" for the gender question.
     """
 
-    def __init__(self, key: str, value: Answer) -> None:
+    def __init__(
+        self, key: str, value: Answer
+    ) -> None:
         self.__key = key
         self.__value = value
 

@@ -10,7 +10,9 @@ class SymptomMenuAction(ABC):
     These can range from adding fixed symptoms, removing symptoms, or even exiting the symptom menu.
     """
 
-    def __init__(self, label: str) -> None:
+    def __init__(
+        self, label: str
+    ) -> None:
         self.__label = label
 
     @property

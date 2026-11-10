@@ -17,7 +17,9 @@ class ConsentRequiredRule(StopRule):
 
     """
 
-    def __init__(self, key: str) -> None:
+    def __init__(
+        self, key: str
+    ) -> None:
         self.__key = key
 
     @override

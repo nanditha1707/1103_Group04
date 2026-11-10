@@ -4,7 +4,8 @@ import pandas as pd
 
 
 class TableRenderer:
-    """This is used for drawing data as a grid table.
+    """
+    This is used for drawing data as a grid table.
 
     Used for:
         - Patient query results (current and past patient information)
@@ -48,8 +49,10 @@ class TableRenderer:
     def render(
         self, report: pd.DataFrame | Mapping[str, object], title: str = ""
     ) -> str:
-        """Return the report as a grid table, with the title on top if
-        one is given."""
+        """
+        Return the report as a grid table, with the title on top if
+        one is given.
+        """
 
         # to_markdown only exists on DataFrames, so a dict is converted
         # to a df

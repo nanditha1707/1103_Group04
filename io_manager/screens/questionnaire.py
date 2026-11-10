@@ -7,7 +7,8 @@ from io_manager.rules.stop_rule import StopRule
 
 
 class Questionnaire:
-    """Takes the patient through the registration form once, from the
+    """
+    Takes the patient through the registration form once, from the
     first question to the last.
 
     It only coordinates all the actions. The code that actually does the
@@ -32,9 +33,11 @@ class Questionnaire:
         self.__stop_rule = stop_rule
 
     def run(self) -> PatientAnswers | None:
-        """Return the completed answers, or None if the patient quit or
+        """
+        Return the completed answers, or None if the patient quit or
         a stop rule ended registration (e.g. consent answered N). The
-        message explaining why is shown here."""
+        message explaining why is shown here.
+        """
         # A new PatientAnswers is created for each patient and handed
         # back to the caller.
         answers = PatientAnswers()
@@ -98,7 +101,8 @@ class Questionnaire:
         return answers
 
     def __go_back(self, index: int, answers: PatientAnswers) -> int:
-        """Return the index of the question to ask after the patient
+        """
+        Return the index of the question to ask after the patient
         types BACK. Used when user types BACK on any question.
 
         Example: if the RegistrationForm only had four questions

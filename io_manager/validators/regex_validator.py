@@ -5,7 +5,8 @@ from io_manager.validators.validator import Validator
 
 
 class RegexValidator(Validator):
-    """Accepts answers where the whole text matches a regex pattern.
+    """
+    Accepts answers where the whole text matches a regex pattern.
 
     It is used for:
     1. Name
@@ -30,7 +31,9 @@ class RegexValidator(Validator):
         actually exists in the calendar.
     """
 
-    def __init__(self, pattern: str, error: str) -> None:
+    def __init__(
+        self, pattern: str, error: str
+    ) -> None:
         self.__pattern = re.compile(pattern)
         # Protected, not private: subclasses such as DateValidator return
         # the same error for checks they add on top of the pattern.

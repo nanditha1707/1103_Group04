@@ -11,7 +11,9 @@ class ChainValidator(Validator):
 
     # Sequence means validators must be an ordered collection such as a
     # list or tuple, because they run in the order given. 
-    def __init__(self, validators: Sequence[Validator]) -> None:
+    def __init__(
+        self, validators: Sequence[Validator]
+    ) -> None:
         self.__validators = tuple(validators)
 
     @override

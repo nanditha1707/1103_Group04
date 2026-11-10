@@ -6,14 +6,18 @@ from io_manager.validators.regex_validator import RegexValidator
 
 
 class DateValidator(RegexValidator):
-    """Checks a date is in YYYY-MM-DD format and exists on the calendar.
-    Valid format but non-existent dates like 2026-02-30 are rejected."""
+    """
+    Checks a date is in YYYY-MM-DD format and exists on the calendar.
+    Valid format but non-existent dates like 2026-02-30 are rejected.
+    """
 
     PATTERN = r"[0-9]{4}-[0-9]{2}-[0-9]{2}"
     DATE_FORMAT = "%Y-%m-%d"
 
     # super() calls RegexValidator __init__
-    def __init__(self) -> None:
+    def __init__(
+        self
+    ) -> None:
         super().__init__(self.PATTERN, messages.DATE_ERROR)
 
     @override

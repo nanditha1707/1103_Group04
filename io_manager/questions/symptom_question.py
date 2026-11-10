@@ -8,15 +8,13 @@ from io_manager.symptoms.symptom_menu import SymptomMenu
 
 
 class SymptomQuestion(Question):
-    """The symptoms question, answered through the symptom menu
-    (aggregation) instead of one typed line."""
+    """
+    The symptoms question, answered through the symptom menu
+    (aggregation) instead of one typed line.
+    """
 
     def __init__(
-        self,
-        key: str,
-        prompt: str,
-        menu: SymptomMenu,
-        share_with_ai: bool = False,
+        self, key: str, prompt: str, menu: SymptomMenu, share_with_ai: bool = False
     ) -> None:
         super().__init__(key, prompt, share_with_ai)
         self.__menu = menu

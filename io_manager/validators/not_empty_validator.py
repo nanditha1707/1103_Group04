@@ -5,9 +5,13 @@ from io_manager.validators.validator import Validator
 
 
 class NotEmptyValidator(Validator):
-    """Rejects blank answers."""
+    """
+    Rejects blank answers.
+    """
 
-    def __init__(self, error: str = messages.EMPTY_INPUT_ERROR) -> None:
+    def __init__(
+        self, error: str = messages.EMPTY_INPUT_ERROR
+    ) -> None:
         self.__error = error
 
     @override

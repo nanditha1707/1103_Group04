@@ -10,7 +10,9 @@ class PatientAnswers:
     The dict is hidden so answers can only change through record_answer and mark_not_applicable.
     """
 
-    def __init__(self) -> None:
+    def __init__(
+        self
+    ) -> None:
         self.__answers: dict[str, Answer] = {}
     
     def get_answer(self, key: str) -> Answer:

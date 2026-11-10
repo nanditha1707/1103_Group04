@@ -11,7 +11,9 @@ class DoneAction(SymptomMenuAction):
     but only once at least one symptom has been entered.
     """
 
-    def __init__(self) -> None:
+    def __init__(
+        self
+    ) -> None:
         super().__init__(messages.DONE_LABEL)
 
     @override

@@ -11,4 +11,6 @@ class SkipRule(ABC):
 
     @abstractmethod
     def should_skip(self, answers: PatientAnswers) -> bool:
-        """Return True if the question should be skipped."""
+        """
+        Return True if the question should be skipped.
+        """
