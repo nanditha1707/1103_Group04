@@ -21,7 +21,7 @@ class TextQuestion(Question):
 
     @override
     def ask(self, console: Console, previous: Answer) -> QuestionResult:
-        raw = console.ask_upper(self.prompt)
+        raw = console.ask_normalised(self.prompt)
 
         command = QuestionResult.from_command(raw)
         if command is not None:

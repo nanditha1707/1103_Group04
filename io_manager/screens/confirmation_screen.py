@@ -49,7 +49,7 @@ class ConfirmationScreen:
             )
             # prompt user for choice: Enter either a number to edit the
             # respective question or enter 17 for done / confirm inputs
-            choice = self.__console.ask_upper(messages.MENU_OPTION_PROMPT)
+            choice = self.__console.ask_normalised(messages.MENU_OPTION_PROMPT)
 
             # First checks if the user choice is a command: QUIT or BACK
             command = QuestionResult.from_command(choice)
