@@ -1,0 +1,2 @@
+class InvalidOutputError(ValueError):
+    pass

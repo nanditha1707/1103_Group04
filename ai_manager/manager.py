@@ -5,9 +5,10 @@ import pandas as pd
 from ai_manager.providers import ClaudeProvider, GeminiProvider
 
 from . import constants
-from .ai_output import AiOutput
 from .ai_pipeline import AiPipeline
 from .error_classifier import ErrorClassifier
+from .output_validator import OutputValidator
+from .reply_parser import ReplyParser
 
 
 class AIManager:
@@ -30,20 +31,17 @@ class AIManager:
             "gemini": GeminiProvider(constants.REQUEST_TIMEOUT_SECONDS),
         }
         classifier = ErrorClassifier()
+        parser = ReplyParser()
         # main.py passes in logic_manager's medicine lookup, so a medicine
         # that passes validation always has a classification to route with.
-        ai_output = AiOutput(
-            icd_df,
-            hsa_df,
-            classify_medicine,
-            constants.EXPLANATION_FIELDS
-        )
+        validator = OutputValidator(icd_df, hsa_df, classify_medicine)
 
         self.__pipeline = AiPipeline(
             constants.MODELS,
             providers,
             classifier,
-            ai_output,
+            parser,
+            validator,
             constants.AI_MEDICAL_CONTEXT,
             constants.AI_OUTPUT_SCHEMA,
             constants.TOTAL_TIMEOUT_SECONDS,

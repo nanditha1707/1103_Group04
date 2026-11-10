@@ -62,11 +62,23 @@ AI_OUTPUT_SCHEMA = {
     "additionalProperties": False,
 }
 
+DIAGNOSIS_FIELDS = (
+    ("primary_diagnosis_ICD11_Title", "primary_diagnosis_ICD11_Code"),
+    ("secondary_diagnosis_ICD11_Title", "secondary_diagnosis_ICD11_Code"),
+)
+
+MEDICINE_FIELDS = (
+    "primary_diagnosis_medicine_1",
+    "primary_diagnosis_medicine_2",
+    "secondary_diagnosis_medicine_1",
+    "secondary_diagnosis_medicine_2",
+)
+
 # Fields that hold free text, so they are not stripped and uppercased.
-EXPLANATION_FIELDS = [
+EXPLANATION_FIELDS = (
     "primary_diagnosis_explanation",
     "secondary_diagnosis_explanation",
-]
+)
 
 
 # ======================================================================

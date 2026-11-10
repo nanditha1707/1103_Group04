@@ -1,9 +1,11 @@
 import time
 
 from .action import Action
-from .ai_output import AiOutput
 from .ai_provider import AIProvider
 from .error_classifier import ErrorClassifier
+from .invalid_output_error import InvalidOutputError
+from .output_validator import OutputValidator
+from .reply_parser import ReplyParser
 
 
 class AiPipeline:
@@ -11,14 +13,15 @@ class AiPipeline:
     returns the first valid AI output."""
 
     def __init__(
-        self, models: list[dict[str, str]], providers: dict[str, AIProvider], classifier: ErrorClassifier, ai_output: AiOutput, context: str, schema: dict, total_timeout: int, max_retries_per_model: int, support_message: str
+        self, models: list[dict[str, str]], providers: dict[str, AIProvider], classifier: ErrorClassifier, parser: ReplyParser, validator: OutputValidator, context: str, schema: dict, total_timeout: int, max_retries_per_model: int, support_message: str
     ):
         # Models to use for the AI API, in order of execution.
         self.__models = models
         # Maps each provider name in models to its AIProvider.
         self.__providers = providers
         self.__classifier = classifier
-        self.__ai_output = ai_output
+        self.__parser = parser
+        self.__validator = validator
         self.__context = context
         self.__schema = schema
         # Timeout for all API requests to return a valid answer.
@@ -89,15 +92,13 @@ class AiPipeline:
                     self.__schema
                 )
 
-                ai_output = self.__ai_output.format(
-                    self.__ai_output.parse(ai_response)
-                )
+                ai_output = self.__parser.parse(ai_response)
 
                 # ValueError is classified as RETRY_SAME_MODEL, so invalid ai output
                 # fails validation and retries the same model, then switches model / provider
                 # once retries run out, the same as other errors.
-                if not self.__ai_output.validate(ai_output):
-                    raise ValueError(
+                if not self.__validator.is_valid(ai_output):
+                    raise InvalidOutputError(
                         "AI output not found in the ICD11 / HSA datasets"
                     )
 
@@ -162,7 +163,7 @@ class AiPipeline:
 
         # Without ICD data the diagnoses cannot be checked, so the AI is not
         # called and the patient is sent to manual registration.
-        if not self.__ai_output.has_icd_data():
+        if not self.__validator.has_icd_data:
             return {"error": self.__support_message}
 
         ai_prompt = self.create_prompt(answers_filtered)
