@@ -1,6 +1,7 @@
 import time
 
 from .action import Action
+from .ai_model import AIModel
 from .ai_provider import AIProvider
 from .ai_request import AIRequest
 from .error_classifier import ErrorClassifier
@@ -15,12 +16,10 @@ class AiPipeline:
     returns the first valid AI output."""
 
     def __init__(
-        self, models: list[dict[str, str]], providers: dict[str, AIProvider], classifier: ErrorClassifier, prompt_builder: PromptBuilder, parser: ReplyParser, validator: OutputValidator, total_timeout: int, max_retries_per_model: int, support_message: str
+        self, models: list[AIModel], classifier: ErrorClassifier, prompt_builder: PromptBuilder, parser: ReplyParser, validator: OutputValidator, total_timeout: int, max_retries_per_model: int, support_message: str
     ):
         # Models to use for the AI API, in order of execution.
         self.__models = models
-        # Maps each provider name in models to its AIProvider.
-        self.__providers = providers
         self.__classifier = classifier
         self.__parser = parser
         self.__validator = validator
@@ -34,12 +33,12 @@ class AiPipeline:
     def next_provider_index(
         self,
         current_model_index: int,
-        selected_model_provider: str
+        selected_model_provider: AIProvider
     ) -> int:
         """Return the index of the next model from a different provider."""
 
         for next_model_index in range(current_model_index + 1, len(self.__models)):
-            if self.__models[next_model_index]["provider"] != selected_model_provider:
+            if self.__models[next_model_index].provider is not selected_model_provider:
                 # return the index of the next model
                 return next_model_index
 
@@ -65,17 +64,11 @@ class AiPipeline:
         ):
             # Selects the current model to use and its name and provider.
             selected_model = self.__models[current_model_index]
-            selected_model_provider = selected_model["provider"]
-            selected_model_name = selected_model["model"]
-            provider = self.__providers.get(selected_model_provider)
-
-            # Unrecognised model name means switch to next model.
-            if provider is None:
-                current_model_index += 1
-                continue
+            selected_model_provider = selected_model.provider
+            selected_model_name = selected_model.name
 
             try:
-                ai_response = provider.send(selected_model_name, request)
+                ai_response = selected_model_provider.send(selected_model_name, request)
 
                 ai_output = self.__parser.parse(ai_response)
 
@@ -92,7 +85,7 @@ class AiPipeline:
             except Exception as error:
                 # Take an action based on the returned error. The provider
                 # is passed in because only it knows its own SDK's errors.
-                action = self.__classifier.classify(error, provider)
+                action = self.__classifier.classify(error, selected_model_provider)
 
                 # If fail then breaks the entire loop.
                 if action is Action.FAIL:

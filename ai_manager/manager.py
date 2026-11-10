@@ -5,6 +5,7 @@ import pandas as pd
 from ai_manager.providers import ClaudeProvider, GeminiProvider
 
 from . import constants
+from .ai_model import AIModel
 from .ai_pipeline import AiPipeline
 from .error_classifier import ErrorClassifier
 from .output_validator import OutputValidator
@@ -27,10 +28,12 @@ class AIManager:
     def __init__(
         self, icd_df: pd.DataFrame | None, hsa_df: pd.DataFrame | None, classify_medicine: Callable[[str, pd.DataFrame], str | None]
     ):
-        providers = {
-            "claude": ClaudeProvider(constants.REQUEST_TIMEOUT_SECONDS),
-            "gemini": GeminiProvider(constants.REQUEST_TIMEOUT_SECONDS),
-        }
+        claude = ClaudeProvider(constants.REQUEST_TIMEOUT_SECONDS)
+        gemini = GeminiProvider(constants.REQUEST_TIMEOUT_SECONDS)
+
+        models = [AIModel(claude, name) for name in constants.CLAUDE_MODELS]
+        models += [AIModel(gemini, name) for name in constants.GEMINI_MODELS]
+
         classifier = ErrorClassifier()
         prompt_builder = PromptBuilder(
             constants.AI_MEDICAL_CONTEXT,
@@ -42,8 +45,7 @@ class AIManager:
         validator = OutputValidator(icd_df, hsa_df, classify_medicine)
 
         self.__pipeline = AiPipeline(
-            constants.MODELS,
-            providers,
+            models,
             classifier,
             prompt_builder,
             parser,

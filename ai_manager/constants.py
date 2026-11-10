@@ -8,12 +8,8 @@
 # MODELS, TIMEOUTS AND RETRIES
 # ======================================================================
 # Models to use for the AI API, in order of execution.
-MODELS: list[dict[str, str]] = [
-    {"provider": "claude", "model": "claude-opus-5-5"},
-    {"provider": "claude", "model": "claude-sonnet-5-5"},
-    {"provider": "gemini", "model": "gemini-3.8-flash"},
-    {"provider": "gemini", "model": "gemini-3.5-flash-lite"},
-]
+CLAUDE_MODELS = ("claude-opus-5-5", "claude-sonnet-5-5")
+GEMINI_MODELS = ("gemini-3.8-flash", "gemini-3.5-flash-lite")
 
 # Timeout for 1 AI API request.
 REQUEST_TIMEOUT_SECONDS = 20
