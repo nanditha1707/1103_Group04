@@ -5,11 +5,8 @@ from io_manager.validators.validator import Validator
 
 
 class ChainValidator(Validator):
-    """Runs several validators in order and returns the first error.
-
-    Used for menu options, where the empty input check must run before 
-    the non negative integer check so an empty input gets the correct 
-    empty input error instead of the non negative integer error.
+    """
+    Runs several validators in order and returns the first error.
     """
 
     # Sequence means validators must be an ordered collection such as a
