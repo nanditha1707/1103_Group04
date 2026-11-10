@@ -7,7 +7,7 @@ from io_manager.patient_answers import PatientAnswers
 from io_manager.questions.question import Question
 from io_manager.rendering.box_renderer import BoxRenderer
 from io_manager.rules.stop_rule import StopRule
-from io_manager.validators.validator import Validator
+from io_manager.validators.validators.menu_option_validator import MenuOptionValidator
 
 
 class ConfirmationScreen:
@@ -25,13 +25,17 @@ class ConfirmationScreen:
     """
 
     def __init__(
-        self, console: Console, form: RegistrationForm, stop_rule: StopRule, renderer: BoxRenderer, option_validator: Validator
+        self, console: Console, form: RegistrationForm, stop_rule: StopRule, renderer: BoxRenderer
         ) -> None:
         self.__console = console
         self.__form = form
         self.__stop_rule = stop_rule
         self.__renderer = renderer
-        self.__option_validator = option_validator
+        self.__option_validator = MenuOptionValidator(
+            # self.__confirm_option returns the value of the final option.
+            maximum=self.__confirm_option,
+            error=messages.INVALID_MENU_OPTION,
+        )
 
     def run(self, answers: PatientAnswers) -> bool:
         """Return True once the answers are confirmed, or False if the

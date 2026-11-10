@@ -13,10 +13,8 @@ from io_manager.screens.confirmation_screen import ConfirmationScreen
 from io_manager.screens.questionnaire import Questionnaire
 from io_manager.screens.result_view import ResultView
 from io_manager.symptoms.symptom_catalogue import SymptomCatalogue
-from io_manager.validators.chain_validator import ChainValidator
+from io_manager.validators.validators.menu_option_validator import MenuOptionValidator
 from io_manager.validators.date_validator import DateValidator
-from io_manager.validators.non_negative_integer_validator import NonNegativeIntegerValidator
-from io_manager.validators.not_empty_validator import NotEmptyValidator
 
 
 class IOManager:
@@ -47,14 +45,7 @@ class IOManager:
 
         self.__box_renderer = BoxRenderer()
         self.__table_renderer = TableRenderer()
-        self.__option_validator = ChainValidator(
-            [
-                NotEmptyValidator(),
-                NonNegativeIntegerValidator(
-                    minimum=1, error=messages.POSITIVE_WHOLE_NUMBER_ERROR
-                ),
-            ]
-        )
+        self.__option_validator = MenuOptionValidator()
         self.__date_validator = DateValidator()
 
         catalogue = SymptomCatalogue(symptom_terms)
@@ -67,8 +58,7 @@ class IOManager:
             self.__console,
             self.__form,
             stop_rule,
-            self.__box_renderer,
-            self.__option_validator,
+            self.__box_renderer
         )
         self.__result_view = ResultView()
 
@@ -85,8 +75,8 @@ class IOManager:
         return self.__console.ask(prompt)
 
     def validate_option(self, text: str) -> str | None:
-        # Uses a chainvalidator to validate the menu option
-        # Guards against empty and negative integer input.
+        # Uses the menuoptionvalidator to validate the menu option
+        # Guards against empty, negative, and out of range integer inputs.
         return self.__option_validator.validate(text)
 
     def validate_date(self, text: str) -> str | None:
