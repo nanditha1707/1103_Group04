@@ -106,7 +106,7 @@ Some of the main rules used by the system include:
 
 ```text
 main.py
-io_manager.py
+io_manager/
 ai_manager.py
 logic_manager.py
 data_manager.py
