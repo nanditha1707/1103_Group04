@@ -2,7 +2,7 @@ from typing import override
 
 from io_manager import messages
 from io_manager.console import Console
-from io_manager.symptoms.symptom_menu_action import SymptomMenuAction
+from .symptom_menu_action import SymptomMenuAction
 
 
 class RemoveSymptomAction(SymptomMenuAction):

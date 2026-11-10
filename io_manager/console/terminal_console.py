@@ -1,6 +1,6 @@
 from typing import override
 
-from io_manager.console.console import Console
+from .console import Console
 
 
 class TerminalConsole(Console):

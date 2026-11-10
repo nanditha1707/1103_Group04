@@ -1,7 +1,8 @@
 from io_manager import messages
-from io_manager.validators.chain_validator import ChainValidator
-from io_manager.validators.non_negative_integer_validator import NonNegativeIntegerValidator
-from io_manager.validators.not_empty_validator import NotEmptyValidator
+
+from .chain_validator import ChainValidator
+from .non_negative_integer_validator import NonNegativeIntegerValidator
+from .not_empty_validator import NotEmptyValidator
 
 
 class MenuOptionValidator(ChainValidator):

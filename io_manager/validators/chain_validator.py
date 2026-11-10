@@ -1,7 +1,7 @@
 from collections.abc import Sequence
 from typing import override
 
-from io_manager.validators.validator import Validator
+from .validator import Validator
 
 
 class ChainValidator(Validator):

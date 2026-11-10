@@ -1,6 +1,7 @@
 from io_manager.patient_answers import Answer
-from io_manager.navigation.navigation import Navigation
 from io_manager.validators import Validator
+
+from .navigation import Navigation
 
 
 class QuestionResult:

@@ -1,7 +1,7 @@
 from typing import override
 
 from io_manager.console import Console
-from io_manager.symptoms.add_symptom_action import AddSymptomAction
+from .add_symptom_action import AddSymptomAction
 
 
 class PresetSymptomAction(AddSymptomAction):

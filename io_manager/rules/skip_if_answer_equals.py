@@ -1,7 +1,8 @@
 from typing import override
 
 from io_manager.patient_answers import PatientAnswers
-from io_manager.rules.skip_rule import SkipRule
+
+from .skip_rule import SkipRule
 
 
 class SkipIfAnswerEquals(SkipRule):

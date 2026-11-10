@@ -2,7 +2,8 @@ from typing import override
 
 from io_manager import messages
 from io_manager.patient_answers import PatientAnswers
-from io_manager.rules.stop_rule import StopRule
+
+from .stop_rule import StopRule
 
 
 class MinimumAgeRule(StopRule):

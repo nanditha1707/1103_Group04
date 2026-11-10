@@ -2,8 +2,8 @@ from typing import override
 
 from io_manager import messages
 from io_manager.console import Console
-from io_manager.symptoms.add_symptom_action import AddSymptomAction
-from io_manager.symptoms.yes_no_prompt import YesNoPrompt
+from .add_symptom_action import AddSymptomAction
+from .yes_no_prompt import YesNoPrompt
 
 
 class FeverSymptomAction(AddSymptomAction):

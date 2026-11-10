@@ -3,7 +3,8 @@ from typing import override
 import phonenumbers
 
 from io_manager import messages
-from io_manager.validators.validator import Validator
+
+from .validator import Validator
 
 
 class PhoneNumberValidator(Validator):

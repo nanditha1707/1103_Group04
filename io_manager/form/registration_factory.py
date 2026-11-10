@@ -1,5 +1,4 @@
 from io_manager import messages
-from io_manager.form.registration_form import RegistrationForm
 from io_manager.questions import SymptomQuestion, TextQuestion
 from io_manager.rendering import BoxRenderer
 from io_manager.rules import (
@@ -14,6 +13,8 @@ from io_manager.validators import (
     ChoiceValidator, NonNegativeIntegerValidator, PhoneNumberValidator, RegexValidator,
     YesNoValidator
 )
+
+from .registration_form import RegistrationForm
 
 
 class RegistrationFactory:

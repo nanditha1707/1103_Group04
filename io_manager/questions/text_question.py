@@ -4,9 +4,10 @@ from io_manager import messages
 from io_manager.console import Console
 from io_manager.navigation import QuestionResult
 from io_manager.patient_answers import Answer
-from io_manager.questions.question import Question
 from io_manager.rules import SkipRule
 from io_manager.validators import Validator
+
+from .question import Question
 
 
 class TextQuestion(Question):

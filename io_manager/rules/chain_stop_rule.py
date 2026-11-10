@@ -2,7 +2,8 @@ from collections.abc import Sequence
 from typing import override
 
 from io_manager.patient_answers import PatientAnswers
-from io_manager.rules.stop_rule import StopRule
+
+from .stop_rule import StopRule
 
 
 class ChainStopRule(StopRule):

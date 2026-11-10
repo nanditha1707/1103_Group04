@@ -2,7 +2,8 @@ from datetime import datetime
 from typing import override
 
 from io_manager import messages
-from io_manager.validators.regex_validator import RegexValidator
+
+from .regex_validator import RegexValidator
 
 
 class DateValidator(RegexValidator):

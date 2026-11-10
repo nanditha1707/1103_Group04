@@ -1,5 +1,6 @@
 from io_manager import messages
-from io_manager.validators.choice_validator import ChoiceValidator
+
+from .choice_validator import ChoiceValidator
 
 
 class YesNoValidator(ChoiceValidator):

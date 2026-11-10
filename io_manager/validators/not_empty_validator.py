@@ -1,7 +1,8 @@
 from typing import override
 
 from io_manager import messages
-from io_manager.validators.validator import Validator
+
+from .validator import Validator
 
 
 class NotEmptyValidator(Validator):

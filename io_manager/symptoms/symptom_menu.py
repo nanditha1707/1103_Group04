@@ -4,11 +4,11 @@ from io_manager import messages
 from io_manager.console import Console
 from io_manager.navigation import Navigation, QuestionResult
 from io_manager.rendering import BoxRenderer
-from io_manager.symptoms.add_symptom_action import AddSymptomAction
-from io_manager.symptoms.done_action import DoneAction
-from io_manager.symptoms.remove_symptom_action import RemoveSymptomAction
-from io_manager.symptoms.symptom_menu_action import SymptomMenuAction
 from io_manager.validators import MenuOptionValidator
+from .add_symptom_action import AddSymptomAction
+from .done_action import DoneAction
+from .remove_symptom_action import RemoveSymptomAction
+from .symptom_menu_action import SymptomMenuAction
 
 class SymptomMenu:
     """
