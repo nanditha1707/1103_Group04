@@ -1,3 +1,3 @@
-from .manager import get_ai_output
+from .manager import AIManager
 
-__all__ = ["get_ai_output"]
+__all__ = ["AIManager"]

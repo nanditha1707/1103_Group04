@@ -1,10 +1,12 @@
 # ======================================================================
 # IMPORT FUNCTIONS AND CONSTANTS
 # ======================================================================
-import ai_manager as ai
+from dotenv import load_dotenv
+
 import data_manager as data
 import io_manager as io
 import logic_manager as logic
+from ai_manager import AIManager
 
 ADMIN_PASSWORD = "Password"
 MENU_EXIT_MESSAGE = "Admin Password Inputted, Exiting Program Now!"
@@ -164,6 +166,11 @@ def main_menu() -> dict | int | None:
 
 # load the ICD and HSA datasets once, when the program starts
 icd_df, hsa_df = data.get_cleaned_datasets()
+# Read the AI API keys from the local .env file
+load_dotenv(override=True)
+# The AI manager checks every AI answer against the same datasets, and
+# uses logic_manager's medicine lookup so every valid medicine can be routed
+ai = AIManager(icd_df, hsa_df, logic.get_classification)
 # Copy the starter patient records on the first run
 data.create_records_file_if_missing()
 
@@ -179,7 +186,7 @@ while True:
     answers_filtered = io.filter_answers(answers)
 
     # 2. AI manager: get a diagnosis and medicines
-    ai_output = ai.get_ai_output(answers_filtered, icd_df, hsa_df)
+    ai_output = ai.get_ai_output(answers_filtered)
 
     # get_ai_output returns a dictionary when every AI model failed.
     # The key is "error". The value of the key is the message telling 
