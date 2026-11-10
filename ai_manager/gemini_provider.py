@@ -1,6 +1,6 @@
 from google import genai
 
-from ai_provider import AiProvider
+from .ai_provider import AiProvider
 
 
 class GeminiProvider(AiProvider):

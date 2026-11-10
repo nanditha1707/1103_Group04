@@ -7,11 +7,12 @@ import pandas as pd
 from dotenv import load_dotenv
 
 import logic_manager as logic
-from ai_output import AiOutput
-from ai_pipeline import AiPipeline
-from claude_provider import ClaudeProvider
-from error_classifier import ErrorClassifier
-from gemini_provider import GeminiProvider
+
+from .ai_output import AiOutput
+from .ai_pipeline import AiPipeline
+from .claude_provider import ClaudeProvider
+from .error_classifier import ErrorClassifier
+from .gemini_provider import GeminiProvider
 
 # Timeout for 1 AI API request.
 REQUEST_TIMEOUT_SECONDS = 20

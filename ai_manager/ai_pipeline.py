@@ -1,8 +1,8 @@
 import time
 
-from ai_output import AiOutput
-from ai_provider import AiProvider
-from error_classifier import ErrorClassifier
+from .ai_output import AiOutput
+from .ai_provider import AiProvider
+from .error_classifier import ErrorClassifier
 
 
 class AiPipeline:
