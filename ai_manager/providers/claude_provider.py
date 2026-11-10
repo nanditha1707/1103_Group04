@@ -2,6 +2,7 @@ import anthropic
 
 from ai_manager.action import Action
 from ai_manager.ai_provider import AIProvider
+from ai_manager.ai_request import AIRequest
 from ai_manager.empty_reply_error import EmptyReplyError
 
 
@@ -53,7 +54,7 @@ class ClaudeProvider(AIProvider):
         403: Action.SWITCH_PROVIDER,
     }
 
-    def call(self, model: str, context: str, prompt: str, schema: dict) -> str:
+    def send(self, model: str, request: AIRequest) -> str:
         """Send a prompt to Claude and return its JSON reply as text.
 
         'max_retries' is set to 0 because it is better for the retries to
@@ -66,11 +67,11 @@ class ClaudeProvider(AIProvider):
         response = client.messages.create(
             model=model,
             max_tokens=8000,
-            system=context,
-            messages=[{"role": "user", "content": prompt}],
+            system=request.context,
+            messages=[{"role": "user", "content": request.prompt}],
             output_config={
                 "effort": "high",
-                "format": {"type": "json_schema", "schema": schema},
+                "format": {"type": "json_schema", "schema": request.schema},
             },
         )
         # If Claude refuses, or the reply is cut off by max_tokens, there is

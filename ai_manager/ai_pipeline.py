@@ -2,9 +2,11 @@ import time
 
 from .action import Action
 from .ai_provider import AIProvider
+from .ai_request import AIRequest
 from .error_classifier import ErrorClassifier
 from .invalid_output_error import InvalidOutputError
 from .output_validator import OutputValidator
+from .prompt_builder import PromptBuilder
 from .reply_parser import ReplyParser
 
 
@@ -13,7 +15,7 @@ class AiPipeline:
     returns the first valid AI output."""
 
     def __init__(
-        self, models: list[dict[str, str]], providers: dict[str, AIProvider], classifier: ErrorClassifier, parser: ReplyParser, validator: OutputValidator, context: str, schema: dict, total_timeout: int, max_retries_per_model: int, support_message: str
+        self, models: list[dict[str, str]], providers: dict[str, AIProvider], classifier: ErrorClassifier, prompt_builder: PromptBuilder, parser: ReplyParser, validator: OutputValidator, total_timeout: int, max_retries_per_model: int, support_message: str
     ):
         # Models to use for the AI API, in order of execution.
         self.__models = models
@@ -22,8 +24,7 @@ class AiPipeline:
         self.__classifier = classifier
         self.__parser = parser
         self.__validator = validator
-        self.__context = context
-        self.__schema = schema
+        self.__prompt_builder = prompt_builder
         # Timeout for all API requests to return a valid answer.
         self.__total_timeout = total_timeout
         # Retry number for retrying on same the same model.
@@ -45,19 +46,8 @@ class AiPipeline:
         # Return length of models so the while loop in get_ai_response stops 
         # when theres no other model to switch to.
         return len(self.__models)
-    
-    @staticmethod
-    def create_prompt(answers_filtered: dict) -> str:
-        """Build the patient intake prompt from the already filtered answers,
-        with one "- key: value" line per answer."""
-        ai_prompt = "Presenting patient answers:\n"
 
-        for key, value in answers_filtered.items():
-            ai_prompt += f"- {key}: {value}\n"
-
-        return ai_prompt
-    
-    def get_response(self, prompt: str) -> dict:
+    def get_response(self, request: AIRequest) -> dict:
         """Try each model in MODELS until one returns a valid JSON reply.
 
         Errors are classified to decide whether to retry, switch model,
@@ -85,12 +75,7 @@ class AiPipeline:
                 continue
 
             try:
-                ai_response = provider.call(
-                    selected_model_name,
-                    self.__context,
-                    prompt,
-                    self.__schema
-                )
+                ai_response = provider.send(selected_model_name, request)
 
                 ai_output = self.__parser.parse(ai_response)
 
@@ -166,5 +151,5 @@ class AiPipeline:
         if not self.__validator.has_icd_data:
             return {"error": self.__support_message}
 
-        ai_prompt = self.create_prompt(answers_filtered)
-        return self.get_response(ai_prompt)
+        request = self.__prompt_builder.build(answers_filtered)
+        return self.get_response(request)

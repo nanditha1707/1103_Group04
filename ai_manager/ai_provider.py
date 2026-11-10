@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 
 from .action import Action
+from .ai_request import AIRequest
 
 
 class AIProvider(ABC):
@@ -22,7 +23,7 @@ class AIProvider(ABC):
         self._request_timeout = request_timeout
 
     @abstractmethod
-    def call(self, model: str, context: str, prompt: str, schema: dict) -> str:
+    def send(self, model: str, request: AIRequest) -> str:
         """Send a prompt to the model and return its JSON reply as text.
 
         Raises EmptyReplyError if the model returns no usable text. Any

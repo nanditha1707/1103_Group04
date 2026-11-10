@@ -5,6 +5,7 @@ from google.genai import errors as genai_errors
 
 from ai_manager.action import Action
 from ai_manager.ai_provider import AIProvider
+from ai_manager.ai_request import AIRequest
 from ai_manager.empty_reply_error import EmptyReplyError
 
 
@@ -54,7 +55,7 @@ class GeminiProvider(AIProvider):
         403: Action.SWITCH_PROVIDER,
     }
 
-    def call(self, model: str, context: str, prompt: str, schema: dict) -> str:
+    def send(self, model: str, request: AIRequest) -> str:
         """Send a prompt to Gemini and return its JSON reply as text.
 
         Gemini's timeout is in milliseconds, so timeout multiplied by 1000.
@@ -68,10 +69,10 @@ class GeminiProvider(AIProvider):
                 "retry_options": {"attempts": 1},
             })
         response = client.models.generate_content(
-            model=model, contents=prompt, config={
-                "system_instruction": context,
+            model=model, contents=request.prompt, config={
+                "system_instruction": request.context,
                 "response_mime_type": "application/json",
-                "response_json_schema": schema,
+                "response_json_schema": request.schema,
             },
         )
         # response.text is None when Gemini returns no text, such as when a

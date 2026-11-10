@@ -8,6 +8,7 @@ from . import constants
 from .ai_pipeline import AiPipeline
 from .error_classifier import ErrorClassifier
 from .output_validator import OutputValidator
+from .prompt_builder import PromptBuilder
 from .reply_parser import ReplyParser
 
 
@@ -31,6 +32,10 @@ class AIManager:
             "gemini": GeminiProvider(constants.REQUEST_TIMEOUT_SECONDS),
         }
         classifier = ErrorClassifier()
+        prompt_builder = PromptBuilder(
+            constants.AI_MEDICAL_CONTEXT,
+            constants.AI_OUTPUT_SCHEMA
+        )
         parser = ReplyParser()
         # main.py passes in logic_manager's medicine lookup, so a medicine
         # that passes validation always has a classification to route with.
@@ -40,10 +45,9 @@ class AIManager:
             constants.MODELS,
             providers,
             classifier,
+            prompt_builder,
             parser,
             validator,
-            constants.AI_MEDICAL_CONTEXT,
-            constants.AI_OUTPUT_SCHEMA,
             constants.TOTAL_TIMEOUT_SECONDS,
             constants.MAX_RETRIES_PER_MODEL,
             constants.CONTACT_SUPPORT_MESSAGE
