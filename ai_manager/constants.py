@@ -1,10 +1,9 @@
-"""All the constants for the AI manager, in 6 sections:
+"""All the constants for the AI manager, in 5 sections:
 1. The models to try, and the timeouts and retries.
-2. The actions ErrorClassifier tells AiPipeline to take after an error.
-3. The errors ErrorClassifier needs to recognise.
-4. The message shown to the patient when every model fails.
-5. The fields the AI must return, and the JSON schema that forces them.
-6. The medical context (system prompt) sent with every request."""
+2. The errors ErrorClassifier needs to recognise.
+3. The message shown to the patient when every model fails.
+4. The fields the AI must return, and the JSON schema that forces them.
+5. The medical context (system prompt) sent with every request."""
 
 import httpx
 import httpx2
@@ -26,25 +25,6 @@ REQUEST_TIMEOUT_SECONDS = 20
 TOTAL_TIMEOUT_SECONDS = 60
 # How many times the same model is retried before moving on.
 MAX_RETRIES_PER_MODEL = 2
-
-
-# ======================================================================
-# ACTIONS
-# ======================================================================
-# Actions returned by ErrorClassifier, telling AiPipeline what to do
-# after a failed request.
-FAIL = "Fail immediately"
-RETRY_SAME_MODEL = "Retry on the same model"
-SWITCH_MODEL = "Switch to next model in MODELS"
-SWITCH_MODEL_PROVIDER = "Switch immediately to the next model provider"
-
-# The actions above, keyed by the names ErrorClassifier and AiPipeline use.
-ACTIONS = {
-    "fail": FAIL,
-    "retry_same_model": RETRY_SAME_MODEL,
-    "switch_model": SWITCH_MODEL,
-    "switch_model_provider": SWITCH_MODEL_PROVIDER,
-}
 
 
 # ======================================================================

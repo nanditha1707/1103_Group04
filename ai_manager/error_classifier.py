@@ -1,20 +1,15 @@
 import anthropic
 from google.genai import errors as genai_errors
 
+from .action import Action
+
 
 class ErrorClassifier:
     """Decides what to do after a failed AI request."""
 
     def __init__(
-        self,
-        actions: dict[str, str],
-        no_text_message: str,
-        gemini_timeout_errors: tuple,
-        gemini_connection_errors: tuple
+        self, no_text_message: str, gemini_timeout_errors: tuple, gemini_connection_errors: tuple
     ):
-        # Actions returned by classify_error, telling get_ai_response what to
-        # do after a failed request.
-        self.__actions = actions
         # Error message raised when the AI returns no text. classify_error
         # checks for this exact message to tell it apart from other
         # ValueErrors.
@@ -24,11 +19,11 @@ class ErrorClassifier:
         self.__gemini_timeout_errors = gemini_timeout_errors
         self.__gemini_connection_errors = gemini_connection_errors
 
-    def classify(self, error: Exception) -> str:
+    def classify(self, error: Exception) -> Action:
         """Unified function to classify all API errors from Claude and
         Gemini. It classifies the error based on either the error code or
-        for errors without error codes, the error itself, and returns a
-        suitable ACTION (a constant) to take based on the error message.
+        for errors without error codes, the error itself, and returns the
+        Action to take.
 
         Claude error codes:
             413 (FAIL): Request is too large. Resending the same request
@@ -55,15 +50,15 @@ class ErrorClassifier:
                 may still have capacity.
             529 (SWITCH_MODEL): API is overloaded, switch to a different
                 model API.
-            400 (SWITCH_MODEL_PROVIDER): Invalid request format or
+            400 (SWITCH_PROVIDER): Invalid request format or
                 content. Every Claude model gets the same request format, 
                 so they would all reject it, but other models request format
                 is built differently and may still work.
-            401 (SWITCH_MODEL_PROVIDER): Invalid API key. Every Claude
+            401 (SWITCH_PROVIDER): Invalid API key. Every Claude
                 model uses the same key, so switch models.
-            402 (SWITCH_MODEL_PROVIDER): Billing problem, e.g. out of
+            402 (SWITCH_PROVIDER): Billing problem, e.g. out of
                 credits. This applies to every Claude model.
-            403 (SWITCH_MODEL_PROVIDER): API key lacks permission. This
+            403 (SWITCH_PROVIDER): API key lacks permission. This
                 applies to every Claude model.
 
         Gemini error codes:
@@ -86,68 +81,63 @@ class ErrorClassifier:
                 have quota left.
             503 (SWITCH_MODEL): Service unavailable or overloaded.
                 Another model may not be overloaded.
-            400 (SWITCH_MODEL_PROVIDER): Invalid argument or malformed
+            400 (SWITCH_PROVIDER): Invalid argument or malformed
                 request. Every Gemini model gets the same request, so
                 they would all reject it, but other model requests are built
                 differently and may still work.
-            401 (SWITCH_MODEL_PROVIDER): Invalid API key. Every Gemini
+            401 (SWITCH_PROVIDER): Invalid API key. Every Gemini
                 model uses the same key, so switch models.
-            403 (SWITCH_MODEL_PROVIDER): API key lacks permission. This
+            403 (SWITCH_PROVIDER): API key lacks permission. This
                 applies to every Gemini model.
         """
-
-        fail = self.__actions["fail"]
-        retry_same_model = self.__actions["retry_same_model"]
-        switch_model = self.__actions["switch_model"]
-        switch_model_provider = self.__actions["switch_model_provider"]
 
         # If the AI returned no text then switch model because the same
         # model is likely to fail the same way again. This must be checked
         # before the general ValueError check below.
         if isinstance(error, ValueError) and str(error) == self.__no_text_message:
-            return switch_model
+            return Action.SWITCH_MODEL
 
         # If something is wrong with json output or the AI output failed
         # validation then retry same model because the error is likely
         # transient.
         if isinstance(error, ValueError):
-            return retry_same_model
+            return Action.RETRY_SAME_MODEL
 
         # Claude errors
         if isinstance(error, anthropic.APITimeoutError):
-            return switch_model
+            return Action.SWITCH_MODEL
 
         elif isinstance(error, anthropic.APIConnectionError):
-            return retry_same_model
+            return Action.RETRY_SAME_MODEL
 
         elif isinstance(error, anthropic.APIStatusError):
             error_code = error.status_code
             if error_code == 413:
-                return fail
+                return Action.FAIL
             elif error_code in (409, 500, 502, 503):
-                return retry_same_model
+                return Action.RETRY_SAME_MODEL
             elif error_code in (404, 429, 504, 529):
-                return switch_model
+                return Action.SWITCH_MODEL
             elif error_code in (400, 401, 402, 403):
-                return switch_model_provider
+                return Action.SWITCH_PROVIDER
 
         # Gemini Errors
         if isinstance(error, self.__gemini_timeout_errors):
-            return switch_model
+            return Action.SWITCH_MODEL
 
         elif isinstance(error, self.__gemini_connection_errors):
-            return retry_same_model
+            return Action.RETRY_SAME_MODEL
 
         elif isinstance(error, genai_errors.APIError):
             error_code = error.code
             if error_code == 413:
-                return fail
+                return Action.FAIL
             elif error_code in (500, 502):
-                return retry_same_model
+                return Action.RETRY_SAME_MODEL
             elif error_code in (404, 429, 503, 504):
-                return switch_model
+                return Action.SWITCH_MODEL
             elif error_code in (400, 401, 403):
-                return switch_model_provider
+                return Action.SWITCH_PROVIDER
 
         # Unexpected errors that dont classify.
-        return fail
+        return Action.FAIL

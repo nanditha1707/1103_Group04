@@ -35,7 +35,6 @@ class AIManager:
             ),
         }
         classifier = ErrorClassifier(
-            constants.ACTIONS,
             constants.NO_TEXT_ERROR_MESSAGE,
             constants.GEMINI_TIMEOUT_ERRORS,
             constants.GEMINI_CONNECTION_ERRORS
@@ -56,7 +55,6 @@ class AIManager:
             ai_output,
             constants.AI_MEDICAL_CONTEXT,
             constants.AI_OUTPUT_SCHEMA,
-            constants.ACTIONS,
             constants.TOTAL_TIMEOUT_SECONDS,
             constants.MAX_RETRIES_PER_MODEL,
             constants.CONTACT_SUPPORT_MESSAGE

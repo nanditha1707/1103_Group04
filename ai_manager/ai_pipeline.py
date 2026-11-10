@@ -1,5 +1,6 @@
 import time
 
+from .action import Action
 from .ai_output import AiOutput
 from .ai_provider import AiProvider
 from .error_classifier import ErrorClassifier
@@ -10,17 +11,7 @@ class AiPipeline:
     returns the first valid AI output."""
 
     def __init__(
-        self,
-        models: list[dict[str, str]],
-        providers: dict[str, AiProvider],
-        classifier: ErrorClassifier,
-        ai_output: AiOutput,
-        context: str,
-        schema: dict,
-        actions: dict[str, str],
-        total_timeout: int,
-        max_retries_per_model: int,
-        support_message: str
+        self, models: list[dict[str, str]], providers: dict[str, AiProvider], classifier: ErrorClassifier, ai_output: AiOutput, context: str, schema: dict, total_timeout: int, max_retries_per_model: int, support_message: str
     ):
         # Models to use for the AI API, in order of execution.
         self.__models = models
@@ -30,9 +21,6 @@ class AiPipeline:
         self.__ai_output = ai_output
         self.__context = context
         self.__schema = schema
-        # Actions returned by classify_error, telling get_ai_response what to
-        # do after a failed request.
-        self.__actions = actions
         # Timeout for all API requests to return a valid answer.
         self.__total_timeout = total_timeout
         # Retry number for retrying on same the same model.
@@ -73,11 +61,6 @@ class AiPipeline:
         switch provider or fail immediately. Returns an error dict if
         nothing works before TOTAL_TIMEOUT_SECONDS runs out.
         """
-        fail = self.__actions["fail"]
-        retry_same_model = self.__actions["retry_same_model"]
-        switch_model = self.__actions["switch_model"]
-        switch_model_provider = self.__actions["switch_model_provider"]
-
         time_limit = time.time() + self.__total_timeout
         current_model_index = 0
         current_retries = 0
@@ -125,12 +108,12 @@ class AiPipeline:
                 action = self.__classifier.classify(error)
 
                 # If fail then breaks the entire loop.
-                if action == fail:
+                if action is Action.FAIL:
                     break
 
                 # If retry same model and retry limit is not exceeded.
                 if (
-                    action == retry_same_model
+                    action is Action.RETRY_SAME_MODEL
                     and current_retries < self.__max_retries_per_model
                 ):
                     current_retries += 1
@@ -149,11 +132,11 @@ class AiPipeline:
                 # If no next model provider is available then next_provider_index
                 # returns the length of MODELS, which effectively stops
                 # the main while loop from running as there are no more models to run.
-                if action == switch_model_provider:
+                if action is Action.SWITCH_PROVIDER:
                     current_model_index = self.next_provider_index(
                         current_model_index, selected_model_provider)
 
-                elif action == switch_model or action == retry_same_model:
+                elif action is Action.SWITCH_MODEL or action is Action.RETRY_SAME_MODEL:
                     # RETRY_SAME_MODEL only reaches here once retries are used up
                     current_model_index += 1
 
@@ -162,7 +145,7 @@ class AiPipeline:
                     break
 
                 # Reset retry count. It will only be reached when
-                # action is SWITCH_MODEL or SWITCH_MODEL_PROVIDER.
+                # action is SWITCH_MODEL or SWITCH_PROVIDER.
                 current_retries = 0
 
         # Unexpected error message
