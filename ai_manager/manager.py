@@ -2,12 +2,12 @@ from collections.abc import Callable
 
 import pandas as pd
 
+from ai_manager.providers import ClaudeProvider, GeminiProvider
+
 from . import constants
 from .ai_output import AiOutput
 from .ai_pipeline import AiPipeline
-from .claude_provider import ClaudeProvider
 from .error_classifier import ErrorClassifier
-from .gemini_provider import GeminiProvider
 
 
 class AIManager:
@@ -15,7 +15,8 @@ class AIManager:
 
     It builds the objects that do the work once, when the program starts,
     instead of on every call:
-    - ClaudeProvider and GeminiProvider send requests to their APIs.
+    - ClaudeProvider and GeminiProvider send requests to their APIs, and
+      classify their own SDK's errors.
     - ErrorClassifier decides what to do after a failed request.
     - AiOutput parses, formats and validates a reply.
     - AiPipeline tries each model in turn until one gives a valid reply.
@@ -28,10 +29,7 @@ class AIManager:
             "claude": ClaudeProvider(constants.REQUEST_TIMEOUT_SECONDS),
             "gemini": GeminiProvider(constants.REQUEST_TIMEOUT_SECONDS),
         }
-        classifier = ErrorClassifier(
-            constants.GEMINI_TIMEOUT_ERRORS,
-            constants.GEMINI_CONNECTION_ERRORS
-        )
+        classifier = ErrorClassifier()
         # main.py passes in logic_manager's medicine lookup, so a medicine
         # that passes validation always has a classification to route with.
         ai_output = AiOutput(

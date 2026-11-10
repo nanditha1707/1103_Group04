@@ -1,12 +1,8 @@
-"""All the constants for the AI manager, in 5 sections:
+"""All the constants for the AI manager, in 4 sections:
 1. The models to try, and the timeouts and retries.
-2. The errors ErrorClassifier needs to recognise.
-3. The message shown to the patient when every model fails.
-4. The fields the AI must return, and the JSON schema that forces them.
-5. The medical context (system prompt) sent with every request."""
-
-import httpx
-import httpx2
+2. The message shown to the patient when every model fails.
+3. The fields the AI must return, and the JSON schema that forces them.
+4. The medical context (system prompt) sent with every request."""
 
 # ======================================================================
 # MODELS, TIMEOUTS AND RETRIES
@@ -25,15 +21,6 @@ REQUEST_TIMEOUT_SECONDS = 20
 TOTAL_TIMEOUT_SECONDS = 60
 # How many times the same model is retried before moving on.
 MAX_RETRIES_PER_MODEL = 2
-
-
-# ======================================================================
-# ERRORS
-# ======================================================================
-# Gemini raises raw httpx / httpx2 errors for timeouts and dropped
-# connections, so both libraries are checked by ErrorClassifier.
-GEMINI_TIMEOUT_ERRORS = (httpx.TimeoutException, httpx2.TimeoutException)
-GEMINI_CONNECTION_ERRORS = (httpx.TransportError, httpx2.TransportError)
 
 
 # ======================================================================
