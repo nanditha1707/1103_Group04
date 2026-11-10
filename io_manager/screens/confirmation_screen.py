@@ -186,9 +186,11 @@ class ConfirmationScreen:
             self.__console.show(result.error)
 
         elif result.navigation is Navigation.ANSWERED:
-            answers.record_answer(question.key, result.value)
+            # self.__form is the RegistrationForm passed into 
+            # ConfirmationScreen's constructor.
+            # The form also clears any question that no longer applies
             # e.g. gender changed to M makes pregnancy not applicable.
-            self.__form.mark_skipped(answers)
+            self.__form.apply_answer(answers, question.key, result.value)
 
         return result.navigation
 

@@ -17,6 +17,10 @@ class PatientAnswers:
         # Return the stored answer, or None if there is none.
         return self.__answers.get(key)
 
+    # This is the only way an answer gets written into PatientAnswers so
+    # every save goes through it. The screens do not call it directly. 
+    # They call RegistrationForm.apply_answer, which calls this method 
+    # for them and then clears any question that no longer applies.
     def record_answer(self, key: str, value: Answer) -> None:
         # Store an answer under its question key.
         self.__answers[key] = value

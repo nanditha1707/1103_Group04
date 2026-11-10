@@ -12,8 +12,8 @@ class Questionnaire:
 
     It only coordinates all the actions. The code that actually does the
     actions is in separate classes. Question asks itself and checks the
-    user answer, PatientAnswers stores the answers, RegistrationForm
-    decides which question comes next or before, and StopRule decides
+    user answer, RegistrationForm saves each answer into PatientAnswers
+    and decides which question comes next or before, and StopRule decides
     whether registration ends.
 
     Every question is asked through question.ask(), so this loop never
@@ -75,12 +75,10 @@ class Questionnaire:
                 self.__console.show(result.error)
                 continue
 
-            # If no error then the answer is valid, so store it.
-            answers.record_answer(question.key, result.value)
-
-            # Mark any question that no longer applies as skipped.
+            # If no error then the answer is valid, so store it. The form
+            # also clears any question that no longer applies,
             # e.g. answering gender M makes pregnancy not applicable.
-            self.__form.mark_skipped(answers)
+            self.__form.apply_answer(answers, question.key, result.value)
 
             # Move on to the next question that applies, passing over
             # skipped ones (e.g. gender M jumps over pregnancy).

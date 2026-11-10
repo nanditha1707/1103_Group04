@@ -7,8 +7,10 @@ from io_manager.questions.question import Question
 class RegistrationForm:
     """
     Class that holds the ordered questions,
-    and the methods to navigate through them, 
+    and the methods to navigate through them,
     skipping questions that do not apply.
+    It also saves each answer through apply_answer,
+    so questions that no longer apply are always cleared.
 
     The questions themselves are constructed outside this class, 
     and passed in during initialisation. 
@@ -50,8 +52,21 @@ class RegistrationForm:
             previous -= 1
         return previous
 
-    def mark_skipped(self, answers: PatientAnswers) -> None:
+    def apply_answer(self, answers: PatientAnswers, key: str, value: Answer) -> None:
+        """
+        Store an answer then clear every question that no longer applies.
+
+        The two steps always happen together so they are kept in one method.
+        e.g. changing gender from F to M must also clear the pregnancy answer,
+        otherwise a stored pregnancy answer of Y would still be sent to the AI.
+        The screens call this instead of PatientAnswers.record_answer directly.
+        """
+        answers.record_answer(key, value)
+        self.__mark_skipped(answers)
+
+    def __mark_skipped(self, answers: PatientAnswers) -> None:
         # Mark every question that does not apply as not applicable.
+        # Private, so it only ever runs as part of apply_answer.
         for question in self.__questions:
             if question.should_skip(answers):
                 answers.mark_not_applicable(question.key)
