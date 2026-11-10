@@ -7,7 +7,7 @@ from io_manager.patient_answers import PatientAnswers
 from io_manager.questions.question import Question
 from io_manager.rendering.box_renderer import BoxRenderer
 from io_manager.rules.stop_rule import StopRule
-from io_manager.validators.validators.menu_option_validator import MenuOptionValidator
+from io_manager.validators.menu_option_validator import MenuOptionValidator
 
 
 class ConfirmationScreen:
@@ -15,8 +15,8 @@ class ConfirmationScreen:
     confirming.
 
     It only coordinates all the actions. The code that actually does the
-    actions are in separate classes. BoxRenderer draws the menu, Validator
-    checks the user answer, Question re-asks itself and StopRule decides
+    actions are in separate classes. BoxRenderer draws the menu,
+    MenuOptionValidator checks the menu option, Question re-asks itself and StopRule decides
     whether registration ends.
 
     Only the method run() is public since it is used by IOManager class.
@@ -34,7 +34,6 @@ class ConfirmationScreen:
         self.__option_validator = MenuOptionValidator(
             # self.__confirm_option returns the value of the final option.
             maximum=self.__confirm_option,
-            error=messages.INVALID_MENU_OPTION,
         )
 
     def run(self, answers: PatientAnswers) -> bool:
@@ -68,10 +67,11 @@ class ConfirmationScreen:
                 self.__console.show(messages.CANNOT_GO_BACK)
                 continue
 
-            # Secondly validates the user choice and whether its a valid
-            # integer. Validator returns error message string if error,
-            # None if no error. This in practice rejects all inputs
-            # that are not 
+            # Secondly validates the user choice. The validator returns an
+            # error message string if the choice is blank or not a whole
+            # number from 1 to the Confirm All Inputs option, and None if
+            # there is no error. So after this, choice is always a valid
+            # menu number.
             error = self.__option_validator.validate(choice)
 
             # If error then print error message and re-ask user for input.
@@ -93,15 +93,6 @@ class ConfirmationScreen:
             # Menu numbers are question positions plus one, so question
             # index is question positions minus 1.
             index = option - 1
-
-            # If user choice is integer more than the questions available
-            # then show invalid menu option message and reprompt.
-            # This is checked here instead of in the NonNegativeIntegerValidator
-            # since the validator is shared by other menu screens with
-            # a differing maximum number of menu options. 
-            if index >= len(questions):
-                self.__console.show(messages.INVALID_MENU_OPTION)
-                continue
 
             # If user choice is a question that cannot be edited.
             # This is if gender is 'M' and the user selects pregancy

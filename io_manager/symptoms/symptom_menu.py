@@ -8,7 +8,7 @@ from io_manager.symptoms.add_symptom_action import AddSymptomAction
 from io_manager.symptoms.done_action import DoneAction
 from io_manager.symptoms.remove_symptom_action import RemoveSymptomAction
 from io_manager.symptoms.symptom_menu_action import SymptomMenuAction
-from io_manager.validators.validators.menu_option_validator import MenuOptionValidator
+from io_manager.validators.menu_option_validator import MenuOptionValidator
 
 class SymptomMenu:
     """
@@ -36,8 +36,6 @@ class SymptomMenu:
         # Creates the option validator for menu.
         self.__option_validator = MenuOptionValidator(
             maximum=len(self.__actions),
-            blank_error=messages.SYMPTOM_MENU_BLANK_ERROR,
-            error=messages.SYMPTOM_MENU_OPTION_ERROR,
         )
 
     def run(self, console: Console, initial_symptoms: Sequence[str]) -> QuestionResult:

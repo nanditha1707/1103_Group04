@@ -13,8 +13,8 @@ from io_manager.screens.confirmation_screen import ConfirmationScreen
 from io_manager.screens.questionnaire import Questionnaire
 from io_manager.screens.result_view import ResultView
 from io_manager.symptoms.symptom_catalogue import SymptomCatalogue
-from io_manager.validators.validators.menu_option_validator import MenuOptionValidator
 from io_manager.validators.date_validator import DateValidator
+from io_manager.validators.menu_option_validator import MenuOptionValidator
 
 
 class IOManager:
@@ -45,7 +45,6 @@ class IOManager:
 
         self.__box_renderer = BoxRenderer()
         self.__table_renderer = TableRenderer()
-        self.__option_validator = MenuOptionValidator()
         self.__date_validator = DateValidator()
 
         catalogue = SymptomCatalogue(symptom_terms)
@@ -74,10 +73,11 @@ class IOManager:
         # Ask a questiion and return raw input.
         return self.__console.ask(prompt)
 
-    def validate_option(self, text: str) -> str | None:
-        # Uses the menuoptionvalidator to validate the menu option
-        # Guards against empty, negative, and out of range integer inputs.
-        return self.__option_validator.validate(text)
+    def validate_option(self, text: str, maximum: int) -> str | None:
+        # Uses the menuoptionvalidator to validate the menu option.
+        # maximum is the menu's number of options, e.g. len(FILTER_OPTIONS).
+        # Guards against empty, non-integer, zero, negative and out of range inputs.
+        return MenuOptionValidator(maximum=maximum).validate(text)
 
     def validate_date(self, text: str) -> str | None:
         # Checks if a DD-MM-YYYY date is valid.

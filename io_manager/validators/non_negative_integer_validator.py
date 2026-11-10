@@ -15,10 +15,8 @@ class NonNegativeIntegerValidator(Validator):
     All of these validations have different acceptable ranges:
 
     1. Age between 0 (infants can be 0 years old) and 150
-    2. Menu options 1 or more, since menus start at 1. The symptom menu
-    passes its number of actions as the maximum. The other menus share
-    one validator with no maximum, because they have different number of
-    options, and each checks the maximum number of options itself.
+    2. Menu options between 1 (menus start at 1) and the menu's number
+    of options. This is done through MenuOptionValidator.
     3. 0 (symptoms started today) and 365
 
     Since these are all non negative integers, we used a common class to
@@ -52,7 +50,7 @@ class NonNegativeIntegerValidator(Validator):
         if value < self.__minimum:
             return self.__error
 
-        # Additonal maximum is not None check since it can be None for menu options.
+        # maximum is optional, so it is only checked when one is given.
         if self.__maximum is not None and value > self.__maximum:
             return self.__error
 

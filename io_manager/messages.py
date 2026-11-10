@@ -101,8 +101,6 @@ FEVER_LABEL = "Fever"
 OTHER_SYMPTOMS_LABEL = "Other Symptoms"
 REMOVE_SYMPTOM_LABEL = "Remove a Symptom"
 DONE_LABEL = "Done"
-SYMPTOM_MENU_BLANK_ERROR = "You cannot leave this blank, try again!"
-SYMPTOM_MENU_OPTION_ERROR = "This is not a valid option number."
 NO_SYMPTOMS_ERROR = (
     "You have not entered any symptoms, please enter at least one symptom!"
 )
@@ -129,7 +127,8 @@ SYMPTOM_NOT_IN_LIST = "'{symptom}' is not in your list."
 CONFIRMATION_HEADER = "Confirmation Screen"
 CONFIRM_ALL_LABEL = "Confirm All Inputs"
 CONFIRMATION_MENU_HINT = "You can also input quit"
-INVALID_MENU_OPTION = "Invalid input. Please enter a valid menu option!"
+# {maximum} is filled in by MenuOptionValidator with the menu's last option number.
+INVALID_MENU_OPTION = "Invalid input. Please enter a valid menu option from 1 to {maximum}."
 CANNOT_EDIT = "That item cannot be edited."
 CANNOT_GO_BACK = (
     "You cannot go back during the confirmation process. "
