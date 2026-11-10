@@ -1,6 +1,7 @@
 from google import genai
 
 from .ai_provider import AiProvider
+from .empty_reply_error import EmptyReplyError
 
 
 class GeminiProvider(AiProvider):
@@ -27,11 +28,8 @@ class GeminiProvider(AiProvider):
             },
         )
         # response.text is None when Gemini returns no text, such as when a
-        # safety filter blocks the reply. Raise ValueError with
-        # NO_TEXT_ERROR_MESSAGE so the error is classified as SWITCH_MODEL.
-        # The same prompt sent to the same model is likely to be blocked
-        # again, so retrying would waste time.
+        # safety filter blocks the reply.
         if not response.text:
-            raise ValueError(self._no_text_message)
+            raise EmptyReplyError("Gemini returned no text")
 
         return response.text

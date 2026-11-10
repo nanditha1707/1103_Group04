@@ -25,17 +25,10 @@ class AIManager:
         self, icd_df: pd.DataFrame | None, hsa_df: pd.DataFrame | None, classify_medicine: Callable[[str, pd.DataFrame], str | None]
     ):
         providers = {
-            "claude": ClaudeProvider(
-                constants.REQUEST_TIMEOUT_SECONDS,
-                constants.NO_TEXT_ERROR_MESSAGE
-            ),
-            "gemini": GeminiProvider(
-                constants.REQUEST_TIMEOUT_SECONDS,
-                constants.NO_TEXT_ERROR_MESSAGE
-            ),
+            "claude": ClaudeProvider(constants.REQUEST_TIMEOUT_SECONDS),
+            "gemini": GeminiProvider(constants.REQUEST_TIMEOUT_SECONDS),
         }
         classifier = ErrorClassifier(
-            constants.NO_TEXT_ERROR_MESSAGE,
             constants.GEMINI_TIMEOUT_ERRORS,
             constants.GEMINI_CONNECTION_ERRORS
         )

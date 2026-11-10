@@ -34,9 +34,6 @@ MAX_RETRIES_PER_MODEL = 2
 # connections, so both libraries are checked by ErrorClassifier.
 GEMINI_TIMEOUT_ERRORS = (httpx.TimeoutException, httpx2.TimeoutException)
 GEMINI_CONNECTION_ERRORS = (httpx.TransportError, httpx2.TransportError)
-# Error message raised when the AI returns no text. ErrorClassifier checks
-# for this exact message to tell it apart from other ValueErrors.
-NO_TEXT_ERROR_MESSAGE = "AI returned no text"
 
 
 # ======================================================================

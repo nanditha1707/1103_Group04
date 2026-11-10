@@ -1,6 +1,7 @@
 import anthropic
 
 from .ai_provider import AiProvider
+from .empty_reply_error import EmptyReplyError
 
 
 class ClaudeProvider(AiProvider):
@@ -28,16 +29,13 @@ class ClaudeProvider(AiProvider):
         )
         # If Claude refuses, or the reply is cut off by max_tokens, there is
         # no complete JSON reply. The last content may still be partial text,
-        # so stop_reason is checked as well as the content type. Raise
-        # ValueError with NO_TEXT_ERROR_MESSAGE so the error is classified
-        # as SWITCH_MODEL. The same prompt sent to the same model is likely
-        # to fail the same way, so retrying would waste time.
+        # so stop_reason is checked as well as the content type.
         if (
             response.stop_reason in ("refusal", "max_tokens")
             or not response.content
             or response.content[-1].type != "text"
         ):
-            raise ValueError(self._no_text_message)
+            raise EmptyReplyError("Claude returned no text")
 
         # Slice [-1] to take the last content because Claude outputs its
         # 'thinking and reasoning' steps as well. The last output is the

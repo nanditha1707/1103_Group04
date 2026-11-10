@@ -2,18 +2,15 @@ import anthropic
 from google.genai import errors as genai_errors
 
 from .action import Action
+from .empty_reply_error import EmptyReplyError
 
 
 class ErrorClassifier:
     """Decides what to do after a failed AI request."""
 
     def __init__(
-        self, no_text_message: str, gemini_timeout_errors: tuple, gemini_connection_errors: tuple
+        self, gemini_timeout_errors: tuple, gemini_connection_errors: tuple
     ):
-        # Error message raised when the AI returns no text. classify_error
-        # checks for this exact message to tell it apart from other
-        # ValueErrors.
-        self.__no_text_message = no_text_message
         # Gemini raises raw httpx / httpx2 errors for timeouts and dropped
         # connections, so both libraries are checked in classify_error.
         self.__gemini_timeout_errors = gemini_timeout_errors
@@ -91,10 +88,10 @@ class ErrorClassifier:
                 applies to every Gemini model.
         """
 
-        # If the AI returned no text then switch model because the same
-        # model is likely to fail the same way again. This must be checked
-        # before the general ValueError check below.
-        if isinstance(error, ValueError) and str(error) == self.__no_text_message:
+        # The model answered with no text, e.g. it refused or a safety
+        # filter blocked it. The same prompt sent to the same model is
+        # likely to fail the same way, so retrying would waste time.
+        if isinstance(error, EmptyReplyError):
             return Action.SWITCH_MODEL
 
         # If something is wrong with json output or the AI output failed
