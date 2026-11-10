@@ -59,7 +59,7 @@ class SymptomMenu:
         while True:
             # Show the menu and ask for an option.
             console.show(menu)
-            option = console.ask(messages.MENU_OPTION_PROMPT).strip().upper()
+            option = console.ask_upper(messages.MENU_OPTION_PROMPT)
 
             command = QuestionResult.from_command(option)
             # Ensures there is a command to return, 

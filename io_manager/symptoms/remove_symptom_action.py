@@ -28,7 +28,7 @@ class RemoveSymptomAction(SymptomMenuAction):
         console.show(messages.CURRENT_SYMPTOMS.format(symptoms=", ".join(symptoms)))
         # Prompts the user to input a symptom to remove, or ALL to remove all symptoms.
         prompt = messages.REMOVE_SYMPTOM_PROMPT.format(remove_all=self.REMOVE_ALL)
-        target = console.ask(prompt).strip().upper()
+        target = console.ask_upper(prompt)
 
         # Check if the user input is empty,
         # and show an error message if so.

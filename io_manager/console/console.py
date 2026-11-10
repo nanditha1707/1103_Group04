@@ -12,7 +12,14 @@ class Console(ABC):
         Works akin to a normal input() call, but with a few differences. The prompt is
         shown to the user, but the text returned is not stripped or uppercased.
         The callers are responsible for any normalization they want to do on the text.
+        Use ask_upper() for the common normalization of stripping and uppercasing.
         """
+
+    def ask_upper(self, prompt: str) -> str:
+        """Show the prompt and return the text with surrounding whitespace removed
+        and uppercased.
+        """
+        return self.ask(prompt).strip().upper()
 
     @abstractmethod
     def show(self, text: str) -> None:

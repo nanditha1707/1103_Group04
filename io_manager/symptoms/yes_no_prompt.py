@@ -15,7 +15,7 @@ class YesNoPrompt:
 
     def confirm(self, console: Console, prompt: str) -> bool:
         while True:
-            answer = console.ask(prompt).strip().upper()
+            answer = console.ask_upper(prompt)
             error = self.__validator.validate(answer)
             if error is None:
                 # Compares answer to the YES constant in the YesNoValidator class,

@@ -78,7 +78,7 @@ class IOManager:
     def prompt_menu(self, options: list[str], header: str | None = None) -> str:
         # Print the boxed menu, and return the normalised input.
         self.__console.show(self.__box_renderer.render(options, header))
-        return self.__console.ask(messages.MENU_OPTION_PROMPT).strip().upper()
+        return self.__console.ask_upper(messages.MENU_OPTION_PROMPT)
 
     def ask(self, prompt: str) -> str:
         # Ask a questiion and return raw input.

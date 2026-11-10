@@ -24,7 +24,7 @@ class CatalogueSymptomAction(AddSymptomAction):
 
     @override
     def _choose(self, console: Console) -> str | None:
-        text = console.ask(messages.SYMPTOM_ENTRY_PROMPT).strip().upper()
+        text = console.ask_upper(messages.SYMPTOM_ENTRY_PROMPT)
         if not text:
             console.show(messages.EMPTY_INPUT_ERROR)
             return None
