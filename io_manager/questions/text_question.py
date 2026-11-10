@@ -23,17 +23,12 @@ class TextQuestion(Question):
     def ask(self, console: Console, previous: Answer) -> QuestionResult:
         raw = console.ask_normalised(self.prompt)
 
-        command = QuestionResult.from_command(raw)
-        if command is not None:
-            return command
-
+        # Checked first: an empty answer can never be BACK or QUIT,
+        # so the order does not change the result.
         if not raw:
             return QuestionResult.invalid(messages.EMPTY_INPUT_ERROR)
 
-        error = self.__validator.validate(raw)
-        if error is not None:
-            return QuestionResult.invalid(error)
-        return QuestionResult.answered(raw)
+        return QuestionResult.from_input(raw, self.__validator)
 
     @override
     def display_value(self, value: Answer) -> str:

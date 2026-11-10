@@ -1,10 +1,12 @@
 from io_manager.patient_answers import Answer
 from io_manager.navigation.navigation import Navigation
+from io_manager.validators.validator import Validator
 
 
 class QuestionResult:
     """
-    The class that holds the result of every question asked and every menu input.
+    The class that holds the result of every question asked and every menu input,
+    and builds a result from the patient's input through from_input.
     The navigation attribute is an enum that says what happened, value holds the value of any valid input, and
     error holds the error message and is only used for invalid inputs. The attributes are private and only readable through properties, 
     so a result cannot be changed after it is created. 
@@ -53,11 +55,28 @@ class QuestionResult:
         return cls(Navigation.QUIT)
 
     @classmethod
-    def from_command(cls, text: str) -> QuestionResult | None:
+    def from_input(cls, text: str, validator: Validator) -> QuestionResult:
+        """
+        Turn one line of normalised input into a result, in a fixed order:
+        BACK or QUIT if it is a command, INVALID if the validator rejects it,
+        otherwise ANSWERED with the text.
+        Used by every screen that reads typed input, so they all treat
+        commands and errors the same way, and the order lives only here.
+        """
+        command = cls.__from_command(text)
+        if command is not None:
+            return command
+        error = validator.validate(text)
+        if error is not None:
+            return cls.invalid(error)
+        return cls.answered(text)
+
+    @classmethod
+    def __from_command(cls, text: str) -> QuestionResult | None:
         """
         Return a BACK or QUIT result if the text is that specific command or input,
-        otherwise None so the caller carries on validating the text.
-        Acts as a way to intercept commands before they are validated as answers.
+        otherwise None so from_input carries on validating the text.
+        Private, so commands are only ever checked as part of from_input.
         """
         if text == Navigation.BACK.value:
             return cls.back()

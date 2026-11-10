@@ -54,29 +54,28 @@ class ConfirmationScreen:
             # respective question or enter 17 for done / confirm inputs
             choice = self.__console.ask_normalised(messages.MENU_OPTION_PROMPT)
 
-            # First checks if the user choice is a command: QUIT or BACK
-            command = QuestionResult.from_command(choice)
-            if command is not None:
-                if command.navigation is Navigation.QUIT:
-                    self.__console.show(messages.REG_EXIT_MESSAGE)
-                    return False
-                # Prevent the user from going back and show message.
-                # We dont want user to go back from confirmation screen
-                # because no point: user can already edit all questions
-                # from confirmation screen.
+            # from_input first checks if the user choice is a command (QUIT
+            # or BACK), then validates it. The validator rejects a choice
+            # that is blank or not a whole number from 1 to the Confirm All
+            # Inputs option. So after these checks user choice is always a valid
+            # menu number.
+            result = QuestionResult.from_input(choice, self.__option_validator)
+
+            if result.navigation is Navigation.QUIT:
+                self.__console.show(messages.REG_EXIT_MESSAGE)
+                return False
+
+            # Prevent the user from going back and show message.
+            # We dont want user to go back from confirmation screen
+            # because no point: user can already edit all questions
+            # from confirmation screen.
+            if result.navigation is Navigation.BACK:
                 self.__console.show(messages.CANNOT_GO_BACK)
                 continue
 
-            # Secondly validates the user choice. The validator returns an
-            # error message string if the choice is blank or not a whole
-            # number from 1 to the Confirm All Inputs option, and None if
-            # there is no error. So after this, choice is always a valid
-            # menu number.
-            error = self.__option_validator.validate(choice)
-
             # If error then print error message and re-ask user for input.
-            if error is not None:
-                self.__console.show(error)
+            if result.navigation is Navigation.INVALID:
+                self.__console.show(result.error)
                 continue
 
             # If no error then see if user choice is to edit a question

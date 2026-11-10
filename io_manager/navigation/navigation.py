@@ -5,7 +5,7 @@ class Navigation(Enum):
     of a users input, when answering a question in the registration process.
 
     BACK and QUIT hold the exact text the patient types for those
-    commands, which QuestionResult.from_command relies on.
+    commands, which QuestionResult.from_input relies on to recognise them.
     """
 
     ANSWERED = "ANSWERED"

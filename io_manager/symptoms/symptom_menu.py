@@ -2,6 +2,7 @@ from collections.abc import Sequence
 
 from io_manager import messages
 from io_manager.console.console import Console
+from io_manager.navigation.navigation import Navigation
 from io_manager.navigation.question_result import QuestionResult
 from io_manager.rendering.box_renderer import BoxRenderer
 from io_manager.symptoms.add_symptom_action import AddSymptomAction
@@ -54,17 +55,16 @@ class SymptomMenu:
             console.show(menu)
             option = console.ask_normalised(messages.MENU_OPTION_PROMPT)
 
-            command = QuestionResult.from_command(option)
-            # Ensures there is a command to return, 
-            # and if so, returns it.
-            if command is not None:
-                return command
+            result = QuestionResult.from_input(option, self.__option_validator)
 
-            error = self.__option_validator.validate(option)
             # If the option is invalid, show the error and continue the loop.
-            if error is not None:
-                console.show(error)
+            if result.navigation is Navigation.INVALID:
+                console.show(result.error)
                 continue
+
+            # BACK or QUIT is handed back to the question that runs the menu.
+            if result.navigation is not Navigation.ANSWERED:
+                return result
 
             # All options are one higher then the index of the action, 
             # so subtract 1 to get the index.
@@ -82,7 +82,6 @@ class SymptomMenu:
             f"{number}. {action.label}"
             for number, action in enumerate(self.__actions, start=1)
         ]
-        # The hint tells the user how to exit the menu, 
-        # and is always shown at the end.
+        # The hint tells the user how to exit the menu
         lines.append(messages.SYMPTOM_MENU_HINT)
         return lines
