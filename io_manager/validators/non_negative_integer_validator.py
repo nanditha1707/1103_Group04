@@ -20,9 +20,10 @@ class NonNegativeIntegerValidator(Validator):
     of options. This is done through MenuOptionValidator.
     3. 0 (symptoms started today) and 365
 
-    Since these are all non negative integers, we used a common class to
-    validate all of them and subclass to validate age/menu options/symptoms onset days
-    with individual ranges.
+    Since these are all non negative integers, we used one common class
+    for all of them. Age and symptom onset days each create their own
+    instance with their own range, and MenuOptionValidator creates one
+    for each menu.
     """
 
     def __init__(

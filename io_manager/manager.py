@@ -71,7 +71,7 @@ class IOManager:
         return MenuOptionValidator(maximum=maximum).validate(text)
 
     def validate_date(self, text: str) -> str | None:
-        # Checks if a DD-MM-YYYY date is valid.
+        # Checks if a YYYY-MM-DD date is valid.
         return self.__date_validator.validate(text)
 
     # ------------------------------------------------------------------

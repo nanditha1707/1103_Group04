@@ -33,7 +33,7 @@ class RegistrationFactory:
     """
 
     # Maximum age for a patient to be considered real. 
-    MAXIMUM_AGE = 120
+    MAXIMUM_AGE = 150
     MAXIMUM_ONSET_DAYS = 365
     # Patients under this age cannot self register. 
     # This is clinic policy, separate from the age validator's range of 0 to MAXIMUM_AGE,
