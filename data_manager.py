@@ -341,6 +341,27 @@ def fetch_rows(sql_statement: str | sql.Composed, parameters: tuple) -> list[tup
         return None
 
 
+def get_highest_queue_number(prefix: str, date: str) -> int | None:
+    # SUBSTRING(... FROM 2) drops the letter: "D007" -> "007".
+    # CAST(... AS INTEGER) turns "007" into 7, and MAX keeps the highest.
+    # The ~ pattern only keeps queue numbers like D007 (the letter then
+    # digits only), so corrupted queue numbers are skipped.
+    sql_statement = """
+        SELECT MAX(CAST(SUBSTRING(queue_number FROM 2) AS INTEGER))
+        FROM patient_records
+        WHERE date = %s AND queue_number ~ %s
+    """
+    rows = fetch_rows(sql_statement, (date, f"^{prefix}[0-9]+$"))
+    if rows is None:
+        return None
+
+    highest_number = rows[0][0]
+    if highest_number is None:
+        return 0
+
+    return highest_number
+
+
 # ======================================================================
 # PATIENT RECORD FUNCTIONS
 # ======================================================================

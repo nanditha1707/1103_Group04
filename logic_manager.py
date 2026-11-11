@@ -179,25 +179,10 @@ def get_queue_number(queue_type: str) -> str | None:
 
     # Ask the database for the highest number given out in this queue
     # today, e.g. 7 for D007.
-    # SUBSTRING(... FROM 2) drops the letter: "D007" -> "007".
-    # CAST(... AS INTEGER) turns "007" into 7, and MAX keeps the highest.
-    # The ~ pattern only keeps queue numbers like D007 (the letter then
-    # digits only), so corrupted queue numbers are skipped.
-    sql_statement = """
-        SELECT MAX(CAST(SUBSTRING(queue_number FROM 2) AS INTEGER))
-        FROM patient_records
-        WHERE date = %s AND queue_number ~ %s
-    """
-    rows = data.fetch_rows(sql_statement, (today, f"^{prefix}[0-9]+$"))
+    highest_number_today = data.get_highest_queue_number(prefix, today)
 
-    # MAX gives None when there are no patients in this queue today,
-    # so the queue starts from 0.
-    # rows is None if the database could not be reached. The queue
-    # also starts from 0, and saving the record will fail and tell the
-    # patient to see a nurse.
-    highest_number_today = 0
-    if rows is not None and rows[0][0] is not None:
-        highest_number_today = rows[0][0]
+    if highest_number_today is None:
+        highest_number_today = 0
 
     # Return the next queue number e.g. D008.
     # :03d sets the minimum width to 3, so instead of D9 it is D009.
