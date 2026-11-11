@@ -174,49 +174,30 @@ def get_queue_number(queue_type: str) -> str | None:
     if prefix is None:
         return None
 
-    # Get todays date.
-    today=datetime.now().strftime("%Y-%m-%d")
+    # Get todays date in Singapore time.
+    today=datetime.now(data.SGT).strftime("%Y-%m-%d")
 
-    # Highest number already given out in this queue today.
+    # Ask the database for the highest number given out in this queue
+    # today, e.g. 7 for D007.
+    # SUBSTRING(... FROM 2) drops the letter: "D007" -> "007".
+    # CAST(... AS INTEGER) turns "007" into 7, and MAX keeps the highest.
+    # The ~ pattern only keeps queue numbers like D007 (the letter then
+    # digits only), so corrupted queue numbers are skipped.
+    sql_statement = """
+        SELECT MAX(CAST(SUBSTRING(queue_number FROM 2) AS INTEGER))
+        FROM patient_records
+        WHERE date = %s AND queue_number ~ %s
+    """
+    rows = data.fetch_rows(sql_statement, (today, f"^{prefix}[0-9]+$"))
+
+    # MAX gives None when there are no patients in this queue today,
+    # so the queue starts from 0.
+    # rows is None if the database could not be reached. The queue
+    # also starts from 0, and saving the record will fail and tell the
+    # patient to see a nurse.
     highest_number_today = 0
-
-    try:
-        # Read the saved patient records.
-        # dtype=str keeps queue numbers like D001 as text.
-        # keep_default_na=False turns blank cells into "" instead of NaN.
-        # Saved patient records, used to work out queue numbers.
-        records_df = pd.read_csv(data.RECORDS_CSV_PATH, dtype=str, keep_default_na=False)
-
-        # Only look at todays patients.
-        todays_df = records_df[records_df["date"] == today]
-
-        # Checks in patient records for highest queue number today.
-        # Then adds 1 to print new queue number.
-        for existing_queue_number in todays_df["queue_number"]:
-
-            # Only look at queue numbers in the same queue e.g. D001.
-            if existing_queue_number.startswith(prefix):
-                try:
-                    # [1:] drops the letter e.g. "D007" -> "007".
-                    # int() turns "007" into 7.
-                    # max() keeps the highest number seen so far.
-                    highest_number_today = max(
-                        highest_number_today,
-                        int(existing_queue_number[1:])
-                    )
-
-                # Skip queue numbers that are corrupted.
-                except ValueError:
-                    pass
-
-    # If there are no saved records yet, the queue starts from 0.
-    except FileNotFoundError:
-        pass
-
-    # If the file is empty, has no date/queue_number column,
-    # or cannot be read, the queue starts from 0.
-    except (pd.errors.EmptyDataError, pd.errors.ParserError, KeyError, OSError):
-        pass
+    if rows is not None and rows[0][0] is not None:
+        highest_number_today = rows[0][0]
 
     # Return the next queue number e.g. D008.
     # :03d sets the minimum width to 3, so instead of D9 it is D009.
@@ -236,8 +217,8 @@ def process_result(ai_output: dict, hsa_df: pd.DataFrame | None) -> dict:
         hsa_df
     )
 
-    # Get current date and time.
-    now=datetime.now()
+    # Get current date and time in Singapore time.
+    now=datetime.now(data.SGT)
 
     # Patient was not routed, so no queue number is given.
     if route is None:

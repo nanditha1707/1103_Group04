@@ -1,63 +1,37 @@
 import sys
 from pathlib import Path
 
-import pandas as pd
-
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 
 import data_manager as data
 
 
-def setup_records(tmp_path, monkeypatch):
+def fake_database(monkeypatch, rows):
+    """Replace the database with one that always returns rows.
+    Returns a list that records the parameters of every query, so a
+    test can check the right date and medicine were sent."""
 
-    records = pd.DataFrame([
-        {
-            "date": "2026-10-14",
-            "route": "Doctor",
-            "primary_diagnosis_medicine_1": "PARACETAMOL",
-            "primary_diagnosis_medicine_2": None,
-            "secondary_diagnosis_medicine_1": None,
-            "secondary_diagnosis_medicine_2": None
-        },
-        {
-            "date": "2026-10-14",
-            "route": "Pharmacist",
-            "primary_diagnosis_medicine_1": "PARACETAMOL",
-            "primary_diagnosis_medicine_2": "IBUPROFEN",
-            "secondary_diagnosis_medicine_1": None,
-            "secondary_diagnosis_medicine_2": None
-        },
-        {
-            "date": "2026-10-14",
-            "route": "Retail",
-            "primary_diagnosis_medicine_1": "CETIRIZINE",
-            "primary_diagnosis_medicine_2": None,
-            "secondary_diagnosis_medicine_1": None,
-            "secondary_diagnosis_medicine_2": None
-        }
-    ])
+    sent_parameters = []
 
-    test_file = tmp_path / "patient_records.csv"
-    records.to_csv(test_file, index=False)
+    def fake_fetch_rows(sql_statement, parameters):
+        sent_parameters.append(parameters)
+        return rows
 
     monkeypatch.setattr(
         data,
-        "RECORDS_CSV_PATH",
-        test_file
+        "fetch_rows",
+        fake_fetch_rows
     )
 
-    return records
+    return sent_parameters
 
 
-def test_medicine_count(tmp_path, monkeypatch):
+def test_medicine_count(monkeypatch):
 
-    records = setup_records(
-        tmp_path,
-        monkeypatch
-    )
+    # COUNT(*) returns one row with one value.
+    sent_parameters = fake_database(monkeypatch, [(2,)])
 
     result = data.get_medicine_count(
-        records,
         "PARACETAMOL",
         "2026-10-14"
     )
@@ -67,17 +41,35 @@ def test_medicine_count(tmp_path, monkeypatch):
     print("Expected: {'PARACETAMOL': 2}")
     print("Actual:", result)
 
-    assert result["PARACETAMOL"] == 2
+    assert result == {"PARACETAMOL": 2}
+    assert sent_parameters == [("2026-10-14", "PARACETAMOL")]
 
-def test_medicine_breakdown(tmp_path, monkeypatch):
 
-    records = setup_records(
-        tmp_path,
-        monkeypatch
+def test_medicine_not_issued(monkeypatch):
+
+    fake_database(monkeypatch, [(0,)])
+
+    result = data.get_medicine_count(
+        "IBUPROFEN",
+        "2026-10-14"
     )
 
+    print("\nSCENARIO: Medicine Not Issued")
+    print("Expected: {}")
+    print("Actual:", result)
+
+    assert result == {}
+
+
+def test_medicine_breakdown(monkeypatch):
+
+    sent_parameters = fake_database(monkeypatch, [
+        ("PARACETAMOL", 2),
+        ("CETIRIZINE", 1),
+        ("IBUPROFEN", 1)
+    ])
+
     result = data.get_medicine_breakdown(
-        records,
         "2026-10-14"
     )
 
@@ -92,17 +84,18 @@ def test_medicine_breakdown(tmp_path, monkeypatch):
     assert result["PARACETAMOL"] == 2
     assert result["IBUPROFEN"] == 1
     assert result["CETIRIZINE"] == 1
+    assert sent_parameters == [("2026-10-14",)]
 
 
-def test_patient_type_breakdown(tmp_path, monkeypatch):
+def test_patient_type_breakdown(monkeypatch):
 
-    records = setup_records(
-        tmp_path,
-        monkeypatch
-    )
+    fake_database(monkeypatch, [
+        ("Retail", 1),
+        ("Doctor", 1),
+        ("Pharmacist", 1)
+    ])
 
     result = data.get_patient_type_breakdown(
-        records,
         "2026-10-14"
     )
 
@@ -114,6 +107,20 @@ def test_patient_type_breakdown(tmp_path, monkeypatch):
     print("Actual:")
     print(result)
 
+    # Labels follow the order of ROUTE_LABELS, not the database order.
+    assert list(result) == ["Doctor", "Pharmacy", "Retail"]
     assert result["Doctor"] == 1
     assert result["Pharmacy"] == 1
     assert result["Retail"] == 1
+
+
+def test_reports_database_down(monkeypatch):
+
+    fake_database(monkeypatch, None)
+
+    print("\nSCENARIO: Database Cannot Be Reached")
+    print("Expected: None from every report")
+
+    assert data.get_medicine_count("PARACETAMOL", "2026-10-14") is None
+    assert data.get_medicine_breakdown("2026-10-14") is None
+    assert data.get_patient_type_breakdown("2026-10-14") is None
