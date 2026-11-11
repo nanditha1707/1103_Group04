@@ -1,6 +1,6 @@
 import pandas as pd
 
-from logic_manager.classification import Classification
+from .classification import Classification
 
 
 class MedicineClassifier:

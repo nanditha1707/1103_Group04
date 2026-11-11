@@ -12,7 +12,7 @@ from dotenv import load_dotenv
 from google import genai
 from google.genai import errors as genai_errors
 
-import logic_manager as logic
+from logic_manager import MedicineClassifier
 
 # Timeout for 1 AI API request.
 REQUEST_TIMEOUT_SECONDS = 20
@@ -564,7 +564,7 @@ def validate_medicine(ai_medicine: str, hsa_df: pd.DataFrame) -> bool:
     if ai_medicine == "":
         return False
 
-    return logic.get_classification(ai_medicine, hsa_df) is not None
+    return MedicineClassifier(hsa_df).classify(ai_medicine) is not None
 
 
 def validate_ai_output(

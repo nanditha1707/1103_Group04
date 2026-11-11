@@ -1,6 +1,6 @@
 import pandas as pd
 
-from logic_manager.route import Route
+from .route import Route
 
 class QueueNumberGenerator:
     """

@@ -1,8 +1,8 @@
 import pandas as pd
 
-from logic_manager.classification import Classification
-from logic_manager.medicine_classifier import MedicineClassifier
-from logic_manager.route import Route
+from .classification import Classification
+from .medicine_classifier import MedicineClassifier
+from .route import Route
 
 class Router:
     """
