@@ -1,62 +1,46 @@
-import shutil
- 
 import pandas as pd
- 
- 
+
+from data_manager.storage import RecordReader
+
+
 class PatientQuery:
     """Finds a patient in the saved records, chooses how to show the
     result and saves it to CSV."""
- 
+
     def __init__(
-        self, records: pd.DataFrame | None, filter_columns: dict[int, list[str]]
+        self, reader: RecordReader, filter_options: dict[int, list[str]], identifier_columns: list[str]
     ):
-        self.__records = records
+        self.__reader = reader
         # Maps each filter menu option (1 to 4) to its record columns.
-        self.__filter_columns = filter_columns
+        self.__filter_options = filter_options
+        self.__identifier_columns = identifier_columns
 
     def get_filter(self, option: str) -> list[str] | None:
         """Return the record columns for a filter menu option (1 to 4).
         Return None for any other option number. Expects option to
         already be checked as a positive whole number by
         io_manager.validate_option."""
-        return self.__filter_columns.get(int(option))
+        return self.__filter_options.get(int(option))
 
     def find_by_queue(
         self,
         queue_number: str,
         filter_columns: list[str],
-        today: str
+        date: str
     ) -> pd.DataFrame | None:
         """Find the patient with the given queue number on the given
         date. Return a DataFrame of their record with only the
         filter_columns, which is empty if no patient matches, or None if
         there are no records."""
- 
-        # Checks if records exist. If they do,
-        # continues with the block.
-        if self.__records is not None and not self.__records.empty:
-            # @ lets query use the local variables queue_number and today.
-            patient = self.__records.query(
-                "queue_number == @queue_number and date == @today"
-            )
-            return patient[filter_columns]
- 
-        # If there are no records, return None.
-        return None
+        return self.__reader.find_by_queue(queue_number, filter_columns, date)
 
-    @staticmethod
-    def choose_output(filter_columns: list[str]) -> str:
-        """Return "print" if a table with these columns fits in the
-        terminal, otherwise "export" so it is saved to a CSV instead."""
-        # Each column is at least 10 characters wide (the table's
-        # maxcolwidths), but a long column name needs more than that.
-        width_needed = len(filter_columns) * 10
-        header_width_needed = sum(len(item) for item in filter_columns)
-        width_needed = max(width_needed, header_width_needed)
- 
-        terminal_width = shutil.get_terminal_size().columns
- 
-        if terminal_width >= width_needed:
-            return "print"
- 
-        return "export"
+    def find_by_date(self, filter_columns: list[str], date: str) -> pd.DataFrame | None:
+        # Each patient gets their own row, so the time and queue number
+        # are added in front to tell the rows apart, unless the filter
+        # already has them.
+        identifier_columns = []
+        for column in self.__identifier_columns:
+            if column not in filter_columns:
+                identifier_columns.append(column)
+
+        return self.__reader.find_by_date(identifier_columns + filter_columns, date)
