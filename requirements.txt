@@ -9,3 +9,5 @@ pylint
 pytest
 python-dotenv
 tabulate
+psycopg[binary]
+tzdata
