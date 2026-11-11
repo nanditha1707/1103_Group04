@@ -49,7 +49,7 @@ class AIManager:
         Returns {"error": message} if the ICD-11 dataset did not load, or
         if no model gave a valid answer before the total timeout.
         """
-        # Without ICD data the diagnoses cannot be checked, so the AI is not
+        # Without ICD data the diagnoses cannot be checked so the AI is not
         # called and the patient is sent to manual registration.
         if not self.__validator.has_icd_data:
             return {"error": constants.CONTACT_SUPPORT_MESSAGE}
@@ -79,15 +79,17 @@ class AIManager:
 
     @staticmethod
     def __default_fallback() -> ModelFallback:
-        """Build the ModelFallback main.py uses: the Claude models first,
-        then the Gemini models."""
-        # One object per provider, shared by its models, so ModelFallback
-        # can tell which models belong to the same provider.
-        claude = ClaudeProvider(constants.REQUEST_TIMEOUT_SECONDS)
-        gemini = GeminiProvider(constants.REQUEST_TIMEOUT_SECONDS)
+        providers = (
+            (ClaudeProvider, constants.CLAUDE_MODELS),
+            (GeminiProvider, constants.GEMINI_MODELS),
+        )
 
-        models = [AIModel(claude, name) for name in constants.CLAUDE_MODELS]
-        models += [AIModel(gemini, name) for name in constants.GEMINI_MODELS]
+        models = []
+        for provider_class, model_names in providers:
+            # One object per provider shared by its models so that
+            # ModelFallback can tell which models belong to the same provider.
+            provider = provider_class(constants.REQUEST_TIMEOUT_SECONDS)
+            models += [AIModel(provider, name) for name in model_names]
 
         return ModelFallback(
             models,

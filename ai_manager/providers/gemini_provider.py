@@ -15,12 +15,13 @@ class GeminiProvider(AIProvider):
     # Environment variable, set from the .env file, that holds the key.
     _API_KEY_VARIABLE = "GEMINI_API_KEY"
 
-    # Gemini raises raw httpx / httpx2 errors for timeouts and dropped
-    # connections, so both libraries are checked. The timeout errors are
-    # subclasses of the connection errors, so they are checked first.
+    # Gemini raises raw httpx / httpx2 errors for timeout and connection
+    # errors.
     _TIMEOUT_ERRORS = (httpx.TimeoutException, httpx2.TimeoutException)
     _CONNECTION_ERRORS = (httpx.TransportError, httpx2.TransportError)
 
+    # IMPORTANT: Different model providers have different error codes
+    # so this has to be defined in each model provider instead of being shared
     # What to do for each Gemini HTTP status code. A code that is not
     # listed is unexpected, so classify_error returns None and the request
     # fails.
@@ -28,32 +29,41 @@ class GeminiProvider(AIProvider):
         # Request is too large. Resending the same request will hit the
         # same size limit.
         413: Action.FAIL,
+
         # Unexpected internal error on Google's side. It is transient and
         # usually succeeds on retry.
         500: Action.RETRY_SAME_MODEL,
+
         # Bad gateway, a server between us and Google failed. It is
         # transient and usually succeeds on retry.
         502: Action.RETRY_SAME_MODEL,
+
         # Model not found, e.g. the model ID is wrong or deprecated. That
         # model will never work, but other Gemini models may.
         404: Action.SWITCH_MODEL,
+
         # Deadline exceeded, the model needed more time than
         # REQUEST_TIMEOUT_SECONDS allows. Retrying with the same timeout
         # will likely time out again, so it is handled the same as a client
         # side timeout.
         504: Action.SWITCH_MODEL,
+
         # Quota or rate limit exhausted. Gemini quotas are per model, so
         # another Gemini model may still have quota left.
         429: Action.SWITCH_MODEL,
+
         # Service unavailable or overloaded. Another model may not be
         # overloaded.
         503: Action.SWITCH_MODEL,
+
         # Invalid argument or malformed request. Every Gemini model gets the
         # same request, so they would all reject it, but other providers
         # build their requests differently and may still work.
         400: Action.SWITCH_PROVIDER,
+
         # Invalid API key. Every Gemini model uses the same key.
         401: Action.SWITCH_PROVIDER,
+
         # API key lacks permission. This applies to every Gemini model.
         403: Action.SWITCH_PROVIDER,
     }
@@ -64,7 +74,7 @@ class GeminiProvider(AIProvider):
         # Timeout for 1 AI API request, in seconds.
         self.__request_timeout = request_timeout
         # A client can be passed in, e.g. a fake one in tests. Otherwise it
-        # is created on the first request, see __get_client.
+        # is created on the first request. See __get_client below.
         self.__client = client
 
     def send(self, model: str, request: AIRequest) -> str:

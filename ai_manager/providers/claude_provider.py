@@ -15,6 +15,8 @@ class ClaudeProvider(AIProvider):
     # Environment variable, set from the .env file, that holds the key.
     _API_KEY_VARIABLE = "ANTHROPIC_API_KEY"
 
+    # IMPORTANT: Different model providers have different error codes
+    # so this has to be defined in each model provider instead of being shared
     # What to do for each Claude HTTP status code. A code that is not
     # listed is unexpected, so classify_error returns None and the request
     # fails.
@@ -22,40 +24,52 @@ class ClaudeProvider(AIProvider):
         # Request is too large. Resending the same request will hit the
         # same size limit.
         413: Action.FAIL,
+        
         # Conflict on Anthropic's side. It is transient and usually
         # succeeds on retry.
         409: Action.RETRY_SAME_MODEL,
+
         # Unexpected internal error on Anthropic's side. It is transient
         # and usually succeeds on retry.
         500: Action.RETRY_SAME_MODEL,
+
         # Bad gateway, a server between us and Anthropic failed. It is
         # transient and usually succeeds on retry.
         502: Action.RETRY_SAME_MODEL,
+
         # Service temporarily unavailable. It is transient and usually
         # succeeds on retry.
         503: Action.RETRY_SAME_MODEL,
+
         # Model not found, e.g. the model ID is wrong or deprecated. That
         # model will never work, but other Claude models may.
         404: Action.SWITCH_MODEL,
+
         # Request timed out while being processed, the model needed more
         # time than REQUEST_TIMEOUT_SECONDS allows. Retrying with the same
         # timeout will likely time out again, so it is handled the same as
         # a client side timeout.
         504: Action.SWITCH_MODEL,
+
         # Rate limit reached. Anthropic rate limits are set separately for
         # each model, so another Claude model may still have capacity.
         429: Action.SWITCH_MODEL,
+
         # API is overloaded, switch to a different model.
         529: Action.SWITCH_MODEL,
+
         # Invalid request format or content. Every Claude model gets the
         # same request format, so they would all reject it, but other
         # providers build their requests differently and may still work.
         400: Action.SWITCH_PROVIDER,
+
         # Invalid API key. Every Claude model uses the same key.
         401: Action.SWITCH_PROVIDER,
+
         # Billing problem, e.g. out of credits. This applies to every
         # Claude model.
         402: Action.SWITCH_PROVIDER,
+
         # API key lacks permission. This applies to every Claude model.
         403: Action.SWITCH_PROVIDER,
     }

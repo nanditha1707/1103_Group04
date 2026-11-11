@@ -16,8 +16,11 @@ class AIProvider(ABC):
        only the provider knows its own SDK's errors and status codes.
 
     ModelFallback and ErrorClassifier only call these 2 methods, so a new
-    provider is a new subclass plus its models in AIManager, with no
-    change to the retry logic.
+    provider is a new subclass plus one line in AIManager's list of
+    providers, with no change to the retry logic.
+
+    AIManager creates every provider the same way, so a subclass must take
+    the request timeout in seconds as its first constructor argument.
     """
 
     @abstractmethod
