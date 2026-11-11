@@ -6,17 +6,19 @@ from .missing_api_key_error import MissingApiKeyError
 
 
 class ErrorClassifier:
-    """Decides what AiPipeline does after a failed attempt.
+    """Decides what ModelFallback does after a failed attempt.
 
-    Errors that mean the same for every provider, a problem with the
-    reply itself, are handled here. Errors from an API are passed to the
-    provider that raised them. This class never imports an SDK, so a new
-    provider needs no change here.
+    Errors that mean the same for every provider, a missing API key or a
+    problem with the reply itself, are handled here. Errors from an API
+    are passed to the provider that raised them. This class never imports
+    an SDK, so a new provider needs no change here.
     """
 
     def classify(self, error: Exception, provider: AIProvider) -> Action:
         """Return the Action to take after the provider's attempt raised
         the error."""
+        # The provider's API key is missing or blank. Every model of that
+        # provider uses the same key, so skip to the next provider.
         if isinstance(error, MissingApiKeyError):
             return Action.SWITCH_PROVIDER
 
@@ -26,10 +28,8 @@ class ErrorClassifier:
         if isinstance(error, EmptyReplyError):
             return Action.SWITCH_MODEL
 
-        # The reply was not valid JSON (json.JSONDecodeError) or failed the
-        # ICD-11 / HSA checks. Both are ValueErrors and likely to pass on
-        # another try, so retry the same model. Any other ValueError is
-        # treated the same way.
+        # The reply was not valid JSON or failed the ICD-11 / HSA checks.
+        # Another try is likely to pass, so retry the same model.
         if isinstance(error, InvalidOutputError):
             return Action.RETRY_SAME_MODEL
 

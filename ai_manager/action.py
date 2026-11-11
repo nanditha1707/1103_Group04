@@ -2,7 +2,7 @@ from enum import Enum
 
 
 class Action(Enum):
-    """What AiPipeline does after a failed attempt."""
+    """What ModelFallback does after a failed attempt."""
 
     # Stop trying every model, e.g. the request is too large for any model.
     FAIL = "Fail immediately"

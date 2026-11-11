@@ -9,8 +9,10 @@ from ai_manager.empty_reply_error import EmptyReplyError
 class ClaudeProvider(AIProvider):
     """Sends requests to the Claude API and classifies its errors."""
 
+    # Upper limit on the reply length. Required parameter for Claude API.
     _MAX_TOKENS = 8000
 
+    # Environment variable, set from the .env file, that holds the key.
     _API_KEY_VARIABLE = "ANTHROPIC_API_KEY"
 
     # What to do for each Claude HTTP status code. A code that is not
@@ -61,15 +63,14 @@ class ClaudeProvider(AIProvider):
     def __init__(
         self, request_timeout: int, client: anthropic.Anthropic | None = None
     ):
+        # Timeout for 1 AI API request, in seconds.
         self.__request_timeout = request_timeout
+        # A client can be passed in, e.g. a fake one in tests. Otherwise it
+        # is created on the first request. See __get_client below.
         self.__client = client
 
     def send(self, model: str, request: AIRequest) -> str:
-        """Send a prompt to Claude and return its JSON reply as text.
-
-        'max_retries' is set to 0 because it is better for the retries to
-        be handled by the pipeline.
-        """
+        """Send the request to Claude API and return its JSON reply as text."""
         response = self.__get_client().messages.create(
             model=model,
             max_tokens=self._MAX_TOKENS,
@@ -115,6 +116,16 @@ class ClaudeProvider(AIProvider):
         return None
 
     def __get_client(self) -> anthropic.Anthropic:
+        """Return the Claude client, creating it on the first request.
+
+        It is created here and not in __init__ so that any error creating
+        it is raised by send() and classified like every other error.
+
+        Raises MissingApiKeyError if ANTHROPIC_API_KEY is missing or blank,
+        so ModelFallback moves on to the next provider. The key is passed
+        to the client, so the key that was checked is the one used.
+        'max_retries' is set to 0 because ModelFallback handles retries.
+        """
         if self.__client is None:
             self.__client = anthropic.Anthropic(
                 api_key=self._read_api_key(self._API_KEY_VARIABLE),

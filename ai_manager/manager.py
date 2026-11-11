@@ -17,13 +17,16 @@ from .reply_parser import ReplyParser
 class AIManager:
     """The class main.py uses to get a diagnosis from the AI.
 
-    It builds the objects that do the work once, when the program starts,
-    instead of on every call:
-    - ClaudeProvider and GeminiProvider send requests to their APIs, and
-      classify their own SDK's errors.
-    - ErrorClassifier decides what to do after a failed request.
-    - AiOutput parses, formats and validates a reply.
-    - AiPipeline tries each model in turn until one gives a valid reply.
+    It builds the objects that do the work and passes each one what it
+    needs through its constructor:
+    - PromptBuilder turns the patient's answers into a request.
+    - ModelFallback sends the request to each model in turn, and retries
+      or switches model after an error.
+    - ReplyParser and OutputValidator turn a reply into a checked output.
+
+    A ModelFallback can be passed in, e.g. one with fake providers in
+    tests. Otherwise the Claude and Gemini models in constants.py are used,
+    with the API keys main.py loads from the .env file.
     """
 
     def __init__(
@@ -34,8 +37,6 @@ class AIManager:
             constants.AI_OUTPUT_SCHEMA
         )
         self.__parser = ReplyParser()
-        # main.py passes in logic_manager's medicine lookup, so a medicine
-        # that passes validation always has a classification to route with.
         self.__validator = OutputValidator(icd_df, hsa_df, classify_medicine)
 
         if fallback is None:
@@ -62,6 +63,11 @@ class AIManager:
         return output
 
     def __read_reply(self, reply: str) -> dict:
+        """Parse and check one reply, and return it as the output.
+
+        Raises InvalidOutputError if it is not valid JSON or fails the
+        ICD-11 / HSA checks, so ModelFallback retries the same model.
+        """
         output = self.__parser.parse(reply)
 
         if not self.__validator.is_valid(output):
@@ -73,6 +79,10 @@ class AIManager:
 
     @staticmethod
     def __default_fallback() -> ModelFallback:
+        """Build the ModelFallback main.py uses: the Claude models first,
+        then the Gemini models."""
+        # One object per provider, shared by its models, so ModelFallback
+        # can tell which models belong to the same provider.
         claude = ClaudeProvider(constants.REQUEST_TIMEOUT_SECONDS)
         gemini = GeminiProvider(constants.REQUEST_TIMEOUT_SECONDS)
 

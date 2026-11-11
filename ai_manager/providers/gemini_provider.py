@@ -12,6 +12,7 @@ from ai_manager.empty_reply_error import EmptyReplyError
 class GeminiProvider(AIProvider):
     """Sends requests to the Gemini API and classifies its errors."""
 
+    # Environment variable, set from the .env file, that holds the key.
     _API_KEY_VARIABLE = "GEMINI_API_KEY"
 
     # Gemini raises raw httpx / httpx2 errors for timeouts and dropped
@@ -60,17 +61,14 @@ class GeminiProvider(AIProvider):
     def __init__(
         self, request_timeout: int, client: genai.Client | None = None
     ):
+        # Timeout for 1 AI API request, in seconds.
         self.__request_timeout = request_timeout
+        # A client can be passed in, e.g. a fake one in tests. Otherwise it
+        # is created on the first request, see __get_client.
         self.__client = client
 
     def send(self, model: str, request: AIRequest) -> str:
-        """Send a prompt to Gemini and return its JSON reply as text.
-
-        Gemini's timeout is in milliseconds, so timeout multiplied by 1000.
-
-        'attempts' is set to 1 (the original request only, no retries)
-        because it is better for the retries to be handled by the pipeline.
-        """
+        """Send the request to Gemini and return its JSON reply as text."""
         response = self.__get_client().models.generate_content(
             model=model,
             contents=request.prompt,
@@ -105,6 +103,23 @@ class GeminiProvider(AIProvider):
         return None
 
     def __get_client(self) -> genai.Client:
+        """Return the Gemini client, creating it on the first request.
+
+        It is created here and not in __init__ so the program still starts
+        without a key, and any error is raised by send() and classified
+        like every other error.
+
+        Raises MissingApiKeyError if GEMINI_API_KEY is missing or blank, so
+        ModelFallback moves on to the next provider. Otherwise genai.Client
+        raises a ValueError, which classify_error does not recognise, so
+        every model would stop.
+        The key is passed to the client, so the key that was checked is the
+        one used, even if GOOGLE_API_KEY is also set.
+
+        Gemini's timeout is in milliseconds, so it is multiplied by 1000.
+        'attempts' is set to 1 (the original request only, no retries)
+        because ModelFallback handles retries.
+        """
         if self.__client is None:
             self.__client = genai.Client(
                 api_key=self._read_api_key(self._API_KEY_VARIABLE),

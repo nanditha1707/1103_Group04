@@ -7,8 +7,9 @@
 # ======================================================================
 # MODELS, TIMEOUTS AND RETRIES
 # ======================================================================
-# Models to use for the AI API, in order of execution.
+# Claude models to try first, in order.
 CLAUDE_MODELS = ("claude-opus-5-5", "claude-sonnet-5-5")
+# Gemini models to try once the Claude models have failed, in order.
 GEMINI_MODELS = ("gemini-3.8-flash", "gemini-3.5-flash-lite")
 
 # Timeout for 1 AI API request.
@@ -58,11 +59,14 @@ AI_OUTPUT_SCHEMA = {
     "additionalProperties": False,
 }
 
+# The title and code field of each diagnosis. Both must match the same
+# row of the ICD-11 dataset.
 DIAGNOSIS_FIELDS = (
     ("primary_diagnosis_ICD11_Title", "primary_diagnosis_ICD11_Code"),
     ("secondary_diagnosis_ICD11_Title", "secondary_diagnosis_ICD11_Code"),
 )
 
+# The 4 medicine fields, each checked against the HSA dataset.
 MEDICINE_FIELDS = (
     "primary_diagnosis_medicine_1",
     "primary_diagnosis_medicine_2",
