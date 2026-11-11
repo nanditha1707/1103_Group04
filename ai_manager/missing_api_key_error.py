@@ -1,0 +1,2 @@
+class MissingApiKeyError(Exception):
+    pass

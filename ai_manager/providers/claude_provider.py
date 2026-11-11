@@ -11,6 +11,8 @@ class ClaudeProvider(AIProvider):
 
     _MAX_TOKENS = 8000
 
+    _API_KEY_VARIABLE = "ANTHROPIC_API_KEY"
+
     # What to do for each Claude HTTP status code. A code that is not
     # listed is unexpected, so classify_error returns None and the request
     # fails.
@@ -115,6 +117,7 @@ class ClaudeProvider(AIProvider):
     def __get_client(self) -> anthropic.Anthropic:
         if self.__client is None:
             self.__client = anthropic.Anthropic(
+                api_key=self._read_api_key(self._API_KEY_VARIABLE),
                 timeout=self.__request_timeout,
                 max_retries=0
             )

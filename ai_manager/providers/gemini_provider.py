@@ -12,6 +12,8 @@ from ai_manager.empty_reply_error import EmptyReplyError
 class GeminiProvider(AIProvider):
     """Sends requests to the Gemini API and classifies its errors."""
 
+    _API_KEY_VARIABLE = "GEMINI_API_KEY"
+
     # Gemini raises raw httpx / httpx2 errors for timeouts and dropped
     # connections, so both libraries are checked. The timeout errors are
     # subclasses of the connection errors, so they are checked first.
@@ -105,6 +107,7 @@ class GeminiProvider(AIProvider):
     def __get_client(self) -> genai.Client:
         if self.__client is None:
             self.__client = genai.Client(
+                api_key=self._read_api_key(self._API_KEY_VARIABLE),
                 http_options={
                     "timeout": self.__request_timeout * 1000,
                     "retry_options": {"attempts": 1},

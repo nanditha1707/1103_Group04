@@ -1,7 +1,9 @@
+import os
 from abc import ABC, abstractmethod
 
 from .action import Action
 from .ai_request import AIRequest
+from .missing_api_key_error import MissingApiKeyError
 
 
 class AIProvider(ABC):
@@ -31,3 +33,12 @@ class AIProvider(ABC):
     def classify_error(self, error: Exception) -> Action | None:
         """Return the Action for an error raised by call(), or None if this
         provider does not recognise the error."""
+
+    @staticmethod
+    def _read_api_key(variable: str) -> str:
+        api_key = os.environ.get(variable)
+
+        if not api_key:
+            raise MissingApiKeyError(f"{variable} is missing or blank")
+
+        return api_key

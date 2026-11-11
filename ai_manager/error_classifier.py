@@ -1,6 +1,7 @@
 from .action import Action
 from .ai_provider import AIProvider
 from .empty_reply_error import EmptyReplyError
+from .missing_api_key_error import MissingApiKeyError
 
 
 class ErrorClassifier:
@@ -15,6 +16,9 @@ class ErrorClassifier:
     def classify(self, error: Exception, provider: AIProvider) -> Action:
         """Return the Action to take after the provider's attempt raised
         the error."""
+        if isinstance(error, MissingApiKeyError):
+            return Action.SWITCH_PROVIDER
+
         # The model answered with no text, e.g. it refused or a safety
         # filter blocked it. The same prompt sent to the same model is
         # likely to fail the same way, so retrying would waste time.
