@@ -6,7 +6,7 @@ from google.genai import errors as genai_errors
 from ai_manager.action import Action
 from ai_manager.ai_provider import AIProvider
 from ai_manager.ai_request import AIRequest
-from ai_manager.empty_reply_error import EmptyReplyError
+from ai_manager.errors import EmptyReplyError
 
 
 class GeminiProvider(AIProvider):

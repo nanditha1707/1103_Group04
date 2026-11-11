@@ -7,9 +7,9 @@
 # ======================================================================
 # MODELS, TIMEOUTS AND RETRIES
 # ======================================================================
-# Claude models to try first, in order.
+# Claude models to try in order.
 CLAUDE_MODELS = ("claude-opus-5-5", "claude-sonnet-5-5")
-# Gemini models to try once the Claude models have failed, in order.
+# Gemini models to try in order.
 GEMINI_MODELS = ("gemini-3.8-flash", "gemini-3.5-flash-lite")
 
 # Timeout for 1 AI API request.

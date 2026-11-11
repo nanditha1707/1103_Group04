@@ -1,6 +1,5 @@
 import time
 from collections.abc import Callable, Sequence
-
 from .action import Action
 from .ai_model import AIModel
 from .ai_request import AIRequest
@@ -36,9 +35,7 @@ class ModelFallback:
         self.__sleep = sleep if sleep is not None else time.sleep
 
     def run(
-        self,
-        request: AIRequest,
-        read_reply: Callable[[str], dict]
+        self, request: AIRequest, read_reply: Callable[[str], dict]
     ) -> dict | None:
         """Return the output of the first accepted reply, or None if every
         model failed or the total timeout ran out.

@@ -1,8 +1,7 @@
 import json
 from collections.abc import Collection
-
+from ai_manager.errors import InvalidOutputError
 from .constants import EXPLANATION_FIELDS
-from .invalid_output_error import InvalidOutputError
 
 
 class ReplyParser:

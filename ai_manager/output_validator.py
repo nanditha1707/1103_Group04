@@ -1,7 +1,5 @@
 from collections.abc import Callable
-
 import pandas as pd
-
 from .constants import DIAGNOSIS_FIELDS, EXPLANATION_FIELDS, MEDICINE_FIELDS
 
 

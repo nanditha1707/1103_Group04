@@ -1,5 +1,5 @@
+from ai_manager.errors import AIManagerError
 from .action import Action
-from .ai_manager_error import AIManagerError
 from .ai_provider import AIProvider
 
 

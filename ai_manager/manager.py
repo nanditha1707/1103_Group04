@@ -1,13 +1,10 @@
 from collections.abc import Callable
-
 import pandas as pd
-
+from ai_manager.errors import InvalidOutputError
 from ai_manager.providers import ClaudeProvider, GeminiProvider
-
 from . import constants
 from .ai_model import AIModel
 from .error_classifier import ErrorClassifier
-from .invalid_output_error import InvalidOutputError
 from .model_fallback import ModelFallback
 from .output_validator import OutputValidator
 from .prompt_builder import PromptBuilder
@@ -20,12 +17,12 @@ class AIManager:
     It builds the objects that do the work and passes each one what it
     needs through its constructor:
     - PromptBuilder turns the patient's answers into a request.
-    - ModelFallback sends the request to each model in turn, and retries
-      or switches model after an error.
+    - ModelFallback sends the request to each model. If there are any
+     errors it handles it accordingly.
     - ReplyParser and OutputValidator turn a reply into a checked output.
 
     A ModelFallback can be passed in, e.g. one with fake providers in
-    tests. Otherwise the Claude and Gemini models in constants.py are used,
+    tests. Otherwise the Claude and Gemini models in constants.py are used
     with the API keys main.py loads from the .env file.
     """
 
@@ -79,6 +76,38 @@ class AIManager:
 
     @staticmethod
     def __default_fallback() -> ModelFallback:
+        """Build the ModelFallback main.py uses with each provider's models
+        in the order of the providers list below.
+
+        Example of what it returns with the current constants, where claude
+        is one ClaudeProvider(20) and gemini is one GeminiProvider(20):
+
+            ModelFallback(
+                models=[
+                    AIModel(claude, "claude-opus-5-5"),
+                    AIModel(claude, "claude-sonnet-5-5"),
+                    AIModel(gemini, "gemini-3.8-flash"),
+                    AIModel(gemini, "gemini-3.5-flash-lite"),
+                ],
+                classifier=ErrorClassifier(),
+                total_timeout=60,
+                max_retries_per_model=2,
+            )
+
+        get_ai_output then uses it like this:
+
+            request = self.__prompt_builder.build(answers_filtered)
+            output = self.__fallback.run(request, self.__read_reply)
+
+        run() sends the request to claude-opus-5-5 first and returns the
+        checked output dict from the first reply __read_reply accepts. E.g.
+        if Opus is overloaded (error 529) and Sonnet's reply is valid, run()
+        returns Sonnet's output. It returns None if every model fails or 60
+        seconds pass, and get_ai_output then returns
+        {"error": CONTACT_SUPPORT_MESSAGE}.
+        """
+        # Claude models are tried first before Gemini models. Order can
+        # be changed here.
         providers = (
             (ClaudeProvider, constants.CLAUDE_MODELS),
             (GeminiProvider, constants.GEMINI_MODELS),

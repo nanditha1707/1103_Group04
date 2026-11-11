@@ -1,4 +1,4 @@
-from .action import Action
+from ai_manager.action import Action
 from .ai_manager_error import AIManagerError
 
 

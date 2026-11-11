@@ -1,9 +1,8 @@
 import os
 from abc import ABC, abstractmethod
-
+from ai_manager.errors import MissingApiKeyError
 from .action import Action
 from .ai_request import AIRequest
-from .missing_api_key_error import MissingApiKeyError
 
 
 class AIProvider(ABC):
