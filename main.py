@@ -4,7 +4,7 @@
 import ai_manager as ai
 import data_manager as data
 import io_manager as io
-import logic_manager as logic
+from logic_manager import LogicManager
 
 ADMIN_PASSWORD = "Password"
 MENU_EXIT_MESSAGE = "Admin Password Inputted, Exiting Program Now!"
@@ -165,7 +165,7 @@ def main_menu() -> dict | int | None:
 # load the ICD and HSA datasets once, when the program starts
 icd_df, hsa_df = data.get_cleaned_datasets()
 # Create the logic manager using the HSA dataset.
-logic_manager = logic.LogicManager(hsa_df)
+logic = LogicManager(hsa_df)
 # Copy the starter patient records on the first run
 data.create_records_file_if_missing()
 
@@ -191,7 +191,7 @@ while True:
         continue
 
     # 3. Logic manager: decide and print the route and queue number
-    logic_result = logic_manager.process_result(ai_output)
+    logic_result = logic.process_result(ai_output)
 
     # 4. Data manager: save the completed record to patient_records.csv
     is_export=data.export_record(answers, ai_output, logic_result)
