@@ -31,3 +31,10 @@ class Console(ABC):
         This is the only way to show text to the user. 
         It works akin to a normal print() call.
         """
+
+    @abstractmethod
+    def width(self) -> int:
+        """
+        Return how many characters fit on one line of the screen.
+        Used to check whether a table fits or must be exported instead.
+        """

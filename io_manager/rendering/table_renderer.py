@@ -42,8 +42,6 @@ class TableRenderer:
         +---------------+-------------+------------+
     """
 
-    # Widest a column may get before its text wraps. Must match the 10
-    # that data_manager.print_or_export assumes for each column.
     MAX_COLUMN_WIDTH = 10
 
     def render(
@@ -82,3 +80,16 @@ class TableRenderer:
 
         # The table's own top border closes the title box.
         return "\n".join([title_border, title_row, grid_table])
+
+    def fits(self, columns: list[str], width: int) -> bool:
+        """
+        Return True if a table with these column names fits in the
+        given width, or False if it is too wide.
+        """
+        # Each column is at least MAX_COLUMN_WIDTH characters wide,
+        # but a long column name needs more than that.
+        width_needed = max(
+            len(columns) * self.MAX_COLUMN_WIDTH,
+            sum(len(column) for column in columns)
+        )
+        return width >= width_needed

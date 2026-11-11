@@ -1,4 +1,5 @@
 from typing import override
+import shutil
 
 from .console import Console
 
@@ -18,3 +19,7 @@ class TerminalConsole(Console):
     @override
     def show(self, text: str) -> None:
         print(text)
+
+    @override
+    def width(self) -> int:
+        return shutil.get_terminal_size().columns

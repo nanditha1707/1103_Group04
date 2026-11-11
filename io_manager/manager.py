@@ -126,3 +126,8 @@ class IOManager:
     ) -> None:
         # Shows a report or query in the form of a table.
         self.__console.show(self.__table_renderer.render(report, title))
+
+    def table_fits_screen(self, columns: list[str]) -> bool:
+    # Whether a table with these columns fits on screen or is too
+    # wide and should be exported to a CSV instead.
+        return self.__table_renderer.fits(columns, self.__console.width())
