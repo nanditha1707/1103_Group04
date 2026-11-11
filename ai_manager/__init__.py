@@ -1,4 +1,5 @@
 from .action import Action
+from .ai_manager_factory import AIManagerFactory
 from .ai_model import AIModel
 from .ai_provider import AIProvider
 from .ai_request import AIRequest
@@ -10,6 +11,7 @@ from .model_fallback import ModelFallback
 __all__ = [
     "AIManager",
     "AIManagerError",
+    "AIManagerFactory",
     "AIModel",
     "AIProvider",
     "AIRequest",

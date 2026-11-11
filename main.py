@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 import data_manager as data
 import io_manager as io
 import logic_manager as logic
-from ai_manager import AIManager
+from ai_manager import AIManagerFactory
 
 ADMIN_PASSWORD = "Password"
 MENU_EXIT_MESSAGE = "Admin Password Inputted, Exiting Program Now!"
@@ -170,7 +170,7 @@ icd_df, hsa_df = data.get_cleaned_datasets()
 load_dotenv(override=True)
 # The AI manager checks every AI answer against the same datasets that
 # logic_manager routes with, so every valid medicine can be routed
-ai = AIManager(icd_df, hsa_df)
+ai = AIManagerFactory.create(icd_df, hsa_df)
 # Copy the starter patient records on the first run
 data.create_records_file_if_missing()
 
