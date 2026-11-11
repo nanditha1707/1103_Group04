@@ -1,2 +1,2 @@
-class InvalidOutputError(ValueError):
+class InvalidOutputError(Exception):
     pass

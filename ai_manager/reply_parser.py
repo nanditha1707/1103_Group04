@@ -2,6 +2,7 @@ import json
 from collections.abc import Collection
 
 from .constants import EXPLANATION_FIELDS
+from .invalid_output_error import InvalidOutputError
 
 
 class ReplyParser:
@@ -9,7 +10,10 @@ class ReplyParser:
         self.__free_text_fields = free_text_fields
 
     def parse(self, reply: str) -> dict:
-        output = json.loads(reply)
+        try:
+            output = json.loads(reply)
+        except json.JSONDecodeError as error:
+            raise InvalidOutputError("AI reply is not valid JSON") from error
 
         return {
             key: self.__normalise(key, value)

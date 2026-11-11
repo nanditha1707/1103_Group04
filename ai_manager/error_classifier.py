@@ -1,6 +1,7 @@
 from .action import Action
 from .ai_provider import AIProvider
 from .empty_reply_error import EmptyReplyError
+from .invalid_output_error import InvalidOutputError
 from .missing_api_key_error import MissingApiKeyError
 
 
@@ -29,7 +30,7 @@ class ErrorClassifier:
         # ICD-11 / HSA checks. Both are ValueErrors and likely to pass on
         # another try, so retry the same model. Any other ValueError is
         # treated the same way.
-        if isinstance(error, ValueError):
+        if isinstance(error, InvalidOutputError):
             return Action.RETRY_SAME_MODEL
 
         action = provider.classify_error(error)
