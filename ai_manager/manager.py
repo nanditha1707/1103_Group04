@@ -1,4 +1,3 @@
-from collections.abc import Callable
 import pandas as pd
 from ai_manager.errors import InvalidOutputError
 from ai_manager.providers import ClaudeProvider, GeminiProvider
@@ -27,14 +26,14 @@ class AIManager:
     """
 
     def __init__(
-        self, icd_df: pd.DataFrame | None, hsa_df: pd.DataFrame | None, classify_medicine: Callable[[str, pd.DataFrame], str | None], fallback: ModelFallback | None = None
+        self, icd_df: pd.DataFrame | None, hsa_df: pd.DataFrame | None, fallback: ModelFallback | None = None
     ):
         self.__prompt_builder = PromptBuilder(
             constants.AI_MEDICAL_CONTEXT,
             constants.AI_OUTPUT_SCHEMA
         )
         self.__parser = ReplyParser()
-        self.__validator = OutputValidator(icd_df, hsa_df, classify_medicine)
+        self.__validator = OutputValidator(icd_df, hsa_df)
 
         if fallback is None:
             fallback = self.__default_fallback()

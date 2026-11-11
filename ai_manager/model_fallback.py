@@ -7,13 +7,13 @@ from .error_classifier import ErrorClassifier
 
 
 class ModelFallback:
-    """Sends a request to each model in turn until one gives a reply that
+    """Sends a request to each model until one gives a reply that
     is accepted.
 
     After each failed attempt, ErrorClassifier decides whether to retry
-    the same model, move to the next model, skip the rest of that
-    provider's models, or stop. It gives up when it runs out of models or
-    time.
+    same model, move to the next model, skip the rest of that provider's
+    models (switch model providers), or stop. It stops when it runs out 
+    of models or time.
 
     It knows nothing about diagnoses. The caller passes a function that
     turns a reply into the final output, or raises an error if the reply
@@ -72,8 +72,11 @@ class ModelFallback:
                 and retries < self.__max_retries_per_model
             ):
                 retries += 1
-                # Wait longer after each retry (1 second, then 2 seconds) to
-                # give a transient problem time to clear.
+                # Wait longer after each retry (1 seconds, then 2 seconds) to
+                # handle transient errors. Usually for transient errors
+                # more time is given between consecutive requests to give
+                # time for the transient problem to go away. A basic version
+                # of this is implemented here.
                 self.__sleep(retries)
                 continue
 
@@ -88,14 +91,15 @@ class ModelFallback:
         if action is Action.SWITCH_PROVIDER:
             return self.__next_provider_index(model_index)
 
-        # SWITCH_MODEL, or RETRY_SAME_MODEL once its retries are used up.
+        # SWITCH_MODEL or RETRY_SAME_MODEL once its retries are used up.
         return model_index + 1
 
     def __next_provider_index(self, model_index: int) -> int:
         """Return the index of the next model from a different provider.
 
-        Returns the number of models if there is none, which ends the loop
-        in run().
+        Returns the length (number) of models if there is no next model
+        to try. This ends the while loop in run() as model_index < len(self.__models)
+        will become False.
         """
         provider = self.__models[model_index].provider
 

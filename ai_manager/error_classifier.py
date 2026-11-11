@@ -9,8 +9,7 @@ class ErrorClassifier:
     ai_manager's own errors, such as a missing API key or a problem with
     the reply itself, are AIManagerError subclasses that carry their own
     action. Errors from an API are passed to the provider that raised
-    them. This class never imports an SDK, so a new provider needs no
-    change here.
+    them.
     """
 
     def classify(self, error: Exception, provider: AIProvider) -> Action:

@@ -168,9 +168,9 @@ def main_menu() -> dict | int | None:
 icd_df, hsa_df = data.get_cleaned_datasets()
 # Read the AI API keys from the local .env file
 load_dotenv(override=True)
-# The AI manager checks every AI answer against the same datasets, and
-# uses logic_manager's medicine lookup so every valid medicine can be routed
-ai = AIManager(icd_df, hsa_df, logic.get_classification)
+# The AI manager checks every AI answer against the same datasets that
+# logic_manager routes with, so every valid medicine can be routed
+ai = AIManager(icd_df, hsa_df)
 # Copy the starter patient records on the first run
 data.create_records_file_if_missing()
 

@@ -1,4 +1,3 @@
-from collections.abc import Callable
 import pandas as pd
 from .constants import DIAGNOSIS_FIELDS, EXPLANATION_FIELDS, MEDICINE_FIELDS
 
@@ -21,16 +20,12 @@ class OutputValidator:
     _EMERGENCY_WORD = "EMERGENCY"
 
     def __init__(
-        self, icd_df: pd.DataFrame | None, hsa_df: pd.DataFrame | None, classify_medicine: Callable[[str, pd.DataFrame], str | None]
+        self, icd_df: pd.DataFrame | None, hsa_df: pd.DataFrame | None
     ):
         # The cleaned datasets loaded by data_manager. Either can be None if
         # it failed to load.
         self.__icd_df = icd_df
         self.__hsa_df = hsa_df
-        # Looks up a medicine's HSA classification, or None if it is not
-        # found. main.py passes in logic_manager's lookup, so a medicine
-        # that passes validation always has a classification to route with.
-        self.__classify_medicine = classify_medicine
 
     @property
     def has_icd_data(self) -> bool:
@@ -58,14 +53,21 @@ class OutputValidator:
         'SUNNY PARACETAMOL TABLET 500 MG'.
 
         Expects the medicine to already be stripped and uppercased by
-        ReplyParser.
+        ReplyParser, the same as the cleaned dataset. The cleaned dataset
+        drops rows without a classification, so a medicine that passes
+        always has one for logic_manager to route with.
         """
         # An empty medicine is never valid. This check is needed because ''
         # is found inside every dataset entry, so it would wrongly pass.
         if medicine == "":
             return False
+        
+        is_match = (
+            self.__hsa_df["DrugName"].str.contains(medicine, regex=False)
+            | self.__hsa_df["ActiveIngredients"].str.contains(medicine, regex=False)
+        )
 
-        return self.__classify_medicine(medicine, self.__hsa_df) is not None
+        return bool(is_match.any())
 
     def is_valid(self, output: dict) -> bool:
         """Return True if the output passes one of the 2 cases above."""
@@ -83,14 +85,17 @@ class OutputValidator:
         if self.__hsa_df is None:
             return True
 
-        # Step 2 (normal case): all 4 medicines match the HSA dataset.
+        # Step 2a (normal case): all 4 medicines match the HSA dataset.
         medicine_checks = [
             self.medicine_is_valid(output[field]) for field in MEDICINE_FIELDS
         ]
         if all(medicine_checks):
             return True
 
-        # Step 3 (emergency case): the medicines did not all match, but they
-        # are not needed if either explanation says it is an emergency.
+        # Step 2b (emergency case): the medicines did not all match but they
+        # are not needed if either explanation field says it is an emergency.
         explanations = [output[field] for field in EXPLANATION_FIELDS]
+
+        # For text in explanation fields, if emergency word in text then return
+        # True else return False.
         return any(self._EMERGENCY_WORD in text for text in explanations)
