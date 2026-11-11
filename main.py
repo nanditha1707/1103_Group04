@@ -54,10 +54,9 @@ def show_query_results(query_response: pd.DataFrame | None, not_found_error: str
     else:
         # Wide results do not fit in the terminal, so they are
         # exported to a CSV instead of printed.
-        next_action = data.print_or_export(list(query_response.columns))
-        if next_action == "print":
+        if io.table_fits_screen(list(query_response.columns)):
             io.print_df_and_reports(query_response)
-        elif next_action == "export" and not data.export_query(query_response):
+        elif not data.export_query(query_response):
             error = "The query results could not be exported!"
     return error
 

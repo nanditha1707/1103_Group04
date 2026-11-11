@@ -3,7 +3,6 @@
 # ======================================================================
 from datetime import datetime
 from pathlib import Path
-import shutil
 from zoneinfo import ZoneInfo
 import numpy as np
 import pandas as pd
@@ -532,20 +531,6 @@ def get_patients_by_date(filter_columns: list[str], date: str) -> pd.DataFrame |
 
     # The DataFrame is only used to print the table or export it to CSV.
     return pd.DataFrame(rows, columns=columns)
-
-def print_or_export(filter_columns: list[str]) -> str:
-    """Return "print" if a table with these columns fits in the
-    terminal, otherwise "export" so it is saved to a CSV instead."""
-    # Each column is at least 10 characters wide (the table's
-    # maxcolwidths), but a long column name needs more than that.
-    width_needed= len(filter_columns)*10
-    header_width_needed = sum(len(item) for item in filter_columns)
-    width_needed = max(width_needed, header_width_needed)
-    terminal_width=shutil.get_terminal_size().columns
-    if terminal_width >= width_needed:
-        return "print"
-    else:
-        return "export"
 
 def export_query(query_df: pd.DataFrame) -> bool:
     """Save the query results to a new timestamped CSV in the query
