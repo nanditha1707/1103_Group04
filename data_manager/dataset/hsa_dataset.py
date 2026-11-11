@@ -1,17 +1,17 @@
 import pandas as pd
 
-from reference.dataset import Dataset
+from .dataset import Dataset
 
 
 class HsaDataset(Dataset):
     """The HSA dataset: registered drugs and their classification."""
 
-    def clean(self, hsa_df: pd.DataFrame) -> pd.DataFrame:
+    def clean(self, dataset_df: pd.DataFrame) -> pd.DataFrame:
         """Return the HSA dataset with only the required drug columns,
         cleaned and without duplicates."""
 
         return self._standardise(
-            hsa_df,
+            dataset_df,
             column_map={
                 "Productname": "DrugName",
                 "Dosageform": "Dosage",
