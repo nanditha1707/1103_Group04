@@ -3,6 +3,9 @@ import pandas as pd
 
 import data_manager as data
 
+from .queue_number_generator import QueueNumberGenerator
+from .router import Router
+
 class LogicManager:
     """
     Handles medicine classification, healthcare routing and
@@ -14,14 +17,12 @@ class LogicManager:
     _TIME_FORMAT = "%H:%M:%S"
 
     def __init__(
-            self,
-            hsa_df: pd.DataFrame | None,
-            records_csv_path: str = data.RECORDS_CSV_PATH
-        ):
-            # The records path is passed in instead of being looked up inside, 
-            # so a test or a different storage location can be used without changing code.
-            self.__router = Router(hsa_df)
-            self.__queue_generator = QueueNumberGenerator(records_csv_path)
+        self, hsa_df: pd.DataFrame | None, records_csv_path: str = data.RECORDS_CSV_PATH
+    ):
+        # The records path is passed in instead of being looked up inside,
+        # so a test or a different storage location can be used without changing code.
+        self.__router = Router(hsa_df)
+        self.__queue_generator = QueueNumberGenerator(records_csv_path)
 
     def process_result(self, ai_output: dict) -> dict:
         """
