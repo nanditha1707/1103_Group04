@@ -4,7 +4,7 @@
 import pandas as pd
 
 import ai_manager as ai
-import data_manager as data
+from data_manager import DataManagerFactory
 import io_manager as io
 import logic_manager as logic
 
@@ -195,6 +195,8 @@ def main_menu() -> dict | int | None:
 
     return None
 
+data = DataManagerFactory.create()
+
 # load the ICD and HSA datasets once, when the program starts
 icd_df, hsa_df = data.get_cleaned_datasets()
 io.SYMPTOMS_DIFFLIB_LIST = data.load_symptoms()
@@ -221,7 +223,7 @@ while True:
         continue
 
     # 3. Logic manager: decide and print the route and queue number
-    logic_result = logic.process_result(ai_output, hsa_df)
+    logic_result = logic.process_result(ai_output, hsa_df, data)
 
     # 4. Data manager: save the completed record to the database.
     # export_record returns None if saved, or the error message if not.

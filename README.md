@@ -105,7 +105,7 @@ main.py
 io_manager.py
 ai_manager.py
 logic_manager.py
-data_manager.py
+data_manager/
 datasets/
 query/
 tests/

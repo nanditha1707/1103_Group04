@@ -4,7 +4,8 @@
 from datetime import datetime
 import pandas as pd
 
-import data_manager as data
+from data_manager.constants import SGT
+from data_manager.storage import QueueNumberSource
 
 
 # ======================================================================
@@ -156,7 +157,7 @@ def decide_route(ai_output: dict, hsa_df: pd.DataFrame | None) -> str | None:
 # ======================================================================
 # QUEUE NUMBER FUNCTIONS
 # ======================================================================
-def get_queue_number(queue_type: str) -> str | None:
+def get_queue_number(queue_type: str, queue_numbers: QueueNumberSource) -> str | None:
     """Give out the next queue number for today in the Doctor, Pharmacist
     or Urgent queue, e.g. D008, by checking the saved patient records.
     Returns None for any other queue type."""
@@ -175,11 +176,11 @@ def get_queue_number(queue_type: str) -> str | None:
         return None
 
     # Get todays date in Singapore time.
-    today=datetime.now(data.SGT).strftime("%Y-%m-%d")
+    today=datetime.now(SGT).strftime("%Y-%m-%d")
 
     # Ask the database for the highest number given out in this queue
     # today, e.g. 7 for D007.
-    highest_number_today = data.get_highest_queue_number(prefix, today)
+    highest_number_today = queue_numbers.get_highest_queue_number(prefix, today)
 
     if highest_number_today is None:
         highest_number_today = 0
@@ -192,7 +193,7 @@ def get_queue_number(queue_type: str) -> str | None:
 # ======================================================================
 # FINAL RESULT FUNCTION
 # ======================================================================
-def process_result(ai_output: dict, hsa_df: pd.DataFrame | None) -> dict:
+def process_result(ai_output: dict, hsa_df: pd.DataFrame | None, queue_numbers: QueueNumberSource) -> dict:
     """Create the final domain result. Routes the patient, gives them a
     queue number and returns both with the current date and time."""
 
@@ -203,7 +204,7 @@ def process_result(ai_output: dict, hsa_df: pd.DataFrame | None) -> dict:
     )
 
     # Get current date and time in Singapore time.
-    now=datetime.now(data.SGT)
+    now=datetime.now(SGT)
 
     # Patient was not routed, so no queue number is given.
     if route is None:
@@ -211,15 +212,15 @@ def process_result(ai_output: dict, hsa_df: pd.DataFrame | None) -> dict:
 
     # Emergency route uses the urgent queue ( U queue ).
     elif route =="EMERGENCY":
-        queue_number = get_queue_number("Urgent")
+        queue_number = get_queue_number("Urgent", queue_numbers)
 
     # Docter route ( D queue ).
     elif route == "Doctor":
-        queue_number =get_queue_number("Doctor")
+        queue_number =get_queue_number("Doctor", queue_numbers)
 
     # Pharmacist route ( P queue ).
     elif route == "Pharmacist":
-        queue_number = get_queue_number("Pharmacist")
+        queue_number = get_queue_number("Pharmacist", queue_numbers)
 
     # Retail does not get a queue number.
     else:
