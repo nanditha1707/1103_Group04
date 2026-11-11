@@ -1,24 +1,20 @@
-import pandas as pd
-
 from .dataset import Dataset
 
 
 class HsaDataset(Dataset):
     """The HSA dataset: registered drugs and their classification."""
 
-    def clean(self, dataset_df: pd.DataFrame) -> pd.DataFrame:
-        """Return the HSA dataset with only the required drug columns,
-        cleaned and without duplicates."""
+    @property
+    def _columns_to_keep(self) -> dict[str, str]:
+        return {
+            "Productname": "DrugName",
+            "Dosageform": "Dosage",
+            "Strength": "Strength",
+            "Activeingredients": "ActiveIngredients",
+            "ATCCode": "ATCCode",
+            "Forensicclassification": "Classification"
+        }
 
-        return self._standardise(
-            dataset_df,
-            column_map={
-                "Productname": "DrugName",
-                "Dosageform": "Dosage",
-                "Strength": "Strength",
-                "Activeingredients": "ActiveIngredients",
-                "ATCCode": "ATCCode",
-                "Forensicclassification": "Classification"
-            },
-            uppercase_columns=("DrugName", "ActiveIngredients")
-        )
+    @property
+    def _columns_to_uppercase(self) -> tuple[str, ...]:
+        return ("DrugName", "ActiveIngredients")

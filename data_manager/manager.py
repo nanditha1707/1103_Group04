@@ -26,14 +26,14 @@ class DataManager(QueueNumberSource):
         """Load and clean the ICD-11 and HSA datasets. Either one is None
         if its file fails to load."""
         return (
-            self.__icd_dataset.get_cleaned(),
-            self.__hsa_dataset.get_cleaned()
+            self.__icd_dataset.load_cleaned(),
+            self.__hsa_dataset.load_cleaned()
         )
 
     def load_symptoms(self) -> list[str]:
         """Reads the symptoms dataset. Returns all symptom names in
         uppercase since user input is uppercased before matching."""
-        symptoms_df = self.__symptom_dataset.get_cleaned()
+        symptoms_df = self.__symptom_dataset.load_cleaned()
 
         if symptoms_df is None:
             return []

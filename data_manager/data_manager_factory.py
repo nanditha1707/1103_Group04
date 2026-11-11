@@ -27,5 +27,4 @@ class DataManagerFactory:
             PatientQuery(record_store, constants.FILTER_OPTIONS, constants.IDENTIFIER_COLUMNS),
             QueryExporter(constants.QUERY_DIR, constants.SGT),
             ReportGenerator(record_store, constants.ROUTE_LABELS),
-            record_store
-        )
+            record_store)

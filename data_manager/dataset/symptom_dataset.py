@@ -1,11 +1,13 @@
-import pandas as pd
-
 from .dataset import Dataset
 
 
 class SymptomDataset(Dataset):
-    def clean(self, dataset_df: pd.DataFrame) -> pd.DataFrame:
-        symptoms_df = dataset_df[["term"]].copy()
-        symptoms_df["term"] = symptoms_df["term"].str.upper()
+    @property
+    def _columns_to_keep(self) -> dict[str, str]:
+        return {
+            "term": "term"
+        }
 
-        return symptoms_df
+    @property
+    def _columns_to_uppercase(self) -> tuple[str, ...]:
+        return ("term",)
