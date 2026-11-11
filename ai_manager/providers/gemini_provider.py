@@ -55,6 +55,12 @@ class GeminiProvider(AIProvider):
         403: Action.SWITCH_PROVIDER,
     }
 
+    def __init__(
+        self, request_timeout: int, client: genai.Client | None = None
+    ):
+        self.__request_timeout = request_timeout
+        self.__client = client
+
     def send(self, model: str, request: AIRequest) -> str:
         """Send a prompt to Gemini and return its JSON reply as text.
 
@@ -63,13 +69,10 @@ class GeminiProvider(AIProvider):
         'attempts' is set to 1 (the original request only, no retries)
         because it is better for the retries to be handled by the pipeline.
         """
-        client = genai.Client(
-            http_options={
-                "timeout": self._request_timeout * 1000,
-                "retry_options": {"attempts": 1},
-            })
-        response = client.models.generate_content(
-            model=model, contents=request.prompt, config={
+        response = self.__get_client().models.generate_content(
+            model=model,
+            contents=request.prompt,
+            config={
                 "system_instruction": request.context,
                 "response_mime_type": "application/json",
                 "response_json_schema": request.schema,
@@ -98,3 +101,13 @@ class GeminiProvider(AIProvider):
             return self._STATUS_ACTIONS.get(error.code)
 
         return None
+
+    def __get_client(self) -> genai.Client:
+        if self.__client is None:
+            self.__client = genai.Client(
+                http_options={
+                    "timeout": self.__request_timeout * 1000,
+                    "retry_options": {"attempts": 1},
+                }
+            )
+        return self.__client

@@ -18,10 +18,6 @@ class AIProvider(ABC):
     retry logic.
     """
 
-    def __init__(self, request_timeout: int):
-        # Timeout for 1 AI API request.
-        self._request_timeout = request_timeout
-
     @abstractmethod
     def send(self, model: str, request: AIRequest) -> str:
         """Send a prompt to the model and return its JSON reply as text.

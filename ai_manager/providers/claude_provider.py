@@ -9,6 +9,8 @@ from ai_manager.empty_reply_error import EmptyReplyError
 class ClaudeProvider(AIProvider):
     """Sends requests to the Claude API and classifies its errors."""
 
+    _MAX_TOKENS = 8000
+
     # What to do for each Claude HTTP status code. A code that is not
     # listed is unexpected, so classify_error returns None and the request
     # fails.
@@ -54,19 +56,21 @@ class ClaudeProvider(AIProvider):
         403: Action.SWITCH_PROVIDER,
     }
 
+    def __init__(
+        self, request_timeout: int, client: anthropic.Anthropic | None = None
+    ):
+        self.__request_timeout = request_timeout
+        self.__client = client
+
     def send(self, model: str, request: AIRequest) -> str:
         """Send a prompt to Claude and return its JSON reply as text.
 
         'max_retries' is set to 0 because it is better for the retries to
         be handled by the pipeline.
         """
-        client = anthropic.Anthropic(
-            timeout=self._request_timeout,
-            max_retries=0
-        )
-        response = client.messages.create(
+        response = self.__get_client().messages.create(
             model=model,
-            max_tokens=8000,
+            max_tokens=self._MAX_TOKENS,
             system=request.context,
             messages=[{"role": "user", "content": request.prompt}],
             output_config={
@@ -107,3 +111,11 @@ class ClaudeProvider(AIProvider):
             return self._STATUS_ACTIONS.get(error.status_code)
 
         return None
+
+    def __get_client(self) -> anthropic.Anthropic:
+        if self.__client is None:
+            self.__client = anthropic.Anthropic(
+                timeout=self.__request_timeout,
+                max_retries=0
+            )
+        return self.__client
