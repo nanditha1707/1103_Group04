@@ -2,18 +2,28 @@ from io_manager import constants
 from io_manager.questions import SymptomQuestion, TextQuestion
 from io_manager.rendering import BoxRenderer
 from io_manager.rules import (
-    ChainStopRule, ConsentRequiredRule, EmergencyAnswerRule, MinimumAgeRule, SkipIfAnswerEquals,
+    ChainStopRule, 
+    ConsentRequiredRule, 
+    EmergencyAnswerRule, 
+    MinimumAgeRule, 
+    SkipIfAnswerEquals,
     StopRule
 )
 from io_manager.symptoms import (
-    CatalogueSymptomAction, FeverSymptomAction, PresetSymptomAction, SymptomCatalogue, SymptomMenu,
+    CatalogueSymptomAction, 
+    FeverSymptomAction,
+    PresetSymptomAction, 
+    SymptomCatalogue, 
+    SymptomMenu,
     YesNoPrompt
 )
 from io_manager.validators import (
-    ChoiceValidator, NonNegativeIntegerValidator, PhoneNumberValidator, RegexValidator,
+    ChoiceValidator,
+    NonNegativeIntegerValidator, 
+    PhoneNumberValidator, 
+    RegexValidator,
     YesNoValidator
 )
-
 from .registration_form import RegistrationForm
 
 
