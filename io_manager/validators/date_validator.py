@@ -10,6 +10,9 @@ class DateValidator(RegexValidator):
     """
     Checks a date is in YYYY-MM-DD format and exists on the calendar.
     Valid format but non-existent dates like 2026-02-30 are rejected.
+
+    The error message can be passed in so subclasses such as
+    BirthdateValidator can reuse these checks with their own message.
     """
 
     PATTERN = r"[0-9]{4}-[0-9]{2}-[0-9]{2}"
@@ -17,9 +20,9 @@ class DateValidator(RegexValidator):
 
     # super() calls RegexValidator __init__
     def __init__(
-        self
+        self, error: str = constants.DATE_ERROR
     ) -> None:
-        super().__init__(self.PATTERN, constants.DATE_ERROR)
+        super().__init__(self.PATTERN, error)
 
     @override
     def validate(self, answer: str) -> str | None:

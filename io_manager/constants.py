@@ -24,7 +24,10 @@ NURSE_ALERT_MESSAGE = (
     "You need immediate medical attention. "
     "Please approach a nurse right away for help."
 )
-MANUAL_REGISTRATION_MESSAGE = "Please proceed to manual registration."
+UNDERAGE_MESSAGE = (
+    "Patients under {minimum} cannot self register. "
+    "Please approach a nurse or clerk to register with a parent or guardian."
+)
 CONFIRMED_MESSAGE = "Thank you for confirming your inputs."
 
 # ======================================================================
@@ -37,7 +40,7 @@ CONSENT_PROMPT = (
 NAME_PROMPT = "Enter your Name: "
 NRIC_PROMPT = "Enter your NRIC: "
 GENDER_PROMPT = "Enter your Gender [M/F]: "
-AGE_PROMPT = "Enter your Age: "
+BIRTHDATE_PROMPT = "Enter your Birthdate (YYYY-MM-DD): "
 PHONE_PROMPT = (
     "Please enter your country code and phone number "
     "in the following format (+65 88880000): "
@@ -73,8 +76,11 @@ GENDER_ERROR = "This is not a valid input, please only enter either M or F."
 POSITIVE_WHOLE_NUMBER_ERROR = (
     "This is not a valid input, please only enter positive whole numbers."
 )
+BIRTHDATE_FORMAT_ERROR = (
+    "Please enter a valid birthdate in YYYY-MM-DD format (e.g. 1990-05-14)."
+)
+BIRTHDATE_RANGE_ERROR = "Your birthdate must be between {earliest} and today."
 # {maximum} is filled in by RegistrationFactory with the upper bound used.
-AGE_ERROR = "This is not a valid age, please enter a whole number from 0 to {maximum}."
 ONSET_DAYS_ERROR = (
     "This is not a valid number of days, "
     "please enter a whole number from 0 to {maximum}."

@@ -6,24 +6,21 @@ from .validator import Validator
 class NonNegativeIntegerValidator(Validator):
     """
     Validates user inputs for integers >=0 between a minimum and an 
-    optional maximum (both inclusive). We use it mainly for 3 different
+    optional maximum (both inclusive). We use it mainly for 2 different
     validations:
 
-    1. Validate age
-    2. Validate menu options
-    3. Validate symptom onset days (days since symptom started)
+    1. Validate menu options
+    2. Validate symptom onset days (days since symptom started)
     
-    All of these validations have different acceptable ranges:
+    These validations have different acceptable ranges:
 
-    1. Age between 0 (infants can be 0 years old) and 150
-    2. Menu options between 1 (menus start at 1) and the menu's number
+    1. Menu options between 1 (menus start at 1) and the menu's number
     of options. This is done through MenuOptionValidator.
-    3. 0 (symptoms started today) and 365
+    2. 0 (symptoms started today) and 365
 
     Since these are all non negative integers, we used one common class
-    for all of them. Age and symptom onset days each create their own
-    instance with their own range, and MenuOptionValidator creates one
-    for each menu.
+    for all of them. Symptom onset days creates its own instance with its
+    own range, and MenuOptionValidator creates one for each menu.
     """
 
     def __init__(

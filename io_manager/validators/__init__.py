@@ -1,3 +1,4 @@
+from .birthdate_validator import BirthdateValidator
 from .chain_validator import ChainValidator
 from .choice_validator import ChoiceValidator
 from .date_validator import DateValidator
@@ -10,7 +11,7 @@ from .validator import Validator
 from .yes_no_validator import YesNoValidator
 
 __all__ = [
-    "ChainValidator", "ChoiceValidator", "DateValidator", "MenuOptionValidator",
+    "BirthdateValidator", "ChainValidator", "ChoiceValidator", "DateValidator", "MenuOptionValidator",
     "NonNegativeIntegerValidator", "NotEmptyValidator", "PhoneNumberValidator", "RegexValidator",
     "Validator", "YesNoValidator"
 ]

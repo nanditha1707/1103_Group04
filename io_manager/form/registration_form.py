@@ -1,5 +1,6 @@
 from collections.abc import Mapping, Sequence
 
+from io_manager.derived import DerivedAnswer
 from io_manager.patient_answers import Answer, PatientAnswers
 from io_manager.questions import Question
 
@@ -9,8 +10,9 @@ class RegistrationForm:
     Class that holds the ordered questions,
     and the methods to navigate through them,
     skipping questions that do not apply.
-    It also saves each answer through apply_answer,
-    so questions that no longer apply are always cleared.
+    It also saves each answer through apply_answer
+    so derived answers (e.g. age) are always recalculated
+    and questions that no longer apply are always cleared.
 
     The questions themselves are constructed outside this class, 
     and passed in during initialisation. 
@@ -20,9 +22,10 @@ class RegistrationForm:
 
     # Sequences is used for type hint as the question order matters.
     def __init__(
-        self, questions: Sequence[Question]
+        self, questions: Sequence[Question], derived_answers: Sequence[DerivedAnswer] = ()
     ) -> None:
         self.__questions = tuple(questions)
+        self.__derived_answers = tuple(derived_answers)
 
     @property
     def questions(self) -> tuple[Question, ...]:
@@ -56,15 +59,22 @@ class RegistrationForm:
 
     def apply_answer(self, answers: PatientAnswers, key: str, value: Answer) -> None:
         """
-        Store an answer then clear every question that no longer applies.
+        Store an answer, recalculate every derived answer
+        and then clear every question that no longer applies.
 
-        The two steps always happen together so they are kept in one method.
+        The steps always happen together so they are kept in one method.
         e.g. changing gender from F to M must also clear the pregnancy answer,
         otherwise a stored pregnancy answer of Y would still be sent to the AI.
+        Changing the birthdate must also update the age the same way.
         The screens call this instead of PatientAnswers.record_answer directly.
         """
         answers.record_answer(key, value)
+        self.__update_derived(answers)
         self.__mark_skipped(answers)
+
+    def __update_derived(self, answers: PatientAnswers) -> None:
+        for derived in self.__derived_answers:
+            answers.record_answer(derived.key, derived.compute(answers))
 
     def __mark_skipped(self, answers: PatientAnswers) -> None:
         # Mark every question that does not apply as not applicable.
@@ -108,6 +118,8 @@ class RegistrationForm:
         # Essentially appends any questions that are marked share_with_ai,
         # to the shared_questions list, which is then used to filter the answers mapping.
         shared_questions = [q for q in self.__questions if q.share_with_ai]
+        shared_derived = [d for d in self.__derived_answers if d.share_with_ai]
+        shared_keys = [q.key for q in shared_questions] + [d.key for d in shared_derived]
         # .get keeps every shared key, 
         # with None for a question that has no answer (pregnancy).
-        return {q.key: answers.get(q.key) for q in shared_questions}
+        return {key: answers.get(key) for key in shared_keys}

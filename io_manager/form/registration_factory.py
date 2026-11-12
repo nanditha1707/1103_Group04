@@ -1,4 +1,8 @@
+from datetime import date
+from zoneinfo import ZoneInfo
+
 from io_manager import constants
+from io_manager.derived import AgeFromBirthdate
 from io_manager.questions import SymptomQuestion, TextQuestion
 from io_manager.rendering import BoxRenderer
 from io_manager.rules import (
@@ -18,6 +22,7 @@ from io_manager.symptoms import (
     YesNoPrompt
 )
 from io_manager.validators import (
+    BirthdateValidator,
     ChoiceValidator,
     NonNegativeIntegerValidator, 
     PhoneNumberValidator, 
@@ -42,12 +47,13 @@ class RegistrationFactory:
     where it will override any methods that differ, such as build_form and/or build_stop_rule.
     """
 
-    # Maximum age for a patient to be considered real. 
-    MAXIMUM_AGE = 150
+    # Earliest birthdate for a patient to be considered real.
+    EARLIEST_BIRTHDATE = date(1900, 1, 1)
+    TIMEZONE = ZoneInfo("Asia/Singapore")
     MAXIMUM_ONSET_DAYS = 365
     # Patients under this age cannot self register. 
-    # This is clinic policy, separate from the age validator's range of 0 to MAXIMUM_AGE,
-    # which only rejects ages that cannot be real.
+    # This is clinic policy, separate from the birthdate validator's range of
+    # EARLIEST_BIRTHDATE to today, which only rejects birthdates that cannot be real.
     MINIMUM_SELF_REGISTRATION_AGE = 18
     # Regex pattern to ensure a name starts with a letter,
     # and may only contain letters, spaces, hyphens and apostrophes.
@@ -118,18 +124,13 @@ class RegistrationFactory:
                 ChoiceValidator(("M", "F"), constants.GENDER_ERROR),
                 share_with_ai=True,
             ),
+            # A birthdate of today is real (an infant registered by a
+            # parent) so it is accepted here and the minimum age rule
+            # sends them to manual registration.
             TextQuestion(
-                "age",
-                constants.AGE_PROMPT,
-                # 0 is a real age (an infant registered by a parent), so it
-                # is accepted here and the minimum age rule sends them to
-                # manual registration.
-                NonNegativeIntegerValidator(
-                    minimum=0,
-                    maximum=self.MAXIMUM_AGE,
-                    error=constants.AGE_ERROR.format(maximum=self.MAXIMUM_AGE),
-                ),
-                share_with_ai=True,
+                "birthdate",
+                constants.BIRTHDATE_PROMPT,
+                BirthdateValidator(self.EARLIEST_BIRTHDATE, self.TIMEZONE),
             ),
             TextQuestion("phone_number", constants.PHONE_PROMPT, PhoneNumberValidator()),
             TextQuestion(
@@ -183,6 +184,9 @@ class RegistrationFactory:
                 "drug_allergies", constants.ALLERGIES_PROMPT, yes_no,
                 share_with_ai=True,
             ),
+        ],
+        [
+            AgeFromBirthdate("age", "birthdate", self.TIMEZONE, share_with_ai=True),
         ])
 
     def build_stop_rule(self) -> StopRule:
