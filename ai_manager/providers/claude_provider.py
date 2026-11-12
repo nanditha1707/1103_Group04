@@ -89,10 +89,15 @@ class ClaudeProvider(AIProvider):
             model=model,
             max_tokens=self._MAX_TOKENS,
             system=request.context,
-            messages=[{"role": "user", "content": request.prompt}],
+            messages=[
+                {"role": "user", "content": request.prompt}
+            ],
             output_config={
                 "effort": "high",
-                "format": {"type": "json_schema", "schema": request.schema},
+                "format": {
+                    "type": "json_schema",
+                    "schema": request.schema
+                },
             },
         )
         # If Claude refuses, or the reply is cut off by max_tokens, there is

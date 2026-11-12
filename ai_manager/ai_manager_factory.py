@@ -29,7 +29,10 @@ class AIManagerFactory:
         ICD-11 and HSA datasets. Either can be None if it failed to load.
         """
         return AIManager(
-            PromptBuilder(constants.AI_MEDICAL_CONTEXT, constants.AI_OUTPUT_SCHEMA),
+            PromptBuilder(
+                constants.AI_MEDICAL_CONTEXT,
+                constants.AI_OUTPUT_SCHEMA
+            ),
             ReplyParser(),
             OutputValidator(icd_df, hsa_df),
             AIManagerFactory.__create_fallback()
@@ -77,7 +80,10 @@ class AIManagerFactory:
         for provider, model_names in providers:
             # One object per provider shared by its models so that
             # ModelFallback can tell which models belong to the same provider.
-            models += [AIModel(provider, name) for name in model_names]
+            models += [
+                AIModel(provider, name)
+                for name in model_names
+            ]
 
         return ModelFallback(
             models,

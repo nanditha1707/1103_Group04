@@ -32,7 +32,10 @@ class ModelFallback:
         self.__max_retries_per_model = max_retries_per_model
         # Waits between retries. Tests pass in a function that does not
         # wait, so they run instantly.
-        self.__sleep = sleep if sleep is not None else time.sleep
+        if sleep is not None:
+            self.__sleep = sleep
+        else:
+            self.__sleep = time.sleep
 
     def run(
         self, request: AIRequest, read_reply: Callable[[str], dict]

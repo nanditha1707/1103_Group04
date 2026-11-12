@@ -33,7 +33,10 @@ class ReplyParser:
     def __normalise(self, key: str, value: object) -> object:
         """Return the value stripped and uppercased, unless it is free text
         or not a string."""
-        if key in self.__free_text_fields or not isinstance(value, str):
+        if (
+            key in self.__free_text_fields
+            or not isinstance(value, str)
+        ):
             return value
 
         return value.strip().upper()

@@ -87,15 +87,22 @@ class OutputValidator:
 
         # Step 2a (normal case): all 4 medicines match the HSA dataset.
         medicine_checks = [
-            self.medicine_is_valid(output[field]) for field in MEDICINE_FIELDS
+            self.medicine_is_valid(output[field])
+            for field in MEDICINE_FIELDS
         ]
         if all(medicine_checks):
             return True
 
         # Step 2b (emergency case): the medicines did not all match but they
         # are not needed if either explanation field says it is an emergency.
-        explanations = [output[field] for field in EXPLANATION_FIELDS]
+        explanations = [
+            output[field]
+            for field in EXPLANATION_FIELDS
+        ]
 
         # For text in explanation fields, if emergency word in text then return
         # True else return False.
-        return any(self._EMERGENCY_WORD in text for text in explanations)
+        return any(
+            self._EMERGENCY_WORD in text
+            for text in explanations
+        )
