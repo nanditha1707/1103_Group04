@@ -15,7 +15,8 @@ class DataManagerFactory:
     def create(database: Database | None = None) -> DataManager:
         if database is None:
             load_dotenv(override=True)
-            database = PostgresDatabase(os.getenv(constants.DATABASE_URL_ENV_VAR))
+            database_url = os.getenv(constants.DATABASE_URL_ENV_VAR)
+            database = PostgresDatabase(database_url)
 
         record_store = PostgresRecordStore(database)
 

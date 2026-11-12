@@ -96,10 +96,15 @@ class PostgresRecordStore(RecordWriter, RecordReader, RecordCounter, QueueNumber
         The AS keeps the original names (e.g. primary_diagnosis_ICD11_Code)
         as the table headers instead of the lowercase database names.
         sql.Identifier quotes each name safely."""
-        return sql.SQL(", ").join(
-            sql.SQL("{} AS {}").format(sql.Identifier(column.lower()), sql.Identifier(column))
-            for column in columns
-        )
+        select_parts = []
+        for column in columns:
+            select_part = sql.SQL("{} AS {}").format(
+                sql.Identifier(column.lower()),
+                sql.Identifier(column)
+            )
+            select_parts.append(select_part)
+
+        return sql.SQL(", ").join(select_parts)
 
     def __fetch_table(
         self,
@@ -181,7 +186,8 @@ class PostgresRecordStore(RecordWriter, RecordReader, RecordCounter, QueueNumber
             FROM patient_records
             WHERE date = %s AND queue_number ~ %s
         """
-        rows = self.__database.fetch_rows(sql_statement, (date, f"^{prefix}[0-9]+$"))
+        queue_number_pattern = f"^{prefix}[0-9]+$"
+        rows = self.__database.fetch_rows(sql_statement, (date, queue_number_pattern))
         if rows is None:
             return None
 

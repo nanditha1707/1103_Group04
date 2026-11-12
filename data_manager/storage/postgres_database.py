@@ -22,7 +22,10 @@ class PostgresDatabase(Database):
         saved by other users. Return None if the database could not be
         reached or the query failed."""
         try:
-            with self.__connect() as connection, connection.cursor() as cursor:
+            with (
+                self.__connect() as connection,
+                connection.cursor() as cursor
+            ):
                 # psycopg fills in each %s with the matching parameter
                 # safely, so user input is never pasted into the SQL itself.
                 cursor.execute(sql_statement, parameters)
@@ -32,7 +35,10 @@ class PostgresDatabase(Database):
 
     def execute(self, sql_statement: str | sql.Composed, parameters: dict) -> str | None:
         try:
-            with self.__connect() as connection, connection.cursor() as cursor:
+            with (
+                self.__connect() as connection,
+                connection.cursor() as cursor
+            ):
                 cursor.execute(sql_statement, parameters)
         except psycopg.Error as error:
             return f"{type(error).__name__} - {error}"
