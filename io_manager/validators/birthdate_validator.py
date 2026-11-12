@@ -4,27 +4,31 @@ from typing import override
 from io_manager import constants
 
 from .date_validator import DateValidator
+from .validator import Validator
 
 
-class BirthdateValidator(DateValidator):
+class BirthdateValidator(Validator):
     """
     Checks a birthdate is a real YYYY-MM-DD date that is no earlier than
     the earliest allowed birthdate and not in the future.
 
-    The format and calendar checks are reused from DateValidator
-    so this class only adds the range check on top.
+    The format and calendar checks are delegated to a DateValidator it
+    holds (composition) so this class only adds the range check on top.
+    It does not inherit from DateValidator because a birthdate check is
+    stricter than a date check. A DateValidator accepts any real date
+    including future ones, so a BirthdateValidator cannot stand in for it.
     """
 
     def __init__(
         self, earliest: date, timezone: tzinfo
     ) -> None:
-        super().__init__(constants.BIRTHDATE_FORMAT_ERROR)
+        self.__date_validator = DateValidator(constants.BIRTHDATE_FORMAT_ERROR)
         self.__earliest = earliest
         self.__timezone = timezone
 
     @override
     def validate(self, answer: str) -> str | None:
-        format_error = super().validate(answer)
+        format_error = self.__date_validator.validate(answer)
         if format_error is not None:
             return format_error
 
