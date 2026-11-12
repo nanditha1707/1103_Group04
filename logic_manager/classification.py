@@ -20,7 +20,8 @@ class Classification(Enum):
         Turn text from the HSA dataset into a Classification.
         """
         try:
-            return cls(str(text).strip())
+            cleaned_text = str(text).strip()
+            return cls(cleaned_text)
         except ValueError:
             return None
 

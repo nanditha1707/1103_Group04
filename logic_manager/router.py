@@ -1,13 +1,12 @@
-import pandas as pd
-
 from .classification import Classification
 from .medicine_classifier import MedicineClassifier
 from .route import Route
 
 class Router:
     """
-    Decides where a patient should go based off the AI output. 
-    Composes a MedicineClassifier, which it creates itself because it is the only class that needs one.
+    Decides where a patient should go based off the AI output.
+    Uses the MedicineClassifier that LogicManagerFactory passes in. It is
+    None when the HSA data failed to load.
     """
 
     # Key the AI output contains when it failed validation.
@@ -38,14 +37,10 @@ class Router:
         Classification.PRESCRIPTION_ONLY: Route.DOCTOR
     }
 
-    def __init__(self, hsa_df: pd.DataFrame | None):
-        # Composition: Router creates and owns the classifier.
-        # Without HSA data there is nothing to classify, so no classifier.
-        # Currently impossible in our current setup, 
-        # acts as a safeguard for an unlikely scenario.
-        self.__classifier = (
-            MedicineClassifier(hsa_df) if hsa_df is not None else None
-        )
+    def __init__(
+        self, classifier: MedicineClassifier | None
+    ):
+        self.__classifier = classifier
 
     def decide(self, ai_output: dict) -> Route | None:
         """
@@ -67,15 +62,19 @@ class Router:
             return Route.DOCTOR
 
         # Classify every medicine the AI recommended.
-        classifications = [
-            self.__classifier.classify(medicine)
-            for medicine in self._get_medicines(ai_output)
-        ]
+        medicines = self._get_medicines(ai_output)
+        classifications = []
+        for medicine in medicines:
+            classification = self.__classifier.classify(medicine)
+            classifications.append(classification)
 
         # If a medicine is not in the HSA data, it cannot be confirmed as safe to buy at retail. 
         # or if there are no medicines recommended, send the patient to a doctor.
         # Currently does not occur but acts as a form of safeguarding for future code.
-        if None in classifications or not classifications:
+        has_unknown_medicine = None in classifications
+        has_no_medicines = not classifications
+
+        if has_unknown_medicine or has_no_medicines:
             return Route.DOCTOR
 
         # The strictest medicine decides the route. 
@@ -90,7 +89,8 @@ class Router:
         while a lower-case phrase like "no emergency signs" must not trigger it.
         """
         for key in self._EXPLANATION_KEYS:
-            if self._EMERGENCY_KEYWORD in self._get_text(ai_output, key):
+            explanation = self._get_text(ai_output, key)
+            if self._EMERGENCY_KEYWORD in explanation:
                 return True
         return False
 

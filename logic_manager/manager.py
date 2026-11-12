@@ -1,7 +1,5 @@
+from collections.abc import Callable
 from datetime import datetime
-import pandas as pd
-
-import data_manager as data
 
 from .queue_number_generator import QueueNumberGenerator
 from .router import Router
@@ -10,6 +8,9 @@ class LogicManager:
     """
     Handles medicine classification, healthcare routing and
     queue number generation.
+
+    LogicManagerFactory gives it every object it needs and it creates none
+    itself, so a test can pass in fakes and a fixed clock.
     """
 
     # Formats used for the date and time in the result.
@@ -17,12 +18,11 @@ class LogicManager:
     _TIME_FORMAT = "%H:%M:%S"
 
     def __init__(
-        self, hsa_df: pd.DataFrame | None, records_csv_path: str = data.RECORDS_CSV_PATH
+        self, router: Router, queue_generator: QueueNumberGenerator, clock: Callable[[], datetime]
     ):
-        # The records path is passed in instead of being looked up inside,
-        # so a test or a different storage location can be used without changing code.
-        self.__router = Router(hsa_df)
-        self.__queue_generator = QueueNumberGenerator(records_csv_path)
+        self.__router = router
+        self.__queue_generator = queue_generator
+        self.__clock = clock
 
     def process_result(self, ai_output: dict) -> dict:
         """
@@ -33,17 +33,21 @@ class LogicManager:
         # Where the patient goes.
         route = self.__router.decide(ai_output)
 
-        now = datetime.now()
+        now = self.__clock()
         today = now.strftime(self._DATE_FORMAT)
+
+        current_time = now.strftime(self._TIME_FORMAT)
 
         if route is None:
             queue_number = None
+            route_value = None
         else:
             queue_number = self.__queue_generator.next_number(route, today)
+            route_value = route.value
 
         return {
             "queue_number": queue_number,
             "date": today,
-            "time": now.strftime(self._TIME_FORMAT),
-            "route": route.value if route is not None else None
+            "time": current_time,
+            "route": route_value
         }

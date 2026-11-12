@@ -56,8 +56,13 @@ class MedicineClassifier:
         """
         Return True if the medicine appears in the drug name or the active ingredients of a row.
         """
-        return (target in self._to_text(drug_name)
-                or target in self._to_text(ingredient))
+        drug_name_text = self._to_text(drug_name)
+        ingredient_text = self._to_text(ingredient)
+
+        in_drug_name = target in drug_name_text
+        in_ingredient = target in ingredient_text
+
+        return in_drug_name or in_ingredient
 
     @staticmethod
     def _to_text(value) -> str:

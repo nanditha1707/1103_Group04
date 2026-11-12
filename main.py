@@ -4,7 +4,7 @@
 import ai_manager as ai
 import data_manager as data
 import io_manager as io
-from logic_manager import LogicManager
+from logic_manager import LogicManagerFactory
 
 ADMIN_PASSWORD = "Password"
 MENU_EXIT_MESSAGE = "Admin Password Inputted, Exiting Program Now!"
@@ -164,8 +164,8 @@ def main_menu() -> dict | int | None:
 
 # load the ICD and HSA datasets once, when the program starts
 icd_df, hsa_df = data.get_cleaned_datasets()
-# Create the logic manager using the HSA dataset.
-logic = LogicManager(hsa_df)
+# Create the logic manager using the HSA dataset and data_manager for queue numbers.
+logic = LogicManagerFactory.create(hsa_df, data)
 # Copy the starter patient records on the first run
 data.create_records_file_if_missing()
 

@@ -24,7 +24,7 @@ HSA_CSV_PATH = DATASETS_DIR / "hsa.csv"
 SYMPTOMS_CSV_PATH = DATASETS_DIR / "symptoms_umls.csv"
 
 # CSV file used to store patient records.
-# Same file logic_manager reads to work out queue numbers.
+# Same file get_highest_queue_number reads to work out queue numbers.
 RECORDS_CSV_PATH = RECORDS_DIR / "patient_records.csv"
 
 # Starter patient records, copied to RECORDS_CSV_PATH on the first run.
@@ -356,6 +356,28 @@ def load_records() -> pd.DataFrame | None:
         return pd.read_csv(RECORDS_CSV_PATH)
     except FileNotFoundError:
         return None
+
+
+def get_highest_queue_number(prefix: str, date: str) -> int | None:
+    try:
+        records = pd.read_csv(RECORDS_CSV_PATH, dtype=str, keep_default_na=False)
+        queue_numbers = records[records["date"] == date]["queue_number"]
+    except (OSError, ValueError, KeyError):
+        return None
+
+    highest_number = 0
+    for queue_number in queue_numbers:
+        if not queue_number.startswith(prefix):
+            continue
+
+        try:
+            number = int(queue_number[len(prefix):])
+        except ValueError:
+            continue
+
+        highest_number = max(highest_number, number)
+
+    return highest_number
 
 
 def join_symptoms(patient_record: dict) -> dict:
