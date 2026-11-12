@@ -1,16 +1,16 @@
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
-# Docker runs by default use UTC, so this is used to make Docker use SGT
-# This matters for time and date generation for patient records
+# Docker runs by default use UTC so this is used to make Docker use SGT.
+# This matters for time and date generation for patient records.
 SGT = ZoneInfo("Asia/Singapore")
 
 DATABASE_URL_ENV_VAR = "POSTGRESQL_CLOUD_DATABASE_URL"
 
-# Folder paths, based on where this file is, not where the program is run from.
+# Folder paths
 # Every module gets its file paths from here.
 PROJECT_DIR = Path(__file__).resolve().parent.parent
-# Read-only datasets that ship with the app.
+# Read-only datasets
 DATASETS_DIR = PROJECT_DIR / "datasets"
 # Exported query results.
 QUERY_DIR = PROJECT_DIR / "query"
@@ -20,9 +20,7 @@ ICD_CSV_PATH = DATASETS_DIR / "icd11.csv"
 HSA_CSV_PATH = DATASETS_DIR / "hsa.csv"
 SYMPTOMS_CSV_PATH = DATASETS_DIR / "symptoms_umls.csv"
 
-# Fixed column order for a patient record, as shown to staff.
-# The database stores these names in lowercase (Postgres lowercases
-# unquoted names), so queries use column.lower() for the real name.
+# Fixed column order for a patient record
 RECORD_COLUMNS = [
     "date",
     "time",
@@ -30,6 +28,7 @@ RECORD_COLUMNS = [
     "name",
     "nric",
     "gender",
+    "birthdate",
     "age",
     "phone_number",
     "pregnancy",
@@ -57,6 +56,7 @@ PATIENT_COLUMNS = [
     "name",
     "nric",
     "gender",
+    "birthdate",
     "age",
     "phone_number"
 ]
