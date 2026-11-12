@@ -49,9 +49,8 @@ class ConfirmationScreen:
             lines, editable = self.__menu_lines(answers)
 
             # shows the confirmation screen box
-            self.__console.show(
-                self.__renderer.render(lines, constants.CONFIRMATION_HEADER)
-            )
+            box = self.__renderer.render(lines, constants.CONFIRMATION_HEADER)
+            self.__console.show(box)
             # prompt user for choice: Enter either a number to edit the
             # respective question or enter 17 for done / confirm inputs
             choice = self.__console.ask_normalised(constants.MENU_OPTION_PROMPT)
@@ -152,7 +151,8 @@ class ConfirmationScreen:
             if question.should_skip(answers):
                 value = constants.NOT_APPLICABLE
             else:
-                value = question.display_value(answers.get_answer(question.key))
+                answer = answers.get_answer(question.key)
+                value = question.display_value(answer)
                 editable.add(index)
             lines.append(f"{index + 1:02d}. {question.prompt}{value}")
 
@@ -183,7 +183,8 @@ class ConfirmationScreen:
             QUIT  shows nothing here (run() shows the exit message)
                   answers unchanged, returns Navigation.QUIT
         """
-        result = question.ask(self.__console, answers.get_answer(question.key))
+        previous = answers.get_answer(question.key)
+        result = question.ask(self.__console, previous)
 
         if result.navigation is Navigation.BACK:
             self.__console.show(constants.CANNOT_GO_BACK)
@@ -209,7 +210,7 @@ class ConfirmationScreen:
         missing = self.__form.first_unanswered(answers)
         if missing is None:
             return True
-        self.__console.show(
-            constants.UNANSWERED_QUESTION.format(prompt=missing.prompt.strip())
-        )
+        prompt = missing.prompt.strip()
+        message = constants.UNANSWERED_QUESTION.format(prompt=prompt)
+        self.__console.show(message)
         return False

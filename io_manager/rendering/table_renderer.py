@@ -73,10 +73,12 @@ class TableRenderer:
         # Build title box
         # Every line of a grid table is the same length, so the first
         # line gives the full width. The title box has a "|" each side.
-        grid_width = len(grid_table.splitlines()[0])
+        first_line = grid_table.splitlines()[0]
+        grid_width = len(first_line)
         inner_width = grid_width - 2
         title_border = "+" + "-" * inner_width + "+"
-        title_row = "|" + title.center(inner_width) + "|"
+        centered_title = title.center(inner_width)
+        title_row = "|" + centered_title + "|"
 
         # The table's own top border closes the title box.
         return "\n".join([title_border, title_row, grid_table])

@@ -74,7 +74,8 @@ class RegistrationForm:
 
     def __update_derived(self, answers: PatientAnswers) -> None:
         for derived in self.__derived_answers:
-            answers.record_answer(derived.key, derived.compute(answers))
+            value = derived.compute(answers)
+            answers.record_answer(derived.key, value)
 
     def __mark_skipped(self, answers: PatientAnswers) -> None:
         # Mark every question that does not apply as not applicable.
@@ -119,7 +120,9 @@ class RegistrationForm:
         # to the shared_questions list, which is then used to filter the answers mapping.
         shared_questions = [q for q in self.__questions if q.share_with_ai]
         shared_derived = [d for d in self.__derived_answers if d.share_with_ai]
-        shared_keys = [q.key for q in shared_questions] + [d.key for d in shared_derived]
+        question_keys = [q.key for q in shared_questions]
+        derived_keys = [d.key for d in shared_derived]
+        shared_keys = question_keys + derived_keys
         # .get keeps every shared key, 
         # with None for a question that has no answer (pregnancy).
         return {key: answers.get(key) for key in shared_keys}

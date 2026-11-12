@@ -27,7 +27,9 @@ class RemoveSymptomAction(SymptomMenuAction):
             console.show(constants.NO_SYMPTOMS_TO_REMOVE)
             return False
 
-        console.show(constants.CURRENT_SYMPTOMS.format(symptoms=", ".join(symptoms)))
+        symptom_list = ", ".join(symptoms)
+        message = constants.CURRENT_SYMPTOMS.format(symptoms=symptom_list)
+        console.show(message)
         # Prompts the user to input a symptom to remove, or ALL to remove all symptoms.
         prompt = constants.REMOVE_SYMPTOM_PROMPT.format(remove_all=self.REMOVE_ALL)
         target = console.ask_normalised(prompt)

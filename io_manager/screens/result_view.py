@@ -62,7 +62,8 @@ class ResultView:
 
         # First add the queue number, followed by a blank line.
         if queue_number:
-            lines.append(constants.QUEUE_NUMBER_LINE.format(queue_number=queue_number))
+            queue_line = constants.QUEUE_NUMBER_LINE.format(queue_number=queue_number)
+            lines.append(queue_line)
             lines.append("")
 
         # Then add what the patient should do next for their route.

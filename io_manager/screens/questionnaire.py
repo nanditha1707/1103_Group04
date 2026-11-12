@@ -57,7 +57,8 @@ class Questionnaire:
             # Ask the current question. The previous answer is passed in
             # so a question can start from it when the patient goes back
             # (e.g. the symptom list keeps the symptoms already added).
-            result = question.ask(self.__console, answers.get_answer(question.key))
+            previous = answers.get_answer(question.key)
+            result = question.ask(self.__console, previous)
 
             # First checks if the user typed QUIT. Stop registration
             # straight away and show the exit message.

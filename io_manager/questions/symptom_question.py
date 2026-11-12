@@ -25,7 +25,10 @@ class SymptomQuestion(Question):
         # The menu starts from the earlier symptoms, so going back to
         # this question keeps what the patient already entered.
         # previous is None the first time this question is asked.
-        starting = previous or []
+        if previous:
+            starting = previous
+        else:
+            starting = []
         return self.__menu.run(console, starting)
 
     @override

@@ -28,7 +28,10 @@ class IOManager:
     ) -> None:
         # Sets the default console to TerminalConsole, unless a separate console is fed to it during init.
         # Currently doesnt occur, will only come into play if other custom GUI's are created.
-        self.__console = console if console is not None else TerminalConsole()
+        if console is not None:
+            self.__console = console
+        else:
+            self.__console = TerminalConsole()
 
         # Sets the default factory/ registration setup to the RegistrationFactory class.
         if factory is None:
@@ -57,7 +60,8 @@ class IOManager:
     # ------------------------------------------------------------------
     def prompt_menu(self, options: list[str], header: str | None = None) -> str:
         # Print the boxed menu, and return the normalised input.
-        self.__console.show(self.__box_renderer.render(options, header))
+        menu = self.__box_renderer.render(options, header)
+        self.__console.show(menu)
         return self.__console.ask_normalised(constants.MENU_OPTION_PROMPT)
 
     def ask(self, prompt: str) -> str:
@@ -119,15 +123,18 @@ class IOManager:
         # Show the patient the result of their registration. 
         # Such as their queue number and furhter instructions
         lines = self.__result_view.build_lines(ai_output, logic_result)
-        self.__console.show(self.__box_renderer.render(lines, constants.RESULT_HEADER))
+        box = self.__box_renderer.render(lines, constants.RESULT_HEADER)
+        self.__console.show(box)
 
     def show_table(
         self, report: pd.DataFrame | Mapping[str, object], title: str = ""
     ) -> None:
         # Shows a report or query in the form of a table.
-        self.__console.show(self.__table_renderer.render(report, title))
+        table = self.__table_renderer.render(report, title)
+        self.__console.show(table)
 
     def table_fits_screen(self, columns: list[str]) -> bool:
     # Whether a table with these columns fits on screen or is too
     # wide and should be exported to a CSV instead.
-        return self.__table_renderer.fits(columns, self.__console.width())
+        screen_width = self.__console.width()
+        return self.__table_renderer.fits(columns, screen_width)

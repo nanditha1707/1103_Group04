@@ -54,7 +54,9 @@ class Question(ABC):
         skip rule checks the earlier answers, e.g. the pregnancy question
         is skipped if the patient answered "M" for gender.
         """
-        return self.__skip_rule is not None and self.__skip_rule.should_skip(answers)
+        if self.__skip_rule is None:
+            return False
+        return self.__skip_rule.should_skip(answers)
 
     @abstractmethod
     def ask(self, console: Console, previous: Answer) -> QuestionResult:

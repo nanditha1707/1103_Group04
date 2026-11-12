@@ -65,9 +65,12 @@ class BoxRenderer:
         rows = [separator]
 
         if header:
-            rows.append("|" + header.center(box_width - 2) + "|")
+            centered_header = header.center(box_width - 2)
+            rows.append("|" + centered_header + "|")
             rows.append(separator)
 
-        rows.extend("|" + f" {line}".ljust(box_width - 2) + "|" for line in lines)
+        for line in lines:
+            padded_line = f" {line}".ljust(box_width - 2)
+            rows.append("|" + padded_line + "|")
         rows.append(separator)
         return "\n".join(rows)
