@@ -6,7 +6,7 @@ import pandas as pd
 import ai_manager as ai
 from data_manager import DataManagerFactory
 import io_manager as io
-import logic_manager as logic
+from logic_manager import LogicManagerFactory
 
 ADMIN_PASSWORD = "Password"
 MENU_EXIT_MESSAGE = "Admin Password Inputted, Exiting Program Now!"
@@ -200,6 +200,8 @@ data = DataManagerFactory.create()
 # load the ICD and HSA datasets once, when the program starts
 icd_df, hsa_df = data.get_cleaned_datasets()
 io.SYMPTOMS_DIFFLIB_LIST = data.load_symptoms()
+# Create the logic manager using the HSA dataset and data_manager for queue numbers.
+logic = LogicManagerFactory.create(hsa_df, data)
 
 while True:
     # 1. I/O manager: collect the patient's answers
@@ -223,7 +225,7 @@ while True:
         continue
 
     # 3. Logic manager: decide and print the route and queue number
-    logic_result = logic.process_result(ai_output, hsa_df, data)
+    logic_result = logic.process_result(ai_output)
 
     # 4. Data manager: save the completed record to the database.
     # export_record returns None if saved, or the error message if not.
