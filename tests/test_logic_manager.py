@@ -7,7 +7,8 @@ sys.path.append(
     str(Path(__file__).resolve().parent.parent)
     )
 
-import logic_manager as logic
+from fakes import FakeQueueNumberSource
+from logic_manager import LogicManagerFactory
 
 
 # ==========================================================
@@ -51,6 +52,16 @@ def get_fake_hsa_data():
     ])
 
 
+def route_patient(ai_output):
+
+    logic = LogicManagerFactory.create(
+        get_fake_hsa_data(),
+        FakeQueueNumberSource(7)
+    )
+
+    return logic.process_result(ai_output)
+
+
 # ==========================================================
 # CASE 1 - ALL 4 MEDICINES ARE RETAIL
 # ==========================================================
@@ -78,10 +89,7 @@ def test_all_retail_medicines():
             "LOZENGES"
     }
 
-    result = logic.decide_route(
-        ai_output,
-        get_fake_hsa_data()
-    )
+    result = route_patient(ai_output)
 
     print("\nCASE 1: ALL RETAIL MEDICINES")
     print("PARACETAMOL -> Retail")
@@ -89,9 +97,12 @@ def test_all_retail_medicines():
     print("IBUPROFEN -> Retail")
     print("LOZENGES -> Retail")
     print("Expected Route: Retail")
-    print("Actual Route:", result)
+    print("Expected Queue Number: PR008")
+    print("Actual Route:", result["route"])
+    print("Actual Queue Number:", result["queue_number"])
 
-    assert result == "Retail"
+    assert result["route"] == "Retail"
+    assert result["queue_number"] == "PR008"
 
 
 # ==========================================================
@@ -121,10 +132,7 @@ def test_pharmacy_medicine_overrides_retail():
             "CHLORPHENIRAMINE"
     }
 
-    result = logic.decide_route(
-        ai_output,
-        get_fake_hsa_data()
-    )
+    result = route_patient(ai_output)
 
     print("\nCASE 2: 3 RETAIL + 1 PHARMACY")
     print("PARACETAMOL -> Retail")
@@ -132,9 +140,12 @@ def test_pharmacy_medicine_overrides_retail():
     print("IBUPROFEN -> Retail")
     print("CHLORPHENIRAMINE -> Pharmacy Only")
     print("Expected Route: Pharmacist")
-    print("Actual Route:", result)
+    print("Expected Queue Number: P008")
+    print("Actual Route:", result["route"])
+    print("Actual Queue Number:", result["queue_number"])
 
-    assert result == "Pharmacist"
+    assert result["route"] == "Pharmacist"
+    assert result["queue_number"] == "P008"
 
 
 # ==========================================================
@@ -164,10 +175,7 @@ def test_prescription_medicine_overrides_other_routes():
             "CETIRIZINE"
     }
 
-    result = logic.decide_route(
-        ai_output,
-        get_fake_hsa_data()
-    )
+    result = route_patient(ai_output)
 
     print("\nCASE 3: PRESCRIPTION MEDICINE PRESENT")
     print("PARACETAMOL -> Retail")
@@ -175,9 +183,12 @@ def test_prescription_medicine_overrides_other_routes():
     print("AMOXICILLIN -> Prescription Only")
     print("CETIRIZINE -> Retail")
     print("Expected Route: Doctor")
-    print("Actual Route:", result)
+    print("Expected Queue Number: D008")
+    print("Actual Route:", result["route"])
+    print("Actual Queue Number:", result["queue_number"])
 
-    assert result == "Doctor"
+    assert result["route"] == "Doctor"
+    assert result["queue_number"] == "D008"
 
 
 # ==========================================================
@@ -207,15 +218,15 @@ def test_emergency_overrides_medicine_routing():
             "LOZENGES"
     }
 
-    result = logic.decide_route(
-        ai_output,
-        get_fake_hsa_data()
-    )
+    result = route_patient(ai_output)
 
     print("\nCASE 4: EMERGENCY")
     print("All medicines are Retail.")
     print("AI explanation contains EMERGENCY.")
     print("Expected Route: EMERGENCY")
-    print("Actual Route:", result)
+    print("Expected Queue Number: U008")
+    print("Actual Route:", result["route"])
+    print("Actual Queue Number:", result["queue_number"])
 
-    assert result == "EMERGENCY"
+    assert result["route"] == "EMERGENCY"
+    assert result["queue_number"] == "U008"

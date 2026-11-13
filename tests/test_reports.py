@@ -3,33 +3,15 @@ from pathlib import Path
 
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 
-import data_manager as data
+from data_manager import DataManagerFactory
+from fakes import FakeDatabase
 
 
-def fake_database(monkeypatch, rows):
-    """Replace the database with one that always returns rows.
-    Returns a list that records the parameters of every query, so a
-    test can check the right date and medicine were sent."""
-
-    sent_parameters = []
-
-    def fake_fetch_rows(sql_statement, parameters):
-        sent_parameters.append(parameters)
-        return rows
-
-    monkeypatch.setattr(
-        data,
-        "fetch_rows",
-        fake_fetch_rows
-    )
-
-    return sent_parameters
-
-
-def test_medicine_count(monkeypatch):
+def test_medicine_count():
 
     # COUNT(*) returns one row with one value.
-    sent_parameters = fake_database(monkeypatch, [(2,)])
+    database = FakeDatabase([(2,)])
+    data = DataManagerFactory.create(database)
 
     result = data.get_medicine_count(
         "PARACETAMOL",
@@ -42,12 +24,12 @@ def test_medicine_count(monkeypatch):
     print("Actual:", result)
 
     assert result == {"PARACETAMOL": 2}
-    assert sent_parameters == [("2026-10-14", "PARACETAMOL")]
+    assert database.fetched_parameters == [("2026-10-14", "PARACETAMOL")]
 
 
-def test_medicine_not_issued(monkeypatch):
+def test_medicine_not_issued():
 
-    fake_database(monkeypatch, [(0,)])
+    data = DataManagerFactory.create(FakeDatabase([(0,)]))
 
     result = data.get_medicine_count(
         "IBUPROFEN",
@@ -61,13 +43,14 @@ def test_medicine_not_issued(monkeypatch):
     assert result == {}
 
 
-def test_medicine_breakdown(monkeypatch):
+def test_medicine_breakdown():
 
-    sent_parameters = fake_database(monkeypatch, [
+    database = FakeDatabase([
         ("PARACETAMOL", 2),
         ("CETIRIZINE", 1),
         ("IBUPROFEN", 1)
     ])
+    data = DataManagerFactory.create(database)
 
     result = data.get_medicine_breakdown(
         "2026-10-14"
@@ -84,16 +67,16 @@ def test_medicine_breakdown(monkeypatch):
     assert result["PARACETAMOL"] == 2
     assert result["IBUPROFEN"] == 1
     assert result["CETIRIZINE"] == 1
-    assert sent_parameters == [("2026-10-14",)]
+    assert database.fetched_parameters == [("2026-10-14",)]
 
 
-def test_patient_type_breakdown(monkeypatch):
+def test_patient_type_breakdown():
 
-    fake_database(monkeypatch, [
+    data = DataManagerFactory.create(FakeDatabase([
         ("Retail", 1),
         ("Doctor", 1),
         ("Pharmacist", 1)
-    ])
+    ]))
 
     result = data.get_patient_type_breakdown(
         "2026-10-14"
@@ -114,9 +97,9 @@ def test_patient_type_breakdown(monkeypatch):
     assert result["Retail"] == 1
 
 
-def test_reports_database_down(monkeypatch):
+def test_reports_database_down():
 
-    fake_database(monkeypatch, None)
+    data = DataManagerFactory.create(FakeDatabase(None))
 
     print("\nSCENARIO: Database Cannot Be Reached")
     print("Expected: None from every report")
