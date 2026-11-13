@@ -3,7 +3,7 @@
 # ======================================================================
 from ai_manager import AIManagerFactory
 from app import constants
-from app.portal import CurrentPatientQuery, PastPatientQuery, ReportMenu
+from app.portal import CurrentPatientQuery, HealthcarePortal, PastPatientQuery, ReportMenu
 from app.queries import AllPatientsScope, PatientQueryHandler, QueryResultPresenter, SinglePatientScope
 from app.reports import MedicineBreakdownReport, MedicineCountReport, PatientTypeBreakdownReport
 from app.triage_pipeline import TriagePipeline
@@ -16,28 +16,6 @@ from dotenv import load_dotenv
 # ======================================================================
 # CORE FUNCTIONS
 # ======================================================================
-
-def healthcare_portal_routing(option: str) -> None:
-    """Run the healthcare portal option the user chose: query today's
-    patients, query a past date, or show a report. Any error message is
-    printed. Expects option to already be checked by
-    io.validate_option."""
-    option_number = int(option)
-    error_message = None
-    # Option 1: query a patient registered today.
-    if option_number == 1:
-        error_message = current_patient_query.run()
-    # Option 2: query a patient from a date the user enters.
-    elif option_number == 2:
-        error_message = past_patient_query.run()
-
-    # Option 3: show one of the reports for a date the user enters.
-    elif option_number == 3:
-        error_message = report_menu.run()
-    else:
-        error_message= "This is not a valid option number!"
-    if error_message:
-        io.show_message(error_message)
 
 def main_menu() -> dict | int | None:
     """Show the main menu and run the option the user chose.
@@ -56,12 +34,7 @@ def main_menu() -> dict | int | None:
         # if registration did not finish.
         return io.collect_registration()
     elif main_menu_option == "2":
-        choice=io.prompt_menu(constants.HEALTHCARE_PORTAL_OPTIONS)
-        option_error= io.validate_option(choice, len(constants.HEALTHCARE_PORTAL_OPTIONS))
-        if option_error is None:
-            healthcare_portal_routing(choice)
-        else:
-            io.show_message(option_error)
+        healthcare_portal.run()
 
     elif main_menu_option == "3":
         inputted_pass=io.ask("Enter the exit code here: ")
@@ -90,9 +63,11 @@ triage_pipeline = TriagePipeline(io, ai, logic, data)
 patient_query_handler = PatientQueryHandler(
     io, data, [SinglePatientScope(io, data), AllPatientsScope(data)], QueryResultPresenter(io, data)
 )
-current_patient_query = CurrentPatientQuery(data, patient_query_handler)
-past_patient_query = PastPatientQuery(io, patient_query_handler)
-report_menu = ReportMenu(io, [MedicineCountReport(io, data), MedicineBreakdownReport(data), PatientTypeBreakdownReport(data)])
+healthcare_portal = HealthcarePortal(io, [
+    CurrentPatientQuery(data, patient_query_handler),
+    PastPatientQuery(io, patient_query_handler),
+    ReportMenu(io, [MedicineCountReport(io, data), MedicineBreakdownReport(data), PatientTypeBreakdownReport(data)])
+])
 
 while True:
     # 1. I/O manager: collect the patient's answers

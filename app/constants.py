@@ -10,12 +10,7 @@ MAIN_MENU_OPTIONS = [
     "3. Exit"
 ]
 
-HEALTHCARE_PORTAL_OPTIONS = [
-    "1. Query Current Patient Information",
-    "2. Query Past Patient Information",
-    "3. Reports"
-]
-
+HEALTHCARE_PORTAL_LABEL = "Healthcare Professional Portal"
 CURRENT_PATIENT_QUERY_LABEL = "Query Current Patient Information"
 PAST_PATIENT_QUERY_LABEL = "Query Past Patient Information"
 DATE_PROMPT = "Enter the Date here. (YYYY-MM-DD): "
