@@ -1,15 +1,17 @@
 # ======================================================================
 # IMPORT FUNCTIONS AND CONSTANTS
 # ======================================================================
-from dotenv import load_dotenv
-
-import data_manager as data
-import io_manager as io
-import logic_manager as logic
 from ai_manager import AIManagerFactory
+from data_manager import DataManagerFactory
+import io_manager as io
+from logic_manager import LogicManagerFactory
+
+from dotenv import load_dotenv
+import pandas as pd
 
 ADMIN_PASSWORD = "Password"
 MENU_EXIT_MESSAGE = "Admin Password Inputted, Exiting Program Now!"
+DATABASE_ERROR_MESSAGE = "The patient records database could not be reached, please try again later!"
 MAIN_MENU_OPTIONS = ["1. Patient Registration",
                      "2. Healthcare Professional Portal",
                      "3. Exit"]
@@ -24,6 +26,11 @@ FILTER_OPTIONS =[
     "3. AI Ouput Information", 
     "4. All Records"
                  ]
+# Asked after the filter: look up one patient, or every patient on the date.
+QUERY_SCOPE_OPTIONS = [
+    "1. One Patient (by Queue Number)",
+    "2. All Patients on This Date"
+]
 
 REPORT_OPTIONS = [
     "1. Specific Medicine Count",
@@ -36,9 +43,28 @@ REPORT_OPTIONS = [
 # CORE FUNCTIONS
 # ======================================================================
 
+def show_query_results(query_response: pd.DataFrame | None, not_found_error: str) -> str | None:
+    """Print the query results, or export them to a CSV if they are too
+    wide for the terminal. Return an error message if the database
+    failed, nothing was found or the export failed, otherwise None."""
+    error = None
+    if query_response is None:
+        error = DATABASE_ERROR_MESSAGE
+    elif query_response.empty:
+        error = not_found_error
+    else:
+        # Wide results do not fit in the terminal, so they are
+        # exported to a CSV instead of printed.
+        if io.table_fits_screen(list(query_response.columns)):
+            io.print_df_and_reports(query_response)
+        elif not data.export_query(query_response):
+            error = "The query results could not be exported!"
+    return error
+
 def patient_query_handler(date: str) -> str | None:
-    """Ask for a filter option and queue number, then print or export
-    that patient's record for the given date (YYYY-MM-DD).
+    """Ask for a filter option, then whether to look up one patient by
+    queue number or every patient, and print or export the matching
+    records for the given date (YYYY-MM-DD).
     Return an error message if anything fails, otherwise None."""
     error = None
     filter_option= io.dynamic_menu_print(FILTER_OPTIONS)
@@ -48,20 +74,24 @@ def patient_query_handler(date: str) -> str | None:
         if filter_list is None:
             error = "This is not a valid option number!"
         else:
-            queue = input("Enter the Patient's Queue Number here: ").strip().upper()
-            # Load the latest records so patients registered this session are found.
-            records = data.load_records()
-            query_response= data.get_patient_by_queue(records, queue, filter_list, date)
-            # Wide results do not fit in the terminal, so they are
-            # exported to a CSV instead of printed.
-            next_action = data.print_or_export(filter_list)
-            if query_response is not None and not query_response.empty:
-                if next_action == "print":
-                    io.print_df_and_reports(query_response)
-                elif next_action == "export" and not data.export_query(query_response):
-                    error = "The query results could not be exported!"
+            # Both options query the database directly, so patients
+            # registered by other users are found too.
+            scope_option = io.dynamic_menu_print(QUERY_SCOPE_OPTIONS)
+            if scope_option == "1":
+                queue = input("Enter the Patient's Queue Number here: ").strip().upper()
+                query_response= data.get_patient_by_queue(queue, filter_list, date)
+                error = show_query_results(
+                    query_response,
+                    "There is no such patient, please enter a valid queue number!"
+                )
+            elif scope_option == "2":
+                query_response = data.get_patients_by_date(filter_list, date)
+                error = show_query_results(
+                    query_response,
+                    "There are no patient records for this date!"
+                )
             else:
-                error ="There is no such patient, please enter a valid queue number!"
+                error = "This is not a valid option number!"
     else:
         error = option_error
     return error
@@ -92,23 +122,25 @@ def healthcare_portal_routing(option: str) -> None:
             date = input("Enter the Date here. (YYYY-MM-DD): ").strip()
             date_error = io.validate_date(date)
             if date_error is None:
-                previous_records_df = data.load_records()
                 result = None
                 header = ""
                 if report_option == "1":
                     medicine = input("Enter a medicine name: ").strip().upper()
-                    result = data.get_medicine_count(previous_records_df,medicine, date)
+                    result = data.get_medicine_count(medicine, date)
                     header = ""
                 elif report_option == "2":
-                    result = data.get_medicine_breakdown(previous_records_df, date)
+                    result = data.get_medicine_breakdown(date)
                     header = "Medicine Breakdown Report"
                 elif report_option == "3":
-                    result = data.get_patient_type_breakdown(previous_records_df, date)
+                    result = data.get_patient_type_breakdown(date)
                     header = "Patient Type Breakdown Report"
                 else:
                     error_message = "This is not a valid option number!"
+                # A valid report returns None only if the database failed.
+                if result is None and error_message is None:
+                    error_message = DATABASE_ERROR_MESSAGE
                 # An empty report means nothing matched the date.
-                if result:
+                elif result:
                     io.print_df_and_reports(result, header)
                 elif error_message is None:
                     error_message= "There is no matching records for the given date!"
@@ -164,6 +196,8 @@ def main_menu() -> dict | int | None:
 
     return None
 
+data = DataManagerFactory.create()
+
 # load the ICD and HSA datasets once, when the program starts
 icd_df, hsa_df = data.get_cleaned_datasets()
 # Read the AI API keys from the local .env file
@@ -171,8 +205,9 @@ load_dotenv(override=True)
 # The AI manager checks every AI answer against the same datasets that
 # logic_manager routes with, so every valid medicine can be routed
 ai = AIManagerFactory.create(icd_df, hsa_df)
-# Copy the starter patient records on the first run
-data.create_records_file_if_missing()
+io.SYMPTOMS_DIFFLIB_LIST = data.load_symptoms()
+# Create the logic manager using the HSA dataset and data_manager for queue numbers.
+logic = LogicManagerFactory.create(hsa_df, data)
 
 while True:
     # 1. I/O manager: collect the patient's answers
@@ -196,13 +231,15 @@ while True:
         continue
 
     # 3. Logic manager: decide and print the route and queue number
-    logic_result = logic.process_result(ai_output, hsa_df)
+    logic_result = logic.process_result(ai_output)
 
-    # 4. Data manager: save the completed record to patient_records.csv
-    is_export=data.export_record(answers, ai_output, logic_result)
-    if not is_export:
-        error=("The program has encountered an error."
-              "Please approach a nurse or clerk for manual registration.")
+    # 4. Data manager: save the completed record to the database.
+    # export_record returns None if saved, or the error message if not.
+    export_error = data.export_record(answers, ai_output, logic_result)
+    if export_error is not None:
+        error = ("The program has encountered an error. "
+                 "Please approach a nurse or clerk for manual registration.\n"
+                 f"Error: {export_error}")
         io.print_message(error)
     else:
         # 5. I/O manager: tell the patient what to do next
