@@ -3,35 +3,17 @@
 # ======================================================================
 from ai_manager import AIManagerFactory
 from app import constants
+from app.queries import QueryResultPresenter
 from app.triage_pipeline import TriagePipeline
 from data_manager import DataManagerFactory
 from io_manager import IOManager
 from logic_manager import LogicManagerFactory
 
 from dotenv import load_dotenv
-import pandas as pd
 
 # ======================================================================
 # CORE FUNCTIONS
 # ======================================================================
-
-def show_query_results(query_response: pd.DataFrame | None, not_found_error: str) -> str | None:
-    """Print the query results, or export them to a CSV if they are too
-    wide for the terminal. Return an error message if the database
-    failed, nothing was found or the export failed, otherwise None."""
-    error = None
-    if query_response is None:
-        error = constants.DATABASE_ERROR_MESSAGE
-    elif query_response.empty:
-        error = not_found_error
-    else:
-        # Wide results do not fit in the terminal, so they are
-        # exported to a CSV instead of printed.
-        if io.table_fits_screen(list(query_response.columns)):
-            io.show_table(query_response)
-        elif not data.export_query(query_response):
-            error = "The query results could not be exported!"
-    return error
 
 def patient_query_handler(date: str) -> str | None:
     """Ask for a filter option, then whether to look up one patient by
@@ -52,13 +34,13 @@ def patient_query_handler(date: str) -> str | None:
             if scope_option == "1":
                 queue = io.ask("Enter the Patient's Queue Number here: ").strip().upper()
                 query_response= data.get_patient_by_queue(queue, filter_list, date)
-                error = show_query_results(
+                error = query_result_presenter.show(
                     query_response,
                     "There is no such patient, please enter a valid queue number!"
                 )
             elif scope_option == "2":
                 query_response = data.get_patients_by_date(filter_list, date)
-                error = show_query_results(
+                error = query_result_presenter.show(
                     query_response,
                     "There are no patient records for this date!"
                 )
@@ -173,6 +155,7 @@ io = IOManager(symptom_terms=data.load_symptoms())
 # Create the logic manager using the HSA dataset and data_manager for queue numbers.
 logic = LogicManagerFactory.create(hsa_df, data)
 triage_pipeline = TriagePipeline(io, ai, logic, data)
+query_result_presenter = QueryResultPresenter(io, data)
 
 while True:
     # 1. I/O manager: collect the patient's answers

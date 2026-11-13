@@ -28,6 +28,8 @@ QUERY_SCOPE_OPTIONS = [
     "2. All Patients on This Date"
 ]
 
+EXPORT_FAILED_MESSAGE = "The query results could not be exported!"
+
 REPORT_OPTIONS = [
     "1. Specific Medicine Count",
     "2. Medicine Breakdown",
