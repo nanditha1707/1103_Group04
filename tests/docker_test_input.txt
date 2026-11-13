@@ -28,7 +28,7 @@ N
 1
 # Please enter one of the following options (4 = Fever)
 4
-# Is your fever above 39.0 degrees celcius? (Y/N)
+# Is your temperature 39.0 degrees Celsius or higher? (Y/N)
 N
 # Please enter one of the following options (7 = Done)
 7
