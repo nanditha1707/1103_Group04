@@ -3,6 +3,7 @@
 # ======================================================================
 from ai_manager import AIManagerFactory
 from app import constants
+from app.portal import CurrentPatientQuery, PastPatientQuery
 from app.queries import AllPatientsScope, PatientQueryHandler, QueryResultPresenter, SinglePatientScope
 from app.triage_pipeline import TriagePipeline
 from data_manager import DataManagerFactory
@@ -22,16 +23,12 @@ def healthcare_portal_routing(option: str) -> None:
     io.validate_option."""
     option_number = int(option)
     error_message = None
-    today = data.get_current_date()
     # Option 1: query a patient registered today.
     if option_number == 1:
-        error_message = patient_query_handler.handle(today)
+        error_message = current_patient_query.run()
     # Option 2: query a patient from a date the user enters.
     elif option_number == 2:
-        datetime_answer = io.ask("Enter the Date here. (YYYY-MM-DD): ").strip()
-        error_message = io.validate_date(datetime_answer)
-        if error_message is None:
-            error_message = patient_query_handler.handle(datetime_answer)
+        error_message = past_patient_query.run()
 
     # Option 3: show one of the reports for a date the user enters.
     elif option_number == 3:
@@ -123,6 +120,8 @@ triage_pipeline = TriagePipeline(io, ai, logic, data)
 patient_query_handler = PatientQueryHandler(
     io, data, [SinglePatientScope(io, data), AllPatientsScope(data)], QueryResultPresenter(io, data)
 )
+current_patient_query = CurrentPatientQuery(data, patient_query_handler)
+past_patient_query = PastPatientQuery(io, patient_query_handler)
 
 while True:
     # 1. I/O manager: collect the patient's answers

@@ -16,6 +16,10 @@ HEALTHCARE_PORTAL_OPTIONS = [
     "3. Reports"
 ]
 
+CURRENT_PATIENT_QUERY_LABEL = "Query Current Patient Information"
+PAST_PATIENT_QUERY_LABEL = "Query Past Patient Information"
+DATE_PROMPT = "Enter the Date here. (YYYY-MM-DD): "
+
 FILTER_OPTIONS = [
     "1. Patient Information",
     "2. Medical Information",
