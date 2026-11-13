@@ -36,6 +36,9 @@ NO_PATIENTS_ON_DATE_MESSAGE = "There are no patient records for this date!"
 
 EXPORT_FAILED_MESSAGE = "The query results could not be exported!"
 
+REPORTS_LABEL = "Reports"
+REPORT_MENU_HEADER = "Reports"
+NO_MATCHING_RECORDS_MESSAGE = "There is no matching records for the given date!"
 MEDICINE_COUNT_LABEL = "Specific Medicine Count"
 MEDICINE_BREAKDOWN_LABEL = "Medicine Breakdown"
 PATIENT_TYPE_BREAKDOWN_LABEL = "Patient Type Breakdown"
