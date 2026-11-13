@@ -2,43 +2,13 @@
 # IMPORT FUNCTIONS AND CONSTANTS
 # ======================================================================
 from ai_manager import AIManagerFactory
+from app import constants
 from data_manager import DataManagerFactory
 from io_manager import IOManager
 from logic_manager import LogicManagerFactory
 
 from dotenv import load_dotenv
 import pandas as pd
-
-QUIT_SIGNAL = -99
-ADMIN_PASSWORD = "Password"
-MENU_EXIT_MESSAGE = "Admin Password Inputted, Exiting Program Now!"
-DATABASE_ERROR_MESSAGE = "The patient records database could not be reached, please try again later!"
-MAIN_MENU_OPTIONS = ["1. Patient Registration",
-                     "2. Healthcare Professional Portal",
-                     "3. Exit"]
-HEALTHCARE_PORTAL_OPTIONS = [
-    "1. Query Current Patient Information",
-    "2. Query Past Patient Information",
-    "3. Reports",
-                             ]
-FILTER_OPTIONS =[
-    "1. Patient Information", 
-    "2. Medical Information", 
-    "3. AI Ouput Information", 
-    "4. All Records"
-                 ]
-# Asked after the filter: look up one patient, or every patient on the date.
-QUERY_SCOPE_OPTIONS = [
-    "1. One Patient (by Queue Number)",
-    "2. All Patients on This Date"
-]
-
-REPORT_OPTIONS = [
-    "1. Specific Medicine Count",
-    "2. Medicine Breakdown",
-    "3. Patient Type Breakdown"
-]
-
 
 # ======================================================================
 # CORE FUNCTIONS
@@ -50,7 +20,7 @@ def show_query_results(query_response: pd.DataFrame | None, not_found_error: str
     failed, nothing was found or the export failed, otherwise None."""
     error = None
     if query_response is None:
-        error = DATABASE_ERROR_MESSAGE
+        error = constants.DATABASE_ERROR_MESSAGE
     elif query_response.empty:
         error = not_found_error
     else:
@@ -68,8 +38,8 @@ def patient_query_handler(date: str) -> str | None:
     records for the given date (YYYY-MM-DD).
     Return an error message if anything fails, otherwise None."""
     error = None
-    filter_option= io.prompt_menu(FILTER_OPTIONS)
-    option_error = io.validate_option(filter_option, len(FILTER_OPTIONS))
+    filter_option= io.prompt_menu(constants.FILTER_OPTIONS)
+    option_error = io.validate_option(filter_option, len(constants.FILTER_OPTIONS))
     if option_error is None:
         filter_list= data.get_patient_filter(filter_option)
         if filter_list is None:
@@ -77,7 +47,7 @@ def patient_query_handler(date: str) -> str | None:
         else:
             # Both options query the database directly, so patients
             # registered by other users are found too.
-            scope_option = io.prompt_menu(QUERY_SCOPE_OPTIONS)
+            scope_option = io.prompt_menu(constants.QUERY_SCOPE_OPTIONS)
             if scope_option == "1":
                 queue = io.ask("Enter the Patient's Queue Number here: ").strip().upper()
                 query_response= data.get_patient_by_queue(queue, filter_list, date)
@@ -117,8 +87,8 @@ def healthcare_portal_routing(option: str) -> None:
 
     # Option 3: show one of the reports for a date the user enters.
     elif option_number == 3:
-        report_option = io.prompt_menu(REPORT_OPTIONS,"Reports")
-        option_error = io.validate_option(report_option, len(REPORT_OPTIONS))
+        report_option = io.prompt_menu(constants.REPORT_OPTIONS,"Reports")
+        option_error = io.validate_option(report_option, len(constants.REPORT_OPTIONS))
         if option_error is None:
             date = io.ask("Enter the Date here. (YYYY-MM-DD): ").strip()
             date_error = io.validate_date(date)
@@ -139,7 +109,7 @@ def healthcare_portal_routing(option: str) -> None:
                     error_message = "This is not a valid option number!"
                 # A valid report returns None only if the database failed.
                 if result is None and error_message is None:
-                    error_message = DATABASE_ERROR_MESSAGE
+                    error_message = constants.DATABASE_ERROR_MESSAGE
                 # An empty report means nothing matched the date.
                 elif result:
                     io.show_table(result, header)
@@ -161,7 +131,7 @@ def main_menu() -> dict | int | None:
     registration, QUIT_SIGNAL if the admin password was entered to
     exit, or None for anything else so the menu is shown again."""
     header = "Main Menu"
-    main_menu_option= io.prompt_menu(MAIN_MENU_OPTIONS, header)
+    main_menu_option= io.prompt_menu(constants.MAIN_MENU_OPTIONS, header)
     if main_menu_option not in ["1","2","3"]:
         error = "This is not a valid option!"
         io.show_message(error)
@@ -171,8 +141,8 @@ def main_menu() -> dict | int | None:
         # if registration did not finish.
         return io.collect_registration()
     elif main_menu_option == "2":
-        choice=io.prompt_menu(HEALTHCARE_PORTAL_OPTIONS)
-        option_error= io.validate_option(choice, len(HEALTHCARE_PORTAL_OPTIONS))
+        choice=io.prompt_menu(constants.HEALTHCARE_PORTAL_OPTIONS)
+        option_error= io.validate_option(choice, len(constants.HEALTHCARE_PORTAL_OPTIONS))
         if option_error is None:
             healthcare_portal_routing(choice)
         else:
@@ -180,9 +150,9 @@ def main_menu() -> dict | int | None:
 
     elif main_menu_option == "3":
         inputted_pass=io.ask("Enter the exit code here: ")
-        if inputted_pass == ADMIN_PASSWORD:
-            io.show_message(MENU_EXIT_MESSAGE)
-            return QUIT_SIGNAL
+        if inputted_pass == constants.ADMIN_PASSWORD:
+            io.show_message(constants.MENU_EXIT_MESSAGE)
+            return constants.QUIT_SIGNAL
         else:
             error="This is not the right password!"
             io.show_message(error)
@@ -205,7 +175,7 @@ logic = LogicManagerFactory.create(hsa_df, data)
 while True:
     # 1. I/O manager: collect the patient's answers
     answers=main_menu()
-    if answers == QUIT_SIGNAL:
+    if answers == constants.QUIT_SIGNAL:
         break
     if answers is None:
         continue
