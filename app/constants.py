@@ -1,5 +1,6 @@
 MAIN_MENU_HEADER = "Main Menu"
 REGISTRATION_LABEL = "Patient Registration"
+HEALTHCARE_PORTAL_LABEL = "Healthcare Professional Portal"
 EXIT_LABEL = "Exit"
 INVALID_MENU_OPTION_MESSAGE = "This is not a valid option!"
 
@@ -8,13 +9,16 @@ EXIT_CODE_PROMPT = "Enter the exit code here: "
 MENU_EXIT_MESSAGE = "Admin Password Inputted, Exiting Program Now!"
 WRONG_PASSWORD_MESSAGE = "This is not the right password!"
 
-DATABASE_ERROR_MESSAGE = "The patient records database could not be reached, please try again later!"
-INVALID_OPTION_NUMBER_MESSAGE = "This is not a valid option number!"
+RECORD_SAVE_FAILED_MESSAGE = ("The program has encountered an error. "
+                              "Please approach a nurse or clerk for manual registration.\n"
+                              "Error: {error}")
 
-HEALTHCARE_PORTAL_LABEL = "Healthcare Professional Portal"
 CURRENT_PATIENT_QUERY_LABEL = "Query Current Patient Information"
 PAST_PATIENT_QUERY_LABEL = "Query Past Patient Information"
+REPORTS_LABEL = "Reports"
 DATE_PROMPT = "Enter the Date here. (YYYY-MM-DD): "
+INVALID_OPTION_NUMBER_MESSAGE = "This is not a valid option number!"
+DATABASE_ERROR_MESSAGE = "The patient records database could not be reached, please try again later!"
 
 FILTER_OPTIONS = [
     "1. Patient Information",
@@ -29,12 +33,9 @@ ALL_PATIENTS_LABEL = "All Patients on This Date"
 QUEUE_NUMBER_PROMPT = "Enter the Patient's Queue Number here: "
 PATIENT_NOT_FOUND_MESSAGE = "There is no such patient, please enter a valid queue number!"
 NO_PATIENTS_ON_DATE_MESSAGE = "There are no patient records for this date!"
-
 EXPORT_FAILED_MESSAGE = "The query results could not be exported!"
 
-REPORTS_LABEL = "Reports"
 REPORT_MENU_HEADER = "Reports"
-NO_MATCHING_RECORDS_MESSAGE = "There is no matching records for the given date!"
 MEDICINE_COUNT_LABEL = "Specific Medicine Count"
 MEDICINE_BREAKDOWN_LABEL = "Medicine Breakdown"
 PATIENT_TYPE_BREAKDOWN_LABEL = "Patient Type Breakdown"
@@ -42,7 +43,4 @@ MEDICINE_COUNT_HEADER = ""
 MEDICINE_BREAKDOWN_HEADER = "Medicine Breakdown Report"
 PATIENT_TYPE_BREAKDOWN_HEADER = "Patient Type Breakdown Report"
 MEDICINE_PROMPT = "Enter a medicine name: "
-
-RECORD_SAVE_FAILED_MESSAGE = ("The program has encountered an error. "
-                              "Please approach a nurse or clerk for manual registration.\n"
-                              "Error: {error}")
+NO_MATCHING_RECORDS_MESSAGE = "There is no matching records for the given date!"
