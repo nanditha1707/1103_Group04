@@ -1,14 +1,15 @@
-QUIT_SIGNAL = -99
+MAIN_MENU_HEADER = "Main Menu"
+REGISTRATION_LABEL = "Patient Registration"
+EXIT_LABEL = "Exit"
+INVALID_MENU_OPTION_MESSAGE = "This is not a valid option!"
+
 ADMIN_PASSWORD = "Password"
+EXIT_CODE_PROMPT = "Enter the exit code here: "
 MENU_EXIT_MESSAGE = "Admin Password Inputted, Exiting Program Now!"
+WRONG_PASSWORD_MESSAGE = "This is not the right password!"
+
 DATABASE_ERROR_MESSAGE = "The patient records database could not be reached, please try again later!"
 INVALID_OPTION_NUMBER_MESSAGE = "This is not a valid option number!"
-
-MAIN_MENU_OPTIONS = [
-    "1. Patient Registration",
-    "2. Healthcare Professional Portal",
-    "3. Exit"
-]
 
 HEALTHCARE_PORTAL_LABEL = "Healthcare Professional Portal"
 CURRENT_PATIENT_QUERY_LABEL = "Query Current Patient Information"
