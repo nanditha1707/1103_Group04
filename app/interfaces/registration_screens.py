@@ -12,5 +12,5 @@ class RegistrationScreens(Protocol):
     def filter_for_ai(self, answers: Mapping[str, Answer]) -> dict[str, Answer]:
         pass
 
-    def show_result(self, ai_output: Mapping[str, object], logic_result: Mapping[str, str | None]) -> None:
+    def show_result(self, logic_result: Mapping[str, str | None]) -> None:
         pass

@@ -128,11 +128,11 @@ class IOManager:
         self.__console.show(message)
 
     def show_result(
-        self, ai_output: Mapping[str, object], logic_result: Mapping[str, str | None]
+        self, logic_result: Mapping[str, str | None]
     ) -> None:
-        # Show the patient the result of their registration. 
+        # Show the patient the result of their registration.
         # Such as their queue number and furhter instructions
-        lines = self.__result_view.build_lines(ai_output, logic_result)
+        lines = self.__result_view.build_lines(logic_result)
         box = self.__box_renderer.render(lines, constants.RESULT_HEADER)
         self.__console.show(box)
 

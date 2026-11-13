@@ -38,4 +38,4 @@ class TriagePipeline:
             self.__prompt.show_message(constants.RECORD_SAVE_FAILED_MESSAGE.format(error=export_error))
         else:
             # 5. I/O manager: tell the patient what to do next
-            self.__screens.show_result(ai_output, logic_result)
+            self.__screens.show_result(logic_result)
