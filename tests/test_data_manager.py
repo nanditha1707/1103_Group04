@@ -142,29 +142,67 @@ def test_patient_filters():
     assert all_filter == data.RECORD_COLUMNS
 
 
+
+
+# ==========================================================
+# FAKE DATABASE CONNECTION
+# ==========================================================
+# Stands in for psycopg.connect so the tests never touch the real
+# cloud database. It records every statement it is asked to run.
+
+class FakeCursor:
+
+    def __init__(self):
+        self.executed = []
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        return False
+
+    def execute(self, sql_statement, parameters):
+        self.executed.append((sql_statement, parameters))
+
+    def fetchall(self):
+        return []
+
+
+class FakeConnection:
+
+    def __init__(self):
+        self.fake_cursor = FakeCursor()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        return False
+
+    def cursor(self):
+        return self.fake_cursor
+
+
 # ==========================================================
 # TEST 5 - FIND EXISTING PATIENT
 # ==========================================================
 
-def test_get_patient_by_queue():
+def test_get_patient_by_queue(monkeypatch):
 
-    fake_records = pd.DataFrame([
-        {
-            "date": "2026-10-14",
-            "queue_number": "D001",
-            "name": "Alex Tan",
-            "age": 25
-        },
-        {
-            "date": "2026-10-14",
-            "queue_number": "P001",
-            "name": "Betty Lim",
-            "age": 30
-        }
-    ])
+    sent_parameters = []
+
+    # The database returns one row, with the columns in the order asked.
+    def fake_fetch_rows(sql_statement, parameters):
+        sent_parameters.append(parameters)
+        return [("Alex Tan", 25)]
+
+    monkeypatch.setattr(
+        data,
+        "fetch_rows",
+        fake_fetch_rows
+    )
 
     result = data.get_patient_by_queue(
-        fake_records,
         "D001",
         ["name", "age"],
         "2026-10-14"
@@ -176,27 +214,25 @@ def test_get_patient_by_queue():
     print("Actual:")
     print(result)
 
-    assert not result.empty
+    assert list(result.columns) == ["name", "age"]
     assert result.iloc[0]["name"] == "Alex Tan"
     assert result.iloc[0]["age"] == 25
+    assert sent_parameters == [("D001", "2026-10-14")]
 
 
 # ==========================================================
 # TEST 6 - PATIENT DOES NOT EXIST
 # ==========================================================
 
-def test_patient_not_found():
+def test_patient_not_found(monkeypatch):
 
-    fake_records = pd.DataFrame([
-        {
-            "date": "2026-10-14",
-            "queue_number": "D001",
-            "name": "Alex Tan"
-        }
-    ])
+    monkeypatch.setattr(
+        data,
+        "fetch_rows",
+        lambda sql_statement, parameters: []
+    )
 
     result = data.get_patient_by_queue(
-        fake_records,
         "D999",
         ["name"],
         "2026-10-14"
@@ -215,24 +251,14 @@ def test_patient_not_found():
 # TEST 7 - EXPORT PATIENT RECORD
 # ==========================================================
 
-def test_export_record(tmp_path, monkeypatch):
+def test_export_record(monkeypatch):
 
-    test_records_path = (
-        tmp_path / "patient_records.csv"
-    )
-
-    test_records_dir = tmp_path
+    fake_connection = FakeConnection()
 
     monkeypatch.setattr(
-        data,
-        "RECORDS_CSV_PATH",
-        test_records_path
-    )
-
-    monkeypatch.setattr(
-        data,
-        "RECORDS_DIR",
-        test_records_dir
+        data.psycopg,
+        "connect",
+        lambda url: fake_connection
     )
 
     user_answers = {
@@ -249,7 +275,8 @@ def test_export_record(tmp_path, monkeypatch):
         "symptom_onset_days": 2,
         "chronic_conditions": "N",
         "current_medications": "N",
-        "drug_allergies": "N"
+        "drug_allergies": "N",
+        "consent": "Y"
     }
 
     ai_output = {
@@ -279,65 +306,115 @@ def test_export_record(tmp_path, monkeypatch):
         logic_result
     )
 
-    saved_records = pd.read_csv(
-        test_records_path
-    )
+    executed = fake_connection.fake_cursor.executed
+    saved_record = executed[0][1]
 
     print("\nSCENARIO: Export Patient Record")
     print("Expected Saved Patient: Charlie Ng")
     print("Expected Queue: D001")
     print("Expected Symptoms: COUGH, FEVER")
     print("Actual:")
-    print(saved_records)
+    print(saved_record)
 
-    assert result is True
-    assert len(saved_records) == 1
-    assert saved_records.iloc[0]["name"] == "Charlie Ng"
-    assert saved_records.iloc[0]["queue_number"] == "D001"
-    assert saved_records.iloc[0]["current_symptoms"] == (
-        "COUGH, FEVER"
-    )
+    assert result is None
+    assert len(executed) == 1
+    assert "INSERT INTO patient_records" in executed[0][0]
+    assert saved_record["name"] == "Charlie Ng"
+    assert saved_record["queue_number"] == "D001"
+    assert saved_record["current_symptoms"] == "COUGH, FEVER"
+    # Only record columns are saved, so extra keys like consent are left out.
+    assert list(saved_record) == data.RECORD_COLUMNS
 
 
 # ==========================================================
-# TEST 8 - LOAD PATIENT RECORDS
+# TEST 8 - DATABASE CANNOT BE REACHED
 # ==========================================================
 
-def test_load_records(tmp_path, monkeypatch):
+def test_database_down(monkeypatch):
 
-    test_file = tmp_path / "patient_records.csv"
+    def fake_connect(url):
+        raise data.psycopg.OperationalError("connection refused")
 
-    fake_records = pd.DataFrame([
-        {
-            "date": "2026-10-14",
-            "queue_number": "D001",
-            "name": "Alex Tan"
-        },
-        {
-            "date": "2026-10-14",
-            "queue_number": "P001",
-            "name": "Betty Lim"
-        }
-    ])
-
-    fake_records.to_csv(
-        test_file,
-        index=False
+    monkeypatch.setattr(
+        data.psycopg,
+        "connect",
+        fake_connect
     )
+
+    fetch_result = data.fetch_rows(
+        "SELECT 1",
+        ()
+    )
+    export_result = data.export_record(
+        {"name": "Charlie Ng"},
+        {},
+        {"queue_number": "D001"}
+    )
+
+    print("\nSCENARIO: Database Cannot Be Reached")
+    print("Expected fetch_rows: None")
+    print("Expected export_record: an error message")
+    print("Actual:", fetch_result, "|", export_result)
+
+    assert fetch_result is None
+    assert "connection refused" in export_result
+
+
+# ==========================================================
+# TEST 9 - ALL PATIENTS ON A DATE
+# ==========================================================
+
+def test_get_patients_by_date(monkeypatch):
+
+    sent_parameters = []
+
+    # The database returns one row per patient, columns in the order asked.
+    def fake_fetch_rows(sql_statement, parameters):
+        sent_parameters.append(parameters)
+        return [
+            ("09:00:00", "D001", "Alex Tan"),
+            ("09:30:00", "P001", "Betty Lim")
+        ]
 
     monkeypatch.setattr(
         data,
-        "RECORDS_CSV_PATH",
-        test_file
+        "fetch_rows",
+        fake_fetch_rows
     )
 
-    result = data.load_records()
+    result = data.get_patients_by_date(
+        ["name"],
+        "2026-10-14"
+    )
 
-    print("\nSCENARIO: Load Patient Records")
-    print("Expected Records: 2")
-    print("Actual Records:", len(result))
+    print("\nSCENARIO: All Patients On A Date")
+    print("Expected Patients: Alex Tan, Betty Lim")
+    print("Actual:")
     print(result)
 
-    assert len(result) == 2
-    assert result.iloc[0]["name"] == "Alex Tan"
-    assert result.iloc[1]["name"] == "Betty Lim"
+    # Time and queue number are added in front to tell the rows apart.
+    assert list(result.columns) == ["time", "queue_number", "name"]
+    assert list(result["name"]) == ["Alex Tan", "Betty Lim"]
+    assert sent_parameters == [("2026-10-14",)]
+
+
+def test_get_patients_by_date_keeps_existing_columns(monkeypatch):
+
+    monkeypatch.setattr(
+        data,
+        "fetch_rows",
+        lambda sql_statement, parameters: []
+    )
+
+    result = data.get_patients_by_date(
+        data.RECORD_COLUMNS,
+        "2026-10-14"
+    )
+
+    print("\nSCENARIO: All Records Filter, No Patients")
+    print("Expected: Empty result with no repeated columns")
+    print("Actual:", list(result.columns)[:4], "...")
+
+    # RECORD_COLUMNS already has time and queue_number, so nothing is added.
+    assert list(result.columns) == data.RECORD_COLUMNS
+    assert result.empty
