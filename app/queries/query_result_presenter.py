@@ -1,17 +1,16 @@
 import pandas as pd
 
 from app import constants
-from data_manager import DataManager
-from io_manager import IOManager
+from app.interfaces import PatientRecords, TableDisplay
 
 
 class QueryResultPresenter:
 
     def __init__(
-        self, io: IOManager, data: DataManager
+        self, tables: TableDisplay, records: PatientRecords
     ) -> None:
-        self.__io = io
-        self.__data = data
+        self.__tables = tables
+        self.__records = records
 
     def show(self, query_response: pd.DataFrame | None, not_found_error: str) -> str | None:
         error = None
@@ -22,8 +21,8 @@ class QueryResultPresenter:
         else:
             # Wide results do not fit in the terminal, so they are
             # exported to a CSV instead of printed.
-            if self.__io.table_fits_screen(list(query_response.columns)):
-                self.__io.show_table(query_response)
-            elif not self.__data.export_query(query_response):
+            if self.__tables.table_fits_screen(list(query_response.columns)):
+                self.__tables.show_table(query_response)
+            elif not self.__records.export_query(query_response):
                 error = constants.EXPORT_FAILED_MESSAGE
         return error

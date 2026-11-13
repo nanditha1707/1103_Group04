@@ -30,7 +30,8 @@ class ApplicationFactory:
         # Create the logic manager using the HSA dataset and data_manager for queue numbers.
         logic = LogicManagerFactory.create(hsa_df, data)
 
-        registration = RegistrationAction(io, TriagePipeline(io, ai, logic, data))
+        triage_pipeline = TriagePipeline(screens=io, prompt=io, diagnoser=ai, router=logic, records=data)
+        registration = RegistrationAction(io, triage_pipeline)
         healthcare_portal = ApplicationFactory.__create_healthcare_portal(io, data)
         return Application(MainMenu(io, [registration, healthcare_portal, ExitAction(io)]))
 
@@ -43,5 +44,5 @@ class ApplicationFactory:
         return HealthcarePortal(io, [
             CurrentPatientQuery(data, query_handler),
             PastPatientQuery(io, query_handler),
-            ReportMenu(io, reports)
+            ReportMenu(io, io, reports)
         ])
