@@ -16,8 +16,5 @@ class NumberedOptions[T: MenuOption]:
     def lines(self) -> list[str]:
         return [f"{number}. {option.label}" for number, option in enumerate(self.__options, start=1)]
 
-    def find(self, choice: str) -> T | None:
-        for number, option in enumerate(self.__options, start=1):
-            if choice == str(number):
-                return option
-        return None
+    def get(self, choice: str) -> T:
+        return self.__options[int(choice) - 1]

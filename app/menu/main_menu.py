@@ -17,8 +17,8 @@ class MainMenu:
 
     def run_once(self) -> bool:
         choice = self.__io.prompt_menu(self.__actions.lines(), constants.MAIN_MENU_HEADER)
-        action = self.__actions.find(choice)
-        if action is None:
-            self.__io.show_message(constants.INVALID_MENU_OPTION_MESSAGE)
+        error = self.__io.validate_option(choice, len(self.__actions))
+        if error is not None:
+            self.__io.show_message(error)
             return True
-        return action.run()
+        return self.__actions.get(choice).run()

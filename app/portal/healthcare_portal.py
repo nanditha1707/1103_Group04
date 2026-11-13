@@ -23,11 +23,7 @@ class HealthcarePortal(MenuAction):
         choice = self.__io.prompt_menu(self.__actions.lines())
         error = self.__io.validate_option(choice, len(self.__actions))
         if error is None:
-            action = self.__actions.find(str(int(choice)))
-            if action is None:
-                error = constants.INVALID_OPTION_NUMBER_MESSAGE
-            else:
-                error = action.run()
+            error = self.__actions.get(choice).run()
         if error:
             self.__io.show_message(error)
         return True

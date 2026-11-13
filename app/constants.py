@@ -2,7 +2,6 @@ MAIN_MENU_HEADER = "Main Menu"
 REGISTRATION_LABEL = "Patient Registration"
 HEALTHCARE_PORTAL_LABEL = "Healthcare Professional Portal"
 EXIT_LABEL = "Exit"
-INVALID_MENU_OPTION_MESSAGE = "This is not a valid option!"
 
 ADMIN_PASSWORD = "Password"
 EXIT_CODE_PROMPT = "Enter the exit code here: "
@@ -17,7 +16,6 @@ CURRENT_PATIENT_QUERY_LABEL = "Query Current Patient Information"
 PAST_PATIENT_QUERY_LABEL = "Query Past Patient Information"
 REPORTS_LABEL = "Reports"
 DATE_PROMPT = "Enter the Date here. (YYYY-MM-DD): "
-INVALID_OPTION_NUMBER_MESSAGE = "This is not a valid option number!"
 DATABASE_ERROR_MESSAGE = "The patient records database could not be reached, please try again later!"
 
 FILTER_OPTIONS = [
@@ -26,6 +24,7 @@ FILTER_OPTIONS = [
     "3. AI Ouput Information",
     "4. All Records"
 ]
+INVALID_FILTER_MESSAGE = "This is not a valid option number!"
 
 # Asked after the filter: look up one patient, or every patient on the date.
 SINGLE_PATIENT_LABEL = "One Patient (by Queue Number)"

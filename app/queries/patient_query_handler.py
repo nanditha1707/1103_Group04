@@ -27,12 +27,14 @@ class PatientQueryHandler:
 
         filter_columns = self.__data.get_patient_filter(filter_option)
         if filter_columns is None:
-            return constants.INVALID_OPTION_NUMBER_MESSAGE
+            return constants.INVALID_FILTER_MESSAGE
 
         # Both options query the database directly, so patients
         # registered by other users are found too.
-        scope = self.__scopes.find(self.__io.prompt_menu(self.__scopes.lines()))
-        if scope is None:
-            return constants.INVALID_OPTION_NUMBER_MESSAGE
+        scope_option = self.__io.prompt_menu(self.__scopes.lines())
+        error = self.__io.validate_option(scope_option, len(self.__scopes))
+        if error is not None:
+            return error
 
+        scope = self.__scopes.get(scope_option)
         return self.__presenter.show(scope.fetch(filter_columns, date), scope.not_found_error)

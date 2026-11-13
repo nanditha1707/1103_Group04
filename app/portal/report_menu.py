@@ -30,10 +30,7 @@ class ReportMenu(PortalAction):
         if error is not None:
             return error
 
-        report = self.__reports.find(choice)
-        if report is None:
-            return constants.INVALID_OPTION_NUMBER_MESSAGE
-
+        report = self.__reports.get(choice)
         result = report.fetch(date)
         # A valid report returns None only if the database failed.
         if result is None:
