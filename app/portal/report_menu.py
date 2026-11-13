@@ -24,10 +24,9 @@ class ReportMenu(PortalAction):
         if report is None:
             return None
 
-        date = self.__prompt.ask(constants.DATE_PROMPT).strip()
-        error = self.__prompt.validate_date(date)
-        if error is not None:
-            return error
+        date = self.__prompt.ask_date(constants.DATE_PROMPT)
+        if date is None:
+            return None
 
         result = report.fetch(date)
         # A valid report returns None only if the database failed.

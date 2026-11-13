@@ -59,34 +59,42 @@ class IOManager:
     # ------------------------------------------------------------------
     # MENU AND FREE-TEXT INPUT
     # ------------------------------------------------------------------
-    def prompt_menu(self, options: list[str], header: str | None = None) -> str:
-        # Print the boxed menu, and return the normalised input.
-        menu = self.__box_renderer.render(options, header)
-        self.__console.show(menu)
-        return self.__console.ask_normalised(constants.MENU_OPTION_PROMPT)
-
     def ask(self, prompt: str) -> str:
         # Ask a questiion and return raw input.
         return self.__console.ask(prompt)
 
-    def validate_option(self, text: str, maximum: int) -> str | None:
-        # Uses the menuoptionvalidator to validate the menu option.
-        # maximum is the menu's number of options.
-        # Guards against empty, non-integer, zero, negative and out of range inputs.
-        return MenuOptionValidator(maximum=maximum).validate(text)
-
     def choose(self, options: Sequence[Labelled], header: str | None = None) -> Labelled | None:
         numbered = NumberedOptions(options)
-        choice = self.prompt_menu(numbered.lines(), header)
-        error = self.validate_option(choice, len(numbered))
+        choice = self.__prompt_menu(numbered.lines(), header)
+        error = self.__validate_option(choice, len(numbered))
         if error is not None:
             self.show_message(error)
             return None
         return numbered.get(choice)
 
-    def validate_date(self, text: str) -> str | None:
-        # Checks if a YYYY-MM-DD date is valid.
-        return self.__date_validator.validate(text)
+    def ask_date(self, prompt: str) -> str | None:
+        """
+        Ask for a YYYY-MM-DD date and return it, or show the error and
+        return None if it is not a valid date.
+        """
+        date = self.__console.ask(prompt).strip()
+        error = self.__date_validator.validate(date)
+        if error is not None:
+            self.show_message(error)
+            return None
+        return date
+
+    def __prompt_menu(self, options: list[str], header: str | None = None) -> str:
+        # Print the boxed menu, and return the normalised input.
+        menu = self.__box_renderer.render(options, header)
+        self.__console.show(menu)
+        return self.__console.ask_normalised(constants.MENU_OPTION_PROMPT)
+
+    def __validate_option(self, text: str, maximum: int) -> str | None:
+        # Uses the menuoptionvalidator to validate the menu option.
+        # maximum is the menu's number of options.
+        # Guards against empty, non-integer, zero, negative and out of range inputs.
+        return MenuOptionValidator(maximum=maximum).validate(text)
 
     # ------------------------------------------------------------------
     # REGISTRATION 

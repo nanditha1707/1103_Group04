@@ -15,11 +15,5 @@ class UserPrompt(Protocol):
     def choose(self, options: Sequence[Labelled], header: str | None = None) -> Labelled | None:
         pass
 
-    def validate_date(self, text: str) -> str | None:
-        pass
-
-    def prompt_menu(self, options: list[str], header: str | None = None) -> str:
-        pass
-
-    def validate_option(self, text: str, maximum: int) -> str | None:
+    def ask_date(self, prompt: str) -> str | None:
         pass

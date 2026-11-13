@@ -18,8 +18,7 @@ class PastPatientQuery(PortalAction):
 
     @override
     def run(self) -> str | None:
-        date = self.__prompt.ask(constants.DATE_PROMPT).strip()
-        error = self.__prompt.validate_date(date)
-        if error is None:
-            error = self.__query_handler.handle(date)
-        return error
+        date = self.__prompt.ask_date(constants.DATE_PROMPT)
+        if date is None:
+            return None
+        return self.__query_handler.handle(date)
