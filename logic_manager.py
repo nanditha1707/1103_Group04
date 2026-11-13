@@ -4,7 +4,8 @@
 from datetime import datetime
 import pandas as pd
 
-import data_manager as data
+from data_manager.constants import SGT
+from data_manager.storage import QueueNumberSource
 
 
 # ======================================================================
@@ -156,7 +157,7 @@ def decide_route(ai_output: dict, hsa_df: pd.DataFrame | None) -> str | None:
 # ======================================================================
 # QUEUE NUMBER FUNCTIONS
 # ======================================================================
-def get_queue_number(queue_type: str) -> str | None:
+def get_queue_number(queue_type: str, queue_numbers: QueueNumberSource) -> str | None:
     """Give out the next queue number for today in the Doctor, Pharmacist
     or Urgent queue, e.g. D008, by checking the saved patient records.
     Returns None for any other queue type."""
@@ -175,29 +176,14 @@ def get_queue_number(queue_type: str) -> str | None:
         return None
 
     # Get todays date in Singapore time.
-    today=datetime.now(data.SGT).strftime("%Y-%m-%d")
+    today=datetime.now(SGT).strftime("%Y-%m-%d")
 
     # Ask the database for the highest number given out in this queue
     # today, e.g. 7 for D007.
-    # SUBSTRING(... FROM 2) drops the letter: "D007" -> "007".
-    # CAST(... AS INTEGER) turns "007" into 7, and MAX keeps the highest.
-    # The ~ pattern only keeps queue numbers like D007 (the letter then
-    # digits only), so corrupted queue numbers are skipped.
-    sql_statement = """
-        SELECT MAX(CAST(SUBSTRING(queue_number FROM 2) AS INTEGER))
-        FROM patient_records
-        WHERE date = %s AND queue_number ~ %s
-    """
-    rows = data.fetch_rows(sql_statement, (today, f"^{prefix}[0-9]+$"))
+    highest_number_today = queue_numbers.get_highest_queue_number(prefix, today)
 
-    # MAX gives None when there are no patients in this queue today,
-    # so the queue starts from 0.
-    # rows is None if the database could not be reached. The queue
-    # also starts from 0, and saving the record will fail and tell the
-    # patient to see a nurse.
-    highest_number_today = 0
-    if rows is not None and rows[0][0] is not None:
-        highest_number_today = rows[0][0]
+    if highest_number_today is None:
+        highest_number_today = 0
 
     # Return the next queue number e.g. D008.
     # :03d sets the minimum width to 3, so instead of D9 it is D009.
@@ -207,7 +193,7 @@ def get_queue_number(queue_type: str) -> str | None:
 # ======================================================================
 # FINAL RESULT FUNCTION
 # ======================================================================
-def process_result(ai_output: dict, hsa_df: pd.DataFrame | None) -> dict:
+def process_result(ai_output: dict, hsa_df: pd.DataFrame | None, queue_numbers: QueueNumberSource) -> dict:
     """Create the final domain result. Routes the patient, gives them a
     queue number and returns both with the current date and time."""
 
@@ -218,7 +204,7 @@ def process_result(ai_output: dict, hsa_df: pd.DataFrame | None) -> dict:
     )
 
     # Get current date and time in Singapore time.
-    now=datetime.now(data.SGT)
+    now=datetime.now(SGT)
 
     # Patient was not routed, so no queue number is given.
     if route is None:
@@ -226,15 +212,15 @@ def process_result(ai_output: dict, hsa_df: pd.DataFrame | None) -> dict:
 
     # Emergency route uses the urgent queue ( U queue ).
     elif route =="EMERGENCY":
-        queue_number = get_queue_number("Urgent")
+        queue_number = get_queue_number("Urgent", queue_numbers)
 
     # Docter route ( D queue ).
     elif route == "Doctor":
-        queue_number =get_queue_number("Doctor")
+        queue_number =get_queue_number("Doctor", queue_numbers)
 
     # Pharmacist route ( P queue ).
     elif route == "Pharmacist":
-        queue_number = get_queue_number("Pharmacist")
+        queue_number = get_queue_number("Pharmacist", queue_numbers)
 
     # Retail does not get a queue number.
     else:

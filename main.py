@@ -4,7 +4,7 @@
 import pandas as pd
 
 import ai_manager as ai
-import data_manager as data
+from data_manager import DataManagerFactory
 import io_manager as io
 import logic_manager as logic
 
@@ -54,10 +54,9 @@ def show_query_results(query_response: pd.DataFrame | None, not_found_error: str
     else:
         # Wide results do not fit in the terminal, so they are
         # exported to a CSV instead of printed.
-        next_action = data.print_or_export(list(query_response.columns))
-        if next_action == "print":
+        if io.table_fits_screen(list(query_response.columns)):
             io.print_df_and_reports(query_response)
-        elif next_action == "export" and not data.export_query(query_response):
+        elif not data.export_query(query_response):
             error = "The query results could not be exported!"
     return error
 
@@ -196,6 +195,8 @@ def main_menu() -> dict | int | None:
 
     return None
 
+data = DataManagerFactory.create()
+
 # load the ICD and HSA datasets once, when the program starts
 icd_df, hsa_df = data.get_cleaned_datasets()
 io.SYMPTOMS_DIFFLIB_LIST = data.load_symptoms()
@@ -222,7 +223,7 @@ while True:
         continue
 
     # 3. Logic manager: decide and print the route and queue number
-    logic_result = logic.process_result(ai_output, hsa_df)
+    logic_result = logic.process_result(ai_output, hsa_df, data)
 
     # 4. Data manager: save the completed record to the database.
     # export_record returns None if saved, or the error message if not.

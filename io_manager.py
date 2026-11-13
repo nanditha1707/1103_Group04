@@ -4,6 +4,7 @@
 
 import difflib
 import re
+import shutil
 import textwrap
 from datetime import datetime
 from typing import Any
@@ -956,6 +957,7 @@ def print_message(message: str) -> None:
 # result box does not get too wide.
 RESULT_WRAP_WIDTH = 70
 RESULT_HEADER = "Registration Complete"
+TABLE_MAX_COLUMN_WIDTH = 10
 # What the patient should do next for each route from logic_manager.
 ROUTE_MESSAGES = {
     "EMERGENCY": (
@@ -1057,7 +1059,7 @@ def print_df_and_reports(report: pd.DataFrame | dict, title: str = "") -> None:
 
     # Build the table as a string first so its width can be measured
     # before anything is printed.
-    grid_table = report_df.to_markdown(index=False, tablefmt="grid", floatfmt=".2f", maxcolwidths=10)
+    grid_table = report_df.to_markdown(index=False, tablefmt="grid", floatfmt=".2f", maxcolwidths=TABLE_MAX_COLUMN_WIDTH)
 
     # Only print a header if a title was given.
     if title:
@@ -1080,3 +1082,11 @@ def print_df_and_reports(report: pd.DataFrame | dict, title: str = "") -> None:
 
     # The table's own top border acts as the bottom border of the title box.
     print(grid_table)
+
+
+def table_fits_screen(columns: list[str]) -> bool:
+    width_needed = max(
+        len(columns) * TABLE_MAX_COLUMN_WIDTH,
+        sum(len(column) for column in columns)
+    )
+    return shutil.get_terminal_size().columns >= width_needed
