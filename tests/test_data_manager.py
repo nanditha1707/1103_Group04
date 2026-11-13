@@ -2,10 +2,15 @@ import sys
 from pathlib import Path
 
 import pandas as pd
+import psycopg
 
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 
-import data_manager as data
+from data_manager import DataManagerFactory, constants
+from data_manager.dataset import HsaDataset, IcdDataset
+from data_manager.patients import RecordSaver
+from data_manager.storage import PostgresDatabase
+from fakes import FakeDatabase
 
 
 # ==========================================================
@@ -31,7 +36,7 @@ def test_clean_icd_data():
         ]
     })
 
-    result = data.clean_icd_data(fake_icd)
+    result = IcdDataset(constants.ICD_CSV_PATH).clean(fake_icd)
 
     print("\nSCENARIO: Clean ICD Data")
     print("Expected:")
@@ -78,7 +83,7 @@ def test_clean_hsa_data():
         }
     ])
 
-    result = data.clean_hsa_data(fake_hsa)
+    result = HsaDataset(constants.HSA_CSV_PATH).clean(fake_hsa)
 
     print("\nSCENARIO: Clean HSA Data")
     print("Expected Drug Name: PARACETAMOL")
@@ -107,7 +112,7 @@ def test_join_symptoms():
         ]
     }
 
-    result = data.join_symptoms(fake_patient)
+    result = RecordSaver.join_symptoms(fake_patient)
 
     print("\nSCENARIO: Join Symptoms")
     print("Input:", ["COUGH", "FEVER", "HEADACHE"])
@@ -125,6 +130,8 @@ def test_join_symptoms():
 
 def test_patient_filters():
 
+    data = DataManagerFactory.create(FakeDatabase([]))
+
     patient_filter = data.get_patient_filter("1")
     medical_filter = data.get_patient_filter("2")
     ai_filter = data.get_patient_filter("3")
@@ -136,71 +143,21 @@ def test_patient_filters():
     print("Option 3:", ai_filter)
     print("Option 4:", all_filter)
 
-    assert patient_filter == data.PATIENT_COLUMNS
-    assert medical_filter == data.MEDICAL_COLUMNS
-    assert ai_filter == data.AI_OUTPUT_COLUMN
-    assert all_filter == data.RECORD_COLUMNS
-
-
-
-
-# ==========================================================
-# FAKE DATABASE CONNECTION
-# ==========================================================
-# Stands in for psycopg.connect so the tests never touch the real
-# cloud database. It records every statement it is asked to run.
-
-class FakeCursor:
-
-    def __init__(self):
-        self.executed = []
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, *args):
-        return False
-
-    def execute(self, sql_statement, parameters):
-        self.executed.append((sql_statement, parameters))
-
-    def fetchall(self):
-        return []
-
-
-class FakeConnection:
-
-    def __init__(self):
-        self.fake_cursor = FakeCursor()
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, *args):
-        return False
-
-    def cursor(self):
-        return self.fake_cursor
+    assert patient_filter == constants.PATIENT_COLUMNS
+    assert medical_filter == constants.MEDICAL_COLUMNS
+    assert ai_filter == constants.AI_OUTPUT_COLUMNS
+    assert all_filter == constants.RECORD_COLUMNS
 
 
 # ==========================================================
 # TEST 5 - FIND EXISTING PATIENT
 # ==========================================================
 
-def test_get_patient_by_queue(monkeypatch):
-
-    sent_parameters = []
+def test_get_patient_by_queue():
 
     # The database returns one row, with the columns in the order asked.
-    def fake_fetch_rows(sql_statement, parameters):
-        sent_parameters.append(parameters)
-        return [("Alex Tan", 25)]
-
-    monkeypatch.setattr(
-        data,
-        "fetch_rows",
-        fake_fetch_rows
-    )
+    database = FakeDatabase([("Alex Tan", 25)])
+    data = DataManagerFactory.create(database)
 
     result = data.get_patient_by_queue(
         "D001",
@@ -217,20 +174,16 @@ def test_get_patient_by_queue(monkeypatch):
     assert list(result.columns) == ["name", "age"]
     assert result.iloc[0]["name"] == "Alex Tan"
     assert result.iloc[0]["age"] == 25
-    assert sent_parameters == [("D001", "2026-10-14")]
+    assert database.fetched_parameters == [("D001", "2026-10-14")]
 
 
 # ==========================================================
 # TEST 6 - PATIENT DOES NOT EXIST
 # ==========================================================
 
-def test_patient_not_found(monkeypatch):
+def test_patient_not_found():
 
-    monkeypatch.setattr(
-        data,
-        "fetch_rows",
-        lambda sql_statement, parameters: []
-    )
+    data = DataManagerFactory.create(FakeDatabase([]))
 
     result = data.get_patient_by_queue(
         "D999",
@@ -251,28 +204,24 @@ def test_patient_not_found(monkeypatch):
 # TEST 7 - EXPORT PATIENT RECORD
 # ==========================================================
 
-def test_export_record(monkeypatch):
+def test_export_record():
 
-    fake_connection = FakeConnection()
-
-    monkeypatch.setattr(
-        data.psycopg,
-        "connect",
-        lambda url: fake_connection
-    )
+    database = FakeDatabase([])
+    data = DataManagerFactory.create(database)
 
     user_answers = {
         "name": "Charlie Ng",
         "nric": "S8812345C",
         "gender": "M",
-        "age": 38,
+        "birthdate": "1988-03-21",
+        "age": "38",
         "phone_number": "+65 91234567",
         "pregnancy": None,
         "current_symptoms": [
             "COUGH",
             "FEVER"
         ],
-        "symptom_onset_days": 2,
+        "symptom_onset_days": "2",
         "chronic_conditions": "N",
         "current_medications": "N",
         "drug_allergies": "N",
@@ -306,7 +255,7 @@ def test_export_record(monkeypatch):
         logic_result
     )
 
-    executed = fake_connection.fake_cursor.executed
+    executed = database.executed
     saved_record = executed[0][1]
 
     print("\nSCENARIO: Export Patient Record")
@@ -320,10 +269,11 @@ def test_export_record(monkeypatch):
     assert len(executed) == 1
     assert "INSERT INTO patient_records" in executed[0][0]
     assert saved_record["name"] == "Charlie Ng"
+    assert saved_record["birthdate"] == "1988-03-21"
     assert saved_record["queue_number"] == "D001"
     assert saved_record["current_symptoms"] == "COUGH, FEVER"
     # Only record columns are saved, so extra keys like consent are left out.
-    assert list(saved_record) == data.RECORD_COLUMNS
+    assert list(saved_record) == constants.RECORD_COLUMNS
 
 
 # ==========================================================
@@ -333,17 +283,25 @@ def test_export_record(monkeypatch):
 def test_database_down(monkeypatch):
 
     def fake_connect(url):
-        raise data.psycopg.OperationalError("connection refused")
+        raise psycopg.OperationalError("connection refused")
 
     monkeypatch.setattr(
-        data.psycopg,
+        psycopg,
         "connect",
         fake_connect
     )
 
-    fetch_result = data.fetch_rows(
+    database = PostgresDatabase("postgresql://unreachable")
+    data = DataManagerFactory.create(database)
+
+    fetch_result = database.fetch_rows(
         "SELECT 1",
         ()
+    )
+    query_result = data.get_patient_by_queue(
+        "D001",
+        ["name"],
+        "2026-10-14"
     )
     export_result = data.export_record(
         {"name": "Charlie Ng"},
@@ -353,10 +311,12 @@ def test_database_down(monkeypatch):
 
     print("\nSCENARIO: Database Cannot Be Reached")
     print("Expected fetch_rows: None")
+    print("Expected get_patient_by_queue: None")
     print("Expected export_record: an error message")
-    print("Actual:", fetch_result, "|", export_result)
+    print("Actual:", fetch_result, "|", query_result, "|", export_result)
 
     assert fetch_result is None
+    assert query_result is None
     assert "connection refused" in export_result
 
 
@@ -364,23 +324,14 @@ def test_database_down(monkeypatch):
 # TEST 9 - ALL PATIENTS ON A DATE
 # ==========================================================
 
-def test_get_patients_by_date(monkeypatch):
-
-    sent_parameters = []
+def test_get_patients_by_date():
 
     # The database returns one row per patient, columns in the order asked.
-    def fake_fetch_rows(sql_statement, parameters):
-        sent_parameters.append(parameters)
-        return [
-            ("09:00:00", "D001", "Alex Tan"),
-            ("09:30:00", "P001", "Betty Lim")
-        ]
-
-    monkeypatch.setattr(
-        data,
-        "fetch_rows",
-        fake_fetch_rows
-    )
+    database = FakeDatabase([
+        ("09:00:00", "D001", "Alex Tan"),
+        ("09:30:00", "P001", "Betty Lim")
+    ])
+    data = DataManagerFactory.create(database)
 
     result = data.get_patients_by_date(
         ["name"],
@@ -395,19 +346,15 @@ def test_get_patients_by_date(monkeypatch):
     # Time and queue number are added in front to tell the rows apart.
     assert list(result.columns) == ["time", "queue_number", "name"]
     assert list(result["name"]) == ["Alex Tan", "Betty Lim"]
-    assert sent_parameters == [("2026-10-14",)]
+    assert database.fetched_parameters == [("2026-10-14",)]
 
 
-def test_get_patients_by_date_keeps_existing_columns(monkeypatch):
+def test_get_patients_by_date_keeps_existing_columns():
 
-    monkeypatch.setattr(
-        data,
-        "fetch_rows",
-        lambda sql_statement, parameters: []
-    )
+    data = DataManagerFactory.create(FakeDatabase([]))
 
     result = data.get_patients_by_date(
-        data.RECORD_COLUMNS,
+        constants.RECORD_COLUMNS,
         "2026-10-14"
     )
 
@@ -416,5 +363,5 @@ def test_get_patients_by_date_keeps_existing_columns(monkeypatch):
     print("Actual:", list(result.columns)[:4], "...")
 
     # RECORD_COLUMNS already has time and queue_number, so nothing is added.
-    assert list(result.columns) == data.RECORD_COLUMNS
+    assert list(result.columns) == constants.RECORD_COLUMNS
     assert result.empty
