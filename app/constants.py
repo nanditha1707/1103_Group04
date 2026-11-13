@@ -33,3 +33,7 @@ REPORT_OPTIONS = [
     "2. Medicine Breakdown",
     "3. Patient Type Breakdown"
 ]
+
+RECORD_SAVE_FAILED_MESSAGE = ("The program has encountered an error. "
+                              "Please approach a nurse or clerk for manual registration.\n"
+                              "Error: {error}")

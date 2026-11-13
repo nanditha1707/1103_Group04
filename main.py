@@ -3,6 +3,7 @@
 # ======================================================================
 from ai_manager import AIManagerFactory
 from app import constants
+from app.triage_pipeline import TriagePipeline
 from data_manager import DataManagerFactory
 from io_manager import IOManager
 from logic_manager import LogicManagerFactory
@@ -171,6 +172,7 @@ ai = AIManagerFactory.create(icd_df, hsa_df)
 io = IOManager(symptom_terms=data.load_symptoms())
 # Create the logic manager using the HSA dataset and data_manager for queue numbers.
 logic = LogicManagerFactory.create(hsa_df, data)
+triage_pipeline = TriagePipeline(io, ai, logic, data)
 
 while True:
     # 1. I/O manager: collect the patient's answers
@@ -180,30 +182,4 @@ while True:
     if answers is None:
         continue
 
-    # Filter answers so only non-personal information goes to the AI.
-    answers_filtered = io.filter_for_ai(answers)
-
-    # 2. AI manager: get a diagnosis and medicines
-    ai_output = ai.get_ai_output(answers_filtered)
-
-    # get_ai_output returns a dictionary when every AI model failed.
-    # The key is "error". The value of the key is the message telling 
-    # patients to seek assistance.
-    if "error" in ai_output:
-        io.show_message(ai_output["error"])
-        continue
-
-    # 3. Logic manager: decide and print the route and queue number
-    logic_result = logic.process_result(ai_output)
-
-    # 4. Data manager: save the completed record to the database.
-    # export_record returns None if saved, or the error message if not.
-    export_error = data.export_record(answers, ai_output, logic_result)
-    if export_error is not None:
-        error = ("The program has encountered an error. "
-                 "Please approach a nurse or clerk for manual registration.\n"
-                 f"Error: {export_error}")
-        io.show_message(error)
-    else:
-        # 5. I/O manager: tell the patient what to do next
-        io.show_result(ai_output, logic_result)
+    triage_pipeline.process(answers)
