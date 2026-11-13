@@ -3,8 +3,10 @@
 # ======================================================================
 from ai_manager import AIManagerFactory
 from app import constants
+from app.numbered_options import NumberedOptions
 from app.portal import CurrentPatientQuery, PastPatientQuery
 from app.queries import AllPatientsScope, PatientQueryHandler, QueryResultPresenter, SinglePatientScope
+from app.reports import MedicineBreakdownReport, MedicineCountReport, PatientTypeBreakdownReport
 from app.triage_pipeline import TriagePipeline
 from data_manager import DataManagerFactory
 from io_manager import IOManager
@@ -32,32 +34,24 @@ def healthcare_portal_routing(option: str) -> None:
 
     # Option 3: show one of the reports for a date the user enters.
     elif option_number == 3:
-        report_option = io.prompt_menu(constants.REPORT_OPTIONS,"Reports")
-        option_error = io.validate_option(report_option, len(constants.REPORT_OPTIONS))
+        report_option = io.prompt_menu(reports.lines(),"Reports")
+        option_error = io.validate_option(report_option, len(reports))
         if option_error is None:
             date = io.ask("Enter the Date here. (YYYY-MM-DD): ").strip()
             date_error = io.validate_date(date)
             if date_error is None:
                 result = None
-                header = ""
-                if report_option == "1":
-                    medicine = io.ask("Enter a medicine name: ").strip().upper()
-                    result = data.get_medicine_count(medicine, date)
-                    header = ""
-                elif report_option == "2":
-                    result = data.get_medicine_breakdown(date)
-                    header = "Medicine Breakdown Report"
-                elif report_option == "3":
-                    result = data.get_patient_type_breakdown(date)
-                    header = "Patient Type Breakdown Report"
-                else:
+                report = reports.find(report_option)
+                if report is None:
                     error_message = "This is not a valid option number!"
+                else:
+                    result = report.fetch(date)
                 # A valid report returns None only if the database failed.
                 if result is None and error_message is None:
                     error_message = constants.DATABASE_ERROR_MESSAGE
                 # An empty report means nothing matched the date.
                 elif result:
-                    io.show_table(result, header)
+                    io.show_table(result, report.header)
                 elif error_message is None:
                     error_message= "There is no matching records for the given date!"
             else:
@@ -122,6 +116,7 @@ patient_query_handler = PatientQueryHandler(
 )
 current_patient_query = CurrentPatientQuery(data, patient_query_handler)
 past_patient_query = PastPatientQuery(io, patient_query_handler)
+reports = NumberedOptions([MedicineCountReport(io, data), MedicineBreakdownReport(data), PatientTypeBreakdownReport(data)])
 
 while True:
     # 1. I/O manager: collect the patient's answers

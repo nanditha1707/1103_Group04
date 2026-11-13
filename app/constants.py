@@ -36,11 +36,13 @@ NO_PATIENTS_ON_DATE_MESSAGE = "There are no patient records for this date!"
 
 EXPORT_FAILED_MESSAGE = "The query results could not be exported!"
 
-REPORT_OPTIONS = [
-    "1. Specific Medicine Count",
-    "2. Medicine Breakdown",
-    "3. Patient Type Breakdown"
-]
+MEDICINE_COUNT_LABEL = "Specific Medicine Count"
+MEDICINE_BREAKDOWN_LABEL = "Medicine Breakdown"
+PATIENT_TYPE_BREAKDOWN_LABEL = "Patient Type Breakdown"
+MEDICINE_COUNT_HEADER = ""
+MEDICINE_BREAKDOWN_HEADER = "Medicine Breakdown Report"
+PATIENT_TYPE_BREAKDOWN_HEADER = "Patient Type Breakdown Report"
+MEDICINE_PROMPT = "Enter a medicine name: "
 
 RECORD_SAVE_FAILED_MESSAGE = ("The program has encountered an error. "
                               "Please approach a nurse or clerk for manual registration.\n"
