@@ -4,14 +4,13 @@
 
 import difflib
 import re
+import shutil
 import textwrap
 from datetime import datetime
 from typing import Any
 
 import pandas as pd
 import phonenumbers
-
-import data_manager as data
 
 # Returned instead of a state or answers when the user quits.
 QUIT_SIGNAL = -99
@@ -20,15 +19,7 @@ QUIT_COMMAND = "QUIT"
 BACK_COMMAND = "BACK"
 REG_EXIT_MESSAGE = "Exiting The Registration Process!"
 
-def load_symptoms() -> list[str]:
-    """Reads the symptoms dataset. Returns all symptom names in
-    uppercase since user input is uppercased before matching."""
-    symptoms_dataframe = pd.read_csv(data.SYMPTOMS_CSV_PATH)
-    symptoms_column = symptoms_dataframe["term"].str.upper()
-    return symptoms_column.tolist()
-
-# Loaded once on import so every symptom lookup uses the same list.
-SYMPTOMS_DIFFLIB_LIST = load_symptoms()
+SYMPTOMS_DIFFLIB_LIST= []
 # Answering Y to any of these questions means the user needs a nurse
 # immediately, so registration stops straight away.
 EMERGENCY_KEYS = [
@@ -966,6 +957,7 @@ def print_message(message: str) -> None:
 # result box does not get too wide.
 RESULT_WRAP_WIDTH = 70
 RESULT_HEADER = "Registration Complete"
+TABLE_MAX_COLUMN_WIDTH = 10
 # What the patient should do next for each route from logic_manager.
 ROUTE_MESSAGES = {
     "EMERGENCY": (
@@ -1067,7 +1059,7 @@ def print_df_and_reports(report: pd.DataFrame | dict, title: str = "") -> None:
 
     # Build the table as a string first so its width can be measured
     # before anything is printed.
-    grid_table = report_df.to_markdown(index=False, tablefmt="grid", floatfmt=".2f", maxcolwidths=10)
+    grid_table = report_df.to_markdown(index=False, tablefmt="grid", floatfmt=".2f", maxcolwidths=TABLE_MAX_COLUMN_WIDTH)
 
     # Only print a header if a title was given.
     if title:
@@ -1090,3 +1082,11 @@ def print_df_and_reports(report: pd.DataFrame | dict, title: str = "") -> None:
 
     # The table's own top border acts as the bottom border of the title box.
     print(grid_table)
+
+
+def table_fits_screen(columns: list[str]) -> bool:
+    width_needed = max(
+        len(columns) * TABLE_MAX_COLUMN_WIDTH,
+        sum(len(column) for column in columns)
+    )
+    return shutil.get_terminal_size().columns >= width_needed

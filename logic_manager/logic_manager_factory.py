@@ -2,6 +2,8 @@ from datetime import datetime
 
 import pandas as pd
 
+from data_manager.constants import SGT
+
 from .manager import LogicManager
 from .medicine_classifier import MedicineClassifier
 from .queue_number_generator import QueueNumberGenerator
@@ -35,5 +37,5 @@ class LogicManagerFactory:
         return LogicManager(
             Router(classifier),
             QueueNumberGenerator(queue_numbers),
-            datetime.now
+            lambda: datetime.now(SGT)
         )

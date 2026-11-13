@@ -78,11 +78,7 @@ The Data Manager is responsible for:
 - Searching for patient records.
 - Generating medicine and patient-type breakdowns.
 
-Patient records generated while using the application are stored in:
-
-```text
-records/patient_records.csv
-```
+Patient records are stored in the `patient_records` table of a cloud PostgreSQL database hosted on Neon. Searches and reports query the database directly, so they always include records saved by other users.
 
 Queried CSV files are stored in:
 
@@ -109,9 +105,8 @@ main.py
 io_manager.py
 ai_manager.py
 logic_manager.py
-data_manager.py
+data_manager/
 datasets/
-records/
 query/
 tests/
 requirements.txt
@@ -123,6 +118,7 @@ dockerfile
 - Python
 - Pandas
 - NumPy
+- PostgreSQL (Neon) with psycopg
 - Google Gemini API
 - Anthropic Claude API
 - Docker
@@ -138,14 +134,15 @@ Install the required packages:
 pip install -r requirements.txt
 ```
 
-Create a file named exactly `.env` in the project directory and add the required API keys:
+Create a file named exactly `.env` in the project directory and add the required API keys and the cloud database URL:
 
 ```text
 GEMINI_API_KEY=YOUR-GEMINI-API-KEY
 ANTHROPIC_API_KEY=YOUR-ANTHROPIC-API-KEY
+POSTGRESQL_CLOUD_DATABASE_URL=YOUR-DATABASE-URL
 ```
 
-Do not wrap the API keys in quotation marks.
+Do not wrap the values in quotation marks.
 
 ## Running the Project Locally
 
@@ -179,54 +176,42 @@ Create a file named exactly:
 .env
 ```
 
-Add the API keys:
+Add the API keys and the cloud database URL:
 
 ```text
 GEMINI_API_KEY=YOUR-GEMINI-API-KEY
 ANTHROPIC_API_KEY=YOUR-ANTHROPIC-API-KEY
+POSTGRESQL_CLOUD_DATABASE_URL=YOUR-DATABASE-URL
 ```
 
 Important:
 
-- Do not use quotes such as `"` or `'` around the API keys because Docker may not read them correctly.
+- Do not use quotes such as `"` or `'` around the values because Docker may not read them correctly.
 - Ensure the `.env` file is located in the current working directory where the Docker command is being run.
+- Without `POSTGRESQL_CLOUD_DATABASE_URL`, patient records cannot be saved or queried.
 
 ### 3. Run the Docker Container
 
 Run:
 
 ```bash
-docker run -it --rm --env-file .env -v "${PWD}/records:/app/records" -v "${PWD}/query:/app/query" kevinwuyckens/group04-healthcare:latest
+docker run -it --rm --env-file .env -v "${PWD}/query:/app/query" kevinwuyckens/group04-healthcare:latest
 ```
 
 The command:
 
 - Runs the application interactively.
-- Loads the API keys from `.env`.
-- Mounts the local `records/` folder to `/app/records` inside the container.
+- Loads the API keys and database URL from `.env`.
 - Mounts the local `query/` folder to `/app/query` inside the container.
 - Automatically removes the temporary Docker container after the application exits.
 
-The following folders will be created in the directory where the command is run:
+Patient records are saved to and read from the cloud PostgreSQL database, so no `records/` folder is needed. Every container connected to the same database sees the same, up-to-date records.
 
-```text
-records/
-query/
-```
-
-Newly generated patient records will appear under:
-
-```text
-records/patient_records.csv
-```
-
-Queried CSV files will appear under:
+Queried CSV files will appear in the `query/` folder, which is created in the directory where the command is run:
 
 ```text
 query/
 ```
-
-The `patient_records.csv` file will contain the existing records from `patient_records_seed.csv` together with any new patient records generated locally.
 
 ## Docker Image Build
 
