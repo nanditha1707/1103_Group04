@@ -1,0 +1,55 @@
+from typing import override
+
+from io_manager import constants
+from io_manager.console import Console
+from .symptom_menu_action import SymptomMenuAction
+
+
+class RemoveSymptomAction(SymptomMenuAction):
+    """
+    Shows current symptoms and removes the one the patient inputs,
+    or every symptom if they type ALL.
+    """
+
+    # Sets what the user can type to remove all symptoms at once.
+    REMOVE_ALL = "ALL"
+
+    def __init__(
+        self
+    ) -> None:
+        super().__init__(constants.REMOVE_SYMPTOM_LABEL)
+
+    @override
+    def execute(self, console: Console, symptoms: list[str]) -> bool:
+        # Checks if there are any symptoms to remove, 
+        # and shows an error message if there are no current symptoms.
+        if not symptoms:
+            console.show(constants.NO_SYMPTOMS_TO_REMOVE)
+            return False
+
+        symptom_list = ", ".join(symptoms)
+        message = constants.CURRENT_SYMPTOMS.format(symptoms=symptom_list)
+        console.show(message)
+        # Prompts the user to input a symptom to remove, or ALL to remove all symptoms.
+        prompt = constants.REMOVE_SYMPTOM_PROMPT.format(remove_all=self.REMOVE_ALL)
+        target = console.ask_normalised(prompt)
+
+        # Check if the user input is empty,
+        # and show an error message if so.
+        if not target:
+            console.show(constants.EMPTY_INPUT_ERROR)
+        # Check if the user wants to remove all symptoms, 
+        # and clear the list if so.
+        elif target == self.REMOVE_ALL:
+            symptoms.clear()
+            console.show(constants.ALL_SYMPTOMS_REMOVED)
+        # Check if the user input is in the list of symptoms,
+        # and remove it if so.
+        elif target in symptoms:
+            symptoms.remove(target)
+        else:
+            # Show an error message if the user input is not in the list of symptoms.
+            console.show(constants.SYMPTOM_NOT_IN_LIST.format(symptom=target))
+
+        # Ensures menu keeps running.
+        return False
