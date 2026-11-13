@@ -8,19 +8,10 @@ class PatientQuery:
     result and saves it to CSV."""
 
     def __init__(
-        self, reader: RecordReader, filter_options: dict[int, list[str]], identifier_columns: list[str]
+        self, reader: RecordReader, identifier_columns: list[str]
     ):
         self.__reader = reader
-        # Maps each filter menu option (1 to 4) to its record columns.
-        self.__filter_options = filter_options
         self.__identifier_columns = identifier_columns
-
-    def get_filter(self, option: str) -> list[str] | None:
-        """Return the record columns for a filter menu option (1 to 4).
-        Return None for any other option number. Expects option to
-        already be checked as a positive whole number by
-        io_manager.validate_option."""
-        return self.__filter_options.get(int(option))
 
     def find_by_queue(
         self,

@@ -71,7 +71,7 @@ class IOManager:
 
     def validate_option(self, text: str, maximum: int) -> str | None:
         # Uses the menuoptionvalidator to validate the menu option.
-        # maximum is the menu's number of options, e.g. len(FILTER_OPTIONS).
+        # maximum is the menu's number of options.
         # Guards against empty, non-integer, zero, negative and out of range inputs.
         return MenuOptionValidator(maximum=maximum).validate(text)
 

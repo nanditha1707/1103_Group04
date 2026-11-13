@@ -1,9 +1,10 @@
 from dotenv import load_dotenv
 
 from ai_manager import AIManagerFactory
+from app import constants
 from app.menu import ExitAction, MainMenu, RegistrationAction
 from app.portal import CurrentPatientQuery, HealthcarePortal, PastPatientQuery, ReportMenu
-from app.queries import AllPatientsScope, PatientQueryHandler, QueryResultPresenter, SinglePatientScope
+from app.queries import AllPatientsScope, PatientQueryHandler, QueryFilter, QueryResultPresenter, SinglePatientScope
 from app.reports import MedicineBreakdownReport, MedicineCountReport, PatientTypeBreakdownReport
 from data_manager import DataManager, DataManagerFactory
 from io_manager import IOManager
@@ -37,8 +38,14 @@ class ApplicationFactory:
 
     @staticmethod
     def __create_healthcare_portal(io: IOManager, data: DataManager) -> HealthcarePortal:
+        filters = [
+            QueryFilter(constants.PATIENT_INFO_FILTER_LABEL, constants.PATIENT_COLUMNS),
+            QueryFilter(constants.MEDICAL_INFO_FILTER_LABEL, constants.MEDICAL_COLUMNS),
+            QueryFilter(constants.AI_OUTPUT_FILTER_LABEL, constants.AI_OUTPUT_COLUMNS),
+            QueryFilter(constants.ALL_RECORDS_FILTER_LABEL, data.get_record_columns())
+        ]
         query_handler = PatientQueryHandler(
-            io, data, [SinglePatientScope(io, data), AllPatientsScope(data)], QueryResultPresenter(io, data)
+            io, filters, [SinglePatientScope(io, data), AllPatientsScope(data)], QueryResultPresenter(io, data)
         )
         reports = [MedicineCountReport(io, data), MedicineBreakdownReport(data), PatientTypeBreakdownReport(data)]
         return HealthcarePortal(io, [

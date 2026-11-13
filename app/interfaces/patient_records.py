@@ -8,9 +8,6 @@ class PatientRecords(Protocol):
     def get_current_date(self) -> str:
         pass
 
-    def get_patient_filter(self, option: str) -> list[str] | None:
-        pass
-
     def get_patient_by_queue(self, queue_number: str, filter_columns: list[str], date: str) -> pd.DataFrame | None:
         pass
 

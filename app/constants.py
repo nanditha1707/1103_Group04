@@ -18,13 +18,45 @@ REPORTS_LABEL = "Reports"
 DATE_PROMPT = "Enter the Date here. (YYYY-MM-DD): "
 DATABASE_ERROR_MESSAGE = "The patient records database could not be reached, please try again later!"
 
-FILTER_OPTIONS = [
-    "1. Patient Information",
-    "2. Medical Information",
-    "3. AI Ouput Information",
-    "4. All Records"
+PATIENT_INFO_FILTER_LABEL = "Patient Information"
+MEDICAL_INFO_FILTER_LABEL = "Medical Information"
+AI_OUTPUT_FILTER_LABEL = "AI Output Information"
+ALL_RECORDS_FILTER_LABEL = "All Records"
+
+# Column groups shown by each healthcare portal query filter option.
+PATIENT_COLUMNS = [
+    "name",
+    "nric",
+    "gender",
+    "birthdate",
+    "age",
+    "phone_number"
 ]
-INVALID_FILTER_MESSAGE = "This is not a valid option number!"
+
+MEDICAL_COLUMNS = [
+    "date",
+    "route",
+    "pregnancy",
+    "current_symptoms",
+    "symptom_onset_days",
+    "chronic_conditions",
+    "current_medications",
+    "drug_allergies"
+]
+
+AI_OUTPUT_COLUMNS = [
+    "primary_diagnosis_ICD11_Code",
+    "primary_diagnosis_ICD11_Title",
+    "primary_diagnosis_explanation",
+    "primary_diagnosis_medicine_1",
+    "primary_diagnosis_medicine_2",
+    "secondary_diagnosis_ICD11_Code",
+    "secondary_diagnosis_ICD11_Title",
+    "secondary_diagnosis_explanation",
+    "secondary_diagnosis_medicine_1",
+    "secondary_diagnosis_medicine_2",
+    "ai_confidence_score"
+]
 
 # Asked after the filter: look up one patient, or every patient on the date.
 SINGLE_PATIENT_LABEL = "One Patient (by Queue Number)"
