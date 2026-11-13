@@ -3,7 +3,8 @@
 # ======================================================================
 from ai_manager import AIManagerFactory
 from app import constants
-from app.queries import QueryResultPresenter
+from app.numbered_options import NumberedOptions
+from app.queries import AllPatientsScope, QueryResultPresenter, SinglePatientScope
 from app.triage_pipeline import TriagePipeline
 from data_manager import DataManagerFactory
 from io_manager import IOManager
@@ -30,22 +31,12 @@ def patient_query_handler(date: str) -> str | None:
         else:
             # Both options query the database directly, so patients
             # registered by other users are found too.
-            scope_option = io.prompt_menu(constants.QUERY_SCOPE_OPTIONS)
-            if scope_option == "1":
-                queue = io.ask("Enter the Patient's Queue Number here: ").strip().upper()
-                query_response= data.get_patient_by_queue(queue, filter_list, date)
-                error = query_result_presenter.show(
-                    query_response,
-                    "There is no such patient, please enter a valid queue number!"
-                )
-            elif scope_option == "2":
-                query_response = data.get_patients_by_date(filter_list, date)
-                error = query_result_presenter.show(
-                    query_response,
-                    "There are no patient records for this date!"
-                )
-            else:
+            scope = query_scopes.find(io.prompt_menu(query_scopes.lines()))
+            if scope is None:
                 error = "This is not a valid option number!"
+            else:
+                query_response = scope.fetch(filter_list, date)
+                error = query_result_presenter.show(query_response, scope.not_found_error)
     else:
         error = option_error
     return error
@@ -156,6 +147,7 @@ io = IOManager(symptom_terms=data.load_symptoms())
 logic = LogicManagerFactory.create(hsa_df, data)
 triage_pipeline = TriagePipeline(io, ai, logic, data)
 query_result_presenter = QueryResultPresenter(io, data)
+query_scopes = NumberedOptions([SinglePatientScope(io, data), AllPatientsScope(data)])
 
 while True:
     # 1. I/O manager: collect the patient's answers

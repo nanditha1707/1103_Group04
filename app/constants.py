@@ -23,10 +23,11 @@ FILTER_OPTIONS = [
 ]
 
 # Asked after the filter: look up one patient, or every patient on the date.
-QUERY_SCOPE_OPTIONS = [
-    "1. One Patient (by Queue Number)",
-    "2. All Patients on This Date"
-]
+SINGLE_PATIENT_LABEL = "One Patient (by Queue Number)"
+ALL_PATIENTS_LABEL = "All Patients on This Date"
+QUEUE_NUMBER_PROMPT = "Enter the Patient's Queue Number here: "
+PATIENT_NOT_FOUND_MESSAGE = "There is no such patient, please enter a valid queue number!"
+NO_PATIENTS_ON_DATE_MESSAGE = "There are no patient records for this date!"
 
 EXPORT_FAILED_MESSAGE = "The query results could not be exported!"
 
