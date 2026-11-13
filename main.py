@@ -1,12 +1,13 @@
 # ======================================================================
 # IMPORT FUNCTIONS AND CONSTANTS
 # ======================================================================
-import pandas as pd
-
-import ai_manager as ai
+from ai_manager import AIManagerFactory
 from data_manager import DataManagerFactory
 import io_manager as io
 from logic_manager import LogicManagerFactory
+
+from dotenv import load_dotenv
+import pandas as pd
 
 ADMIN_PASSWORD = "Password"
 MENU_EXIT_MESSAGE = "Admin Password Inputted, Exiting Program Now!"
@@ -199,6 +200,11 @@ data = DataManagerFactory.create()
 
 # load the ICD and HSA datasets once, when the program starts
 icd_df, hsa_df = data.get_cleaned_datasets()
+# Read the AI API keys from the local .env file
+load_dotenv(override=True)
+# The AI manager checks every AI answer against the same datasets that
+# logic_manager routes with, so every valid medicine can be routed
+ai = AIManagerFactory.create(icd_df, hsa_df)
 io.SYMPTOMS_DIFFLIB_LIST = data.load_symptoms()
 # Create the logic manager using the HSA dataset and data_manager for queue numbers.
 logic = LogicManagerFactory.create(hsa_df, data)
@@ -215,7 +221,7 @@ while True:
     answers_filtered = io.filter_answers(answers)
 
     # 2. AI manager: get a diagnosis and medicines
-    ai_output = ai.get_ai_output(answers_filtered, icd_df, hsa_df)
+    ai_output = ai.get_ai_output(answers_filtered)
 
     # get_ai_output returns a dictionary when every AI model failed.
     # The key is "error". The value of the key is the message telling 
