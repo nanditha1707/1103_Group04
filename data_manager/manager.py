@@ -53,12 +53,11 @@ class DataManager(QueueNumberSource):
     def get_highest_queue_number(self, prefix: str, date: str) -> int | None:
         return self.__queue_numbers.get_highest_queue_number(prefix, date)
 
-    def get_patient_filter(self, option: str) -> list[str] | None:
-        """Return the record columns for a filter menu option (1 to 4).
-        Return None for any other option number. Expects option to
-        already be checked as a positive whole number by
-        io_manager.validate_option."""
-        return self.__patient_query.get_filter(option)
+    @staticmethod
+    def get_record_columns() -> list[str]:
+        """Return every column of a patient record, in the order they
+        are saved."""
+        return list(constants.RECORD_COLUMNS)
 
     @staticmethod
     def get_current_date() -> str:

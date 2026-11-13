@@ -23,7 +23,7 @@ class ResultView:
     WRAP_WIDTH = 70
 
     def build_lines(
-        self, ai_output: Mapping[str, object], logic_result: Mapping[str, str | None]
+        self, logic_result: Mapping[str, str | None]
     ) -> list[str]:
         """
         Return the result lines. Missing fields are skipped instead
@@ -50,10 +50,6 @@ class ResultView:
                 "Please proceed to the pharmacy and wait for your queue number to be",
                 "called.",
             ]
-
-        ai_output is no longer used, since Retail patients no longer see
-        their diagnoses and medicines. It is kept so that
-        IOManager.show_result() does not need to change.
         """
         # Read the route and queue number decided by logic_manager.
         route = logic_result.get("route")

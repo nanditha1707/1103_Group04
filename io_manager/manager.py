@@ -1,10 +1,11 @@
-from collections.abc import Iterable, Mapping
+from collections.abc import Iterable, Mapping, Sequence
 
 import pandas as pd
 
 from io_manager import constants
 from io_manager.console import Console, TerminalConsole
 from io_manager.form import RegistrationFactory
+from io_manager.menus import Labelled, NumberedOptions
 from io_manager.patient_answers import Answer, PatientAnswers
 from io_manager.rendering import BoxRenderer, TableRenderer
 from io_manager.screens import ConfirmationScreen, Questionnaire, ResultView
@@ -58,25 +59,42 @@ class IOManager:
     # ------------------------------------------------------------------
     # MENU AND FREE-TEXT INPUT
     # ------------------------------------------------------------------
-    def prompt_menu(self, options: list[str], header: str | None = None) -> str:
+    def ask(self, prompt: str) -> str:
+        # Ask a questiion and return raw input.
+        return self.__console.ask(prompt)
+
+    def choose(self, options: Sequence[Labelled], header: str | None = None) -> Labelled | None:
+        numbered = NumberedOptions(options)
+        choice = self.__prompt_menu(numbered.lines(), header)
+        error = self.__validate_option(choice, len(numbered))
+        if error is not None:
+            self.show_message(error)
+            return None
+        return numbered.get(choice)
+
+    def ask_date(self, prompt: str) -> str | None:
+        """
+        Ask for a YYYY-MM-DD date and return it, or show the error and
+        return None if it is not a valid date.
+        """
+        date = self.__console.ask(prompt).strip()
+        error = self.__date_validator.validate(date)
+        if error is not None:
+            self.show_message(error)
+            return None
+        return date
+
+    def __prompt_menu(self, options: list[str], header: str | None = None) -> str:
         # Print the boxed menu, and return the normalised input.
         menu = self.__box_renderer.render(options, header)
         self.__console.show(menu)
         return self.__console.ask_normalised(constants.MENU_OPTION_PROMPT)
 
-    def ask(self, prompt: str) -> str:
-        # Ask a questiion and return raw input.
-        return self.__console.ask(prompt)
-
-    def validate_option(self, text: str, maximum: int) -> str | None:
+    def __validate_option(self, text: str, maximum: int) -> str | None:
         # Uses the menuoptionvalidator to validate the menu option.
-        # maximum is the menu's number of options, e.g. len(FILTER_OPTIONS).
+        # maximum is the menu's number of options.
         # Guards against empty, non-integer, zero, negative and out of range inputs.
         return MenuOptionValidator(maximum=maximum).validate(text)
-
-    def validate_date(self, text: str) -> str | None:
-        # Checks if a YYYY-MM-DD date is valid.
-        return self.__date_validator.validate(text)
 
     # ------------------------------------------------------------------
     # REGISTRATION 
@@ -118,11 +136,11 @@ class IOManager:
         self.__console.show(message)
 
     def show_result(
-        self, ai_output: Mapping[str, object], logic_result: Mapping[str, str | None]
+        self, logic_result: Mapping[str, str | None]
     ) -> None:
-        # Show the patient the result of their registration. 
+        # Show the patient the result of their registration.
         # Such as their queue number and furhter instructions
-        lines = self.__result_view.build_lines(ai_output, logic_result)
+        lines = self.__result_view.build_lines(logic_result)
         box = self.__box_renderer.render(lines, constants.RESULT_HEADER)
         self.__console.show(box)
 
