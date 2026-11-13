@@ -1,112 +1,45 @@
-import ast
+import sys
 from pathlib import Path
 
-import pandas as pd
+sys.path.append(str(Path(__file__).resolve().parent.parent))
 
-
-def load_main():
-
-    main_path = Path(__file__).resolve().parent.parent / "main.py"
-
-    source = main_path.read_text(encoding="utf-8")
-    tree = ast.parse(source)
-
-    safe_nodes = []
-
-    for node in tree.body:
-        if isinstance(
-            node,
-            (
-                ast.Import,
-                ast.ImportFrom,
-                ast.Assign,
-                ast.AnnAssign,
-                ast.FunctionDef
-            )
-        ):
-            safe_nodes.append(node)
-
-    safe_tree = ast.Module(
-        body=safe_nodes,
-        type_ignores=[]
-    )
-
-    namespace = {}
-
-    exec(
-        compile(
-            safe_tree,
-            str(main_path),
-            "exec"
-        ),
-        namespace
-    )
-
-    return namespace
+from data_manager import DataManagerFactory
+from fakes import FakeConsole, FakeDatabase
+from io_manager import IOManager
+from main_loader import load_main
 
 
 main = load_main()
 
 
+def use_fakes(monkeypatch, inputs, rows):
+
+    console = FakeConsole(inputs)
+    database = FakeDatabase(rows)
+
+    monkeypatch.setitem(
+        main,
+        "io",
+        IOManager(console, symptom_terms=[])
+    )
+
+    monkeypatch.setitem(
+        main,
+        "data",
+        DataManagerFactory.create(database)
+    )
+
+    return console, database
+
+
 def test_current_patient_found(monkeypatch):
 
-    fake_patient = pd.DataFrame([
-        {
-            "name": "NANI",
-            "nric": "T0111111C",
-            "gender": "F",
-            "age": "20",
-            "phone_number": "+65 91111111"
-        }
-    ])
-
-    monkeypatch.setattr(
-        main["io"],
-        "dynamic_menu_print",
-        lambda *args: "1"
-    )
-
-    monkeypatch.setattr(
-        main["io"],
-        "validate_option",
-        lambda option: None
-    )
-
-    monkeypatch.setattr(
-        main["data"],
-        "get_patient_filter",
-        lambda option: [
-            "name",
-            "nric",
-            "gender",
-            "age",
-            "phone_number"
+    console, database = use_fakes(
+        monkeypatch,
+        ["1", "1", "D001"],
+        [
+            ("NANI", "T0111111C", "F", "2006-01-01", 20, "+65 91111111")
         ]
-    )
-
-    monkeypatch.setattr(
-        "builtins.input",
-        lambda prompt="": "D001"
-    )
-
-    monkeypatch.setattr(
-        main["data"],
-        "get_patient_by_queue",
-        lambda queue, filters, date: fake_patient
-    )
-
-    printed = []
-
-    monkeypatch.setattr(
-        main["data"],
-        "print_or_export",
-        lambda filters: "print"
-    )
-    
-    monkeypatch.setattr(
-        main["io"],
-        "print_df_and_reports",
-        lambda df, *args: printed.append(df)
     )
 
     result = main["patient_query_handler"](
@@ -117,41 +50,20 @@ def test_current_patient_found(monkeypatch):
     print("Queue: D001")
     print("Expected Patient: NANI")
     print("Actual:")
-    print(fake_patient)
+    print(console.shown[-1])
 
     assert result is None
-    assert len(printed) == 1
+    assert "NANI" in console.shown[-1]
+    assert "T0111111C" in console.shown[-1]
+    assert database.fetched_parameters == [("D001", "2026-10-14")]
 
 
 def test_patient_not_found(monkeypatch):
 
-    monkeypatch.setattr(
-        main["io"],
-        "dynamic_menu_print",
-        lambda *args: "1"
-    )
-
-    monkeypatch.setattr(
-        main["io"],
-        "validate_option",
-        lambda option: None
-    )
-
-    monkeypatch.setattr(
-        main["data"],
-        "get_patient_filter",
-        lambda option: ["name"]
-    )
-
-    monkeypatch.setattr(
-        "builtins.input",
-        lambda prompt="": "D999"
-    )
-
-    monkeypatch.setattr(
-        main["data"],
-        "get_patient_by_queue",
-        lambda queue, filters, date: pd.DataFrame()
+    use_fakes(
+        monkeypatch,
+        ["1", "1", "D999"],
+        []
     )
 
     result = main["patient_query_handler"](
@@ -172,6 +84,8 @@ def test_patient_not_found(monkeypatch):
 def test_current_patient_uses_today(monkeypatch):
 
     dates = []
+
+    use_fakes(monkeypatch, [], [])
 
     monkeypatch.setattr(
         main["data"],
@@ -198,21 +112,16 @@ def test_past_patient_uses_selected_date(monkeypatch):
 
     dates = []
 
+    use_fakes(
+        monkeypatch,
+        ["2026-10-10"],
+        []
+    )
+
     monkeypatch.setattr(
         main["data"],
         "get_current_date",
         lambda: "2026-10-14"
-    )
-
-    monkeypatch.setattr(
-        "builtins.input",
-        lambda prompt="": "2026-10-10"
-    )
-
-    monkeypatch.setattr(
-        main["io"],
-        "validate_date",
-        lambda date: None
     )
 
     monkeypatch.setitem(
@@ -230,30 +139,14 @@ def test_past_patient_uses_selected_date(monkeypatch):
 
     assert dates == ["2026-10-10"]
 
+
 def test_patient_query_database_down(monkeypatch):
 
-    monkeypatch.setattr(
-        main["io"],
-        "dynamic_menu_print",
-        lambda *args: "1"
-    )
-
-    monkeypatch.setattr(
-        main["io"],
-        "validate_option",
-        lambda option: None
-    )
-
-    monkeypatch.setattr(
-        "builtins.input",
-        lambda prompt="": "D001"
-    )
-
-    # get_patient_by_queue returns None when the database cannot be reached.
-    monkeypatch.setattr(
-        main["data"],
-        "get_patient_by_queue",
-        lambda queue, filters, date: None
+    # The database returns None when it cannot be reached.
+    use_fakes(
+        monkeypatch,
+        ["1", "1", "D001"],
+        None
     )
 
     result = main["patient_query_handler"](
@@ -267,48 +160,15 @@ def test_patient_query_database_down(monkeypatch):
     assert result == main["DATABASE_ERROR_MESSAGE"]
 
 
-def answer_menus(monkeypatch, filter_option, scope_option):
-    """Make the filter menu return filter_option, then the one patient
-    or all patients menu return scope_option."""
-
-    answers = iter([filter_option, scope_option])
-
-    monkeypatch.setattr(
-        main["io"],
-        "dynamic_menu_print",
-        lambda *args: next(answers)
-    )
-
-
 def test_all_patients_on_date(monkeypatch):
 
-    fake_patients = pd.DataFrame([
-        {"time": "09:00:00", "queue_number": "D001", "name": "NANI"},
-        {"time": "09:30:00", "queue_number": "P001", "name": "ALEX"}
-    ])
-
-    answer_menus(monkeypatch, "1", "2")
-
-    dates = []
-
-    monkeypatch.setattr(
-        main["data"],
-        "get_patients_by_date",
-        lambda filters, date: dates.append(date) or fake_patients
-    )
-
-    monkeypatch.setattr(
-        main["data"],
-        "print_or_export",
-        lambda columns: "print"
-    )
-
-    printed = []
-
-    monkeypatch.setattr(
-        main["io"],
-        "print_df_and_reports",
-        lambda df, *args: printed.append(df)
+    console, database = use_fakes(
+        monkeypatch,
+        ["1", "2"],
+        [
+            ("09:00:00", "D001", "NANI", "T0111111C", "F", "2006-01-01", 20, "+65 91111111"),
+            ("09:30:00", "P001", "ALEX", "S0012345B", "M", "2001-01-01", 25, "+65 91234567")
+        ]
     )
 
     result = main["patient_query_handler"](
@@ -318,22 +178,20 @@ def test_all_patients_on_date(monkeypatch):
     print("\nSCENARIO: All Patients On A Date")
     print("Expected: Both patients printed, no error")
     print("Actual:", result)
-    print(fake_patients)
+    print(console.shown[-1])
 
     assert result is None
-    assert dates == ["2026-10-14"]
-    assert len(printed) == 1
-    assert len(printed[0]) == 2
+    assert database.fetched_parameters == [("2026-10-14",)]
+    assert "NANI" in console.shown[-1]
+    assert "ALEX" in console.shown[-1]
 
 
 def test_all_patients_none_on_date(monkeypatch):
 
-    answer_menus(monkeypatch, "1", "2")
-
-    monkeypatch.setattr(
-        main["data"],
-        "get_patients_by_date",
-        lambda filters, date: pd.DataFrame()
+    use_fakes(
+        monkeypatch,
+        ["1", "2"],
+        []
     )
 
     result = main["patient_query_handler"](
@@ -349,7 +207,11 @@ def test_all_patients_none_on_date(monkeypatch):
 
 def test_invalid_query_scope(monkeypatch):
 
-    answer_menus(monkeypatch, "1", "3")
+    use_fakes(
+        monkeypatch,
+        ["1", "3"],
+        []
+    )
 
     result = main["patient_query_handler"](
         "2026-10-14"
