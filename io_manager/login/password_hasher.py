@@ -1,6 +1,7 @@
 import bcrypt 
 
 class PasswordHasher:
+    """Hashes passwords and verifies login attempts using bcrypt."""
     def hash(self, plain_password: str) -> str:
         if not plain_password:
             raise ValueError("Password cannot be empty.")
