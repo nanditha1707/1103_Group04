@@ -2,6 +2,7 @@ QUIT_SIGNAL = -99
 ADMIN_PASSWORD = "Password"
 MENU_EXIT_MESSAGE = "Admin Password Inputted, Exiting Program Now!"
 DATABASE_ERROR_MESSAGE = "The patient records database could not be reached, please try again later!"
+INVALID_OPTION_NUMBER_MESSAGE = "This is not a valid option number!"
 
 MAIN_MENU_OPTIONS = [
     "1. Patient Registration",

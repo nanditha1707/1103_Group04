@@ -3,8 +3,7 @@
 # ======================================================================
 from ai_manager import AIManagerFactory
 from app import constants
-from app.numbered_options import NumberedOptions
-from app.queries import AllPatientsScope, QueryResultPresenter, SinglePatientScope
+from app.queries import AllPatientsScope, PatientQueryHandler, QueryResultPresenter, SinglePatientScope
 from app.triage_pipeline import TriagePipeline
 from data_manager import DataManagerFactory
 from io_manager import IOManager
@@ -16,31 +15,6 @@ from dotenv import load_dotenv
 # CORE FUNCTIONS
 # ======================================================================
 
-def patient_query_handler(date: str) -> str | None:
-    """Ask for a filter option, then whether to look up one patient by
-    queue number or every patient, and print or export the matching
-    records for the given date (YYYY-MM-DD).
-    Return an error message if anything fails, otherwise None."""
-    error = None
-    filter_option= io.prompt_menu(constants.FILTER_OPTIONS)
-    option_error = io.validate_option(filter_option, len(constants.FILTER_OPTIONS))
-    if option_error is None:
-        filter_list= data.get_patient_filter(filter_option)
-        if filter_list is None:
-            error = "This is not a valid option number!"
-        else:
-            # Both options query the database directly, so patients
-            # registered by other users are found too.
-            scope = query_scopes.find(io.prompt_menu(query_scopes.lines()))
-            if scope is None:
-                error = "This is not a valid option number!"
-            else:
-                query_response = scope.fetch(filter_list, date)
-                error = query_result_presenter.show(query_response, scope.not_found_error)
-    else:
-        error = option_error
-    return error
-
 def healthcare_portal_routing(option: str) -> None:
     """Run the healthcare portal option the user chose: query today's
     patients, query a past date, or show a report. Any error message is
@@ -51,13 +25,13 @@ def healthcare_portal_routing(option: str) -> None:
     today = data.get_current_date()
     # Option 1: query a patient registered today.
     if option_number == 1:
-        error_message = patient_query_handler(today)
+        error_message = patient_query_handler.handle(today)
     # Option 2: query a patient from a date the user enters.
     elif option_number == 2:
         datetime_answer = io.ask("Enter the Date here. (YYYY-MM-DD): ").strip()
         error_message = io.validate_date(datetime_answer)
         if error_message is None:
-            error_message = patient_query_handler(datetime_answer)
+            error_message = patient_query_handler.handle(datetime_answer)
 
     # Option 3: show one of the reports for a date the user enters.
     elif option_number == 3:
@@ -146,8 +120,9 @@ io = IOManager(symptom_terms=data.load_symptoms())
 # Create the logic manager using the HSA dataset and data_manager for queue numbers.
 logic = LogicManagerFactory.create(hsa_df, data)
 triage_pipeline = TriagePipeline(io, ai, logic, data)
-query_result_presenter = QueryResultPresenter(io, data)
-query_scopes = NumberedOptions([SinglePatientScope(io, data), AllPatientsScope(data)])
+patient_query_handler = PatientQueryHandler(
+    io, data, [SinglePatientScope(io, data), AllPatientsScope(data)], QueryResultPresenter(io, data)
+)
 
 while True:
     # 1. I/O manager: collect the patient's answers
