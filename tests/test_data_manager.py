@@ -13,7 +13,7 @@ from data_manager.storage import PostgresDatabase
 from fakes import FakeDatabase
 
 
-class TestDataManager:
+class TestDatasetCleaning:
     # ==========================================================
     # TEST 1 - CLEAN ICD DATA
     # ==========================================================
@@ -96,6 +96,8 @@ class TestDataManager:
         assert result.iloc[0]["DrugName"] == "PARACETAMOL"
         assert result.iloc[0]["ActiveIngredients"] == "PARACETAMOL"
 
+
+class TestDataManager:
     # ==========================================================
     # TEST 3 - JOIN SYMPTOMS
     # ==========================================================
@@ -271,49 +273,6 @@ class TestDataManager:
         assert list(saved_record) == constants.RECORD_COLUMNS
 
     # ==========================================================
-    # TEST 8 - DATABASE CANNOT BE REACHED
-    # ==========================================================
-
-    def test_database_down(self, monkeypatch):
-
-        def fake_connect(url):
-            raise psycopg.OperationalError("connection refused")
-
-        monkeypatch.setattr(
-            psycopg,
-            "connect",
-            fake_connect
-        )
-
-        database = PostgresDatabase("postgresql://unreachable")
-        data = DataManagerFactory.create(database)
-
-        fetch_result = database.fetch_rows(
-            "SELECT 1",
-            ()
-        )
-        query_result = data.get_patient_by_queue(
-            "D001",
-            ["name"],
-            "2026-10-14"
-        )
-        export_result = data.export_record(
-            {"name": "Charlie Ng"},
-            {},
-            {"queue_number": "D001"}
-        )
-
-        print("\nSCENARIO: Database Cannot Be Reached")
-        print("Expected fetch_rows: None")
-        print("Expected get_patient_by_queue: None")
-        print("Expected export_record: an error message")
-        print("Actual:", fetch_result, "|", query_result, "|", export_result)
-
-        assert fetch_result is None
-        assert query_result is None
-        assert "connection refused" in export_result
-
-    # ==========================================================
     # TEST 9 - ALL PATIENTS ON A DATE
     # ==========================================================
 
@@ -357,3 +316,48 @@ class TestDataManager:
         # RECORD_COLUMNS already has time and queue_number, so nothing is added.
         assert list(result.columns) == constants.RECORD_COLUMNS
         assert result.empty
+
+
+class TestPostgresDatabase:
+    # ==========================================================
+    # TEST 8 - DATABASE CANNOT BE REACHED
+    # ==========================================================
+
+    def test_database_down(self, monkeypatch):
+
+        def fake_connect(url):
+            raise psycopg.OperationalError("connection refused")
+
+        monkeypatch.setattr(
+            psycopg,
+            "connect",
+            fake_connect
+        )
+
+        database = PostgresDatabase("postgresql://unreachable")
+        data = DataManagerFactory.create(database)
+
+        fetch_result = database.fetch_rows(
+            "SELECT 1",
+            ()
+        )
+        query_result = data.get_patient_by_queue(
+            "D001",
+            ["name"],
+            "2026-10-14"
+        )
+        export_result = data.export_record(
+            {"name": "Charlie Ng"},
+            {},
+            {"queue_number": "D001"}
+        )
+
+        print("\nSCENARIO: Database Cannot Be Reached")
+        print("Expected fetch_rows: None")
+        print("Expected get_patient_by_queue: None")
+        print("Expected export_record: an error message")
+        print("Actual:", fetch_result, "|", query_result, "|", export_result)
+
+        assert fetch_result is None
+        assert query_result is None
+        assert "connection refused" in export_result
