@@ -1,10 +1,11 @@
-from collections.abc import Iterable, Mapping
+from collections.abc import Iterable, Mapping, Sequence
 
 import pandas as pd
 
 from io_manager import constants
 from io_manager.console import Console, TerminalConsole
 from io_manager.form import RegistrationFactory
+from io_manager.menus import Labelled, NumberedOptions
 from io_manager.patient_answers import Answer, PatientAnswers
 from io_manager.rendering import BoxRenderer, TableRenderer
 from io_manager.screens import ConfirmationScreen, Questionnaire, ResultView
@@ -73,6 +74,15 @@ class IOManager:
         # maximum is the menu's number of options, e.g. len(FILTER_OPTIONS).
         # Guards against empty, non-integer, zero, negative and out of range inputs.
         return MenuOptionValidator(maximum=maximum).validate(text)
+
+    def choose[T: Labelled](self, options: Sequence[T], header: str | None = None) -> T | None:
+        numbered = NumberedOptions(options)
+        choice = self.prompt_menu(numbered.lines(), header)
+        error = self.validate_option(choice, len(numbered))
+        if error is not None:
+            self.show_message(error)
+            return None
+        return numbered.get(choice)
 
     def validate_date(self, text: str) -> str | None:
         # Checks if a YYYY-MM-DD date is valid.

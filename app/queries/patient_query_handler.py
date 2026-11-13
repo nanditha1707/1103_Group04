@@ -1,7 +1,6 @@
 from collections.abc import Sequence
 
 from app import constants
-from app.numbered_options import NumberedOptions
 from data_manager import DataManager
 from io_manager import IOManager
 
@@ -16,7 +15,7 @@ class PatientQueryHandler:
     ) -> None:
         self.__io = io
         self.__data = data
-        self.__scopes = NumberedOptions(scopes)
+        self.__scopes = list(scopes)
         self.__presenter = presenter
 
     def handle(self, date: str) -> str | None:
@@ -31,10 +30,8 @@ class PatientQueryHandler:
 
         # Both options query the database directly, so patients
         # registered by other users are found too.
-        scope_option = self.__io.prompt_menu(self.__scopes.lines())
-        error = self.__io.validate_option(scope_option, len(self.__scopes))
-        if error is not None:
-            return error
+        scope = self.__io.choose(self.__scopes)
+        if scope is None:
+            return None
 
-        scope = self.__scopes.get(scope_option)
         return self.__presenter.show(scope.fetch(filter_columns, date), scope.not_found_error)

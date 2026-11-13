@@ -1,7 +1,6 @@
 from collections.abc import Sequence
 
 from app import constants
-from app.numbered_options import NumberedOptions
 from io_manager import IOManager
 
 from .menu_action import MenuAction
@@ -13,12 +12,10 @@ class MainMenu:
         self, io: IOManager, actions: Sequence[MenuAction]
     ) -> None:
         self.__io = io
-        self.__actions = NumberedOptions(actions)
+        self.__actions = list(actions)
 
     def run_once(self) -> bool:
-        choice = self.__io.prompt_menu(self.__actions.lines(), constants.MAIN_MENU_HEADER)
-        error = self.__io.validate_option(choice, len(self.__actions))
-        if error is not None:
-            self.__io.show_message(error)
+        action = self.__io.choose(self.__actions, constants.MAIN_MENU_HEADER)
+        if action is None:
             return True
-        return self.__actions.get(choice).run()
+        return action.run()

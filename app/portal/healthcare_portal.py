@@ -3,7 +3,6 @@ from typing import override
 
 from app import constants
 from app.menu import MenuAction
-from app.numbered_options import NumberedOptions
 from io_manager import IOManager
 
 from .portal_action import PortalAction
@@ -16,14 +15,13 @@ class HealthcarePortal(MenuAction):
     ) -> None:
         super().__init__(constants.HEALTHCARE_PORTAL_LABEL)
         self.__io = io
-        self.__actions = NumberedOptions(actions)
+        self.__actions = list(actions)
 
     @override
     def run(self) -> bool:
-        choice = self.__io.prompt_menu(self.__actions.lines())
-        error = self.__io.validate_option(choice, len(self.__actions))
-        if error is None:
-            error = self.__actions.get(choice).run()
-        if error:
-            self.__io.show_message(error)
+        action = self.__io.choose(self.__actions)
+        if action is not None:
+            error = action.run()
+            if error:
+                self.__io.show_message(error)
         return True

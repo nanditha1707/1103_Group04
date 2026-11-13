@@ -1,9 +1,9 @@
 from collections.abc import Sequence
 
-from .menu_option import MenuOption
+from .labelled import Labelled
 
 
-class NumberedOptions[T: MenuOption]:
+class NumberedOptions[T: Labelled]:
 
     def __init__(
         self, options: Sequence[T]
