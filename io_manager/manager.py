@@ -75,7 +75,7 @@ class IOManager:
         # Guards against empty, non-integer, zero, negative and out of range inputs.
         return MenuOptionValidator(maximum=maximum).validate(text)
 
-    def choose[T: Labelled](self, options: Sequence[T], header: str | None = None) -> T | None:
+    def choose(self, options: Sequence[Labelled], header: str | None = None) -> Labelled | None:
         numbered = NumberedOptions(options)
         choice = self.prompt_menu(numbered.lines(), header)
         error = self.validate_option(choice, len(numbered))

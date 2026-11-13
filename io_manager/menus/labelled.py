@@ -5,4 +5,4 @@ class Labelled(Protocol):
 
     @property
     def label(self) -> str:
-        ...
+        pass

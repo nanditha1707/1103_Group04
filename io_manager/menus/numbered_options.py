@@ -3,10 +3,10 @@ from collections.abc import Sequence
 from .labelled import Labelled
 
 
-class NumberedOptions[T: Labelled]:
+class NumberedOptions:
 
     def __init__(
-        self, options: Sequence[T]
+        self, options: Sequence[Labelled]
     ) -> None:
         self.__options = list(options)
 
@@ -16,5 +16,5 @@ class NumberedOptions[T: Labelled]:
     def lines(self) -> list[str]:
         return [f"{number}. {option.label}" for number, option in enumerate(self.__options, start=1)]
 
-    def get(self, choice: str) -> T:
+    def get(self, choice: str) -> Labelled:
         return self.__options[int(choice) - 1]
