@@ -28,7 +28,13 @@ class ReportMenu(PortalAction):
         if date is None:
             return None
 
-        result = report.fetch(date)
+        detail = ""
+        if report.detail_prompt is not None:
+            detail = self.__prompt.ask_or_quit(report.detail_prompt)
+            if detail is None:
+                return None
+
+        result = report.fetch(date, detail)
         # A valid report returns None only if the database failed.
         if result is None:
             return constants.DATABASE_ERROR_MESSAGE

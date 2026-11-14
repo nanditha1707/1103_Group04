@@ -73,7 +73,7 @@ class ApplicationFactory:
     @staticmethod
     def create_healthcare_portal(io: IOManager, data: DataManager) -> HealthcarePortal:
         query_handler = ApplicationFactory.create_query_handler(io, data)
-        reports = [MedicineCountReport(io, data), MedicineBreakdownReport(data), PatientTypeBreakdownReport(data)]
+        reports = [MedicineCountReport(data), MedicineBreakdownReport(data), PatientTypeBreakdownReport(data)]
         return HealthcarePortal(io, [
             CurrentPatientQuery(data, query_handler),
             PastPatientQuery(io, query_handler),
@@ -88,5 +88,5 @@ class ApplicationFactory:
             QueryFilter(constants.AI_OUTPUT_FILTER_LABEL, constants.AI_OUTPUT_COLUMNS),
             QueryFilter(constants.ALL_RECORDS_FILTER_LABEL, data.get_record_columns())
         ]
-        scopes = [SinglePatientScope(io, data), AllPatientsScope(data)]
+        scopes = [SinglePatientScope(data), AllPatientsScope(data)]
         return PatientQueryHandler(io, filters, scopes, QueryResultPresenter(io, data))

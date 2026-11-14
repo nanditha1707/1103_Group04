@@ -15,5 +15,5 @@ class PatientTypeBreakdownReport(Report):
         self.__source = source
 
     @override
-    def fetch(self, date: str) -> dict[str, int] | None:
+    def fetch(self, date: str, detail: str) -> dict[str, int] | None:
         return self.__source.get_patient_type_breakdown(date)
