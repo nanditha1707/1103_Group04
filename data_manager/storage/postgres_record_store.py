@@ -4,11 +4,10 @@ from psycopg import sql
 from .database import Database
 from .queue_number_source import QueueNumberSource
 from .record_counter import RecordCounter
-from .record_reader import RecordReader
-from .record_writer import RecordWriter
+from .record_store import RecordStore
 
 
-class PostgresRecordStore(RecordWriter, RecordReader, RecordCounter, QueueNumberSource):
+class PostgresRecordStore(RecordStore, RecordCounter, QueueNumberSource):
     # Each record has 4 medicine columns. unnest() turns them into 4
     # rows, one medicine per row, so they can be counted as a single
     # column. Used in the FROM part of the medicine reports.
