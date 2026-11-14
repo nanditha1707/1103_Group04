@@ -1,4 +1,5 @@
-from datetime import date, datetime, tzinfo
+from collections.abc import Callable
+from datetime import date, datetime
 from typing import override
 
 from io_manager.patient_answers import PatientAnswers
@@ -16,11 +17,11 @@ class AgeFromBirthdate(DerivedAnswer):
     """
 
     def __init__(
-        self, key: str, birthdate_key: str, timezone: tzinfo, share_with_ai: bool = False
+        self, key: str, birthdate_key: str, clock: Callable[[], datetime], share_with_ai: bool = False
     ) -> None:
         super().__init__(key, share_with_ai)
         self.__birthdate_key = birthdate_key
-        self.__timezone = timezone
+        self.__clock = clock
 
     @override
     def compute(self, answers: PatientAnswers) -> Answer:
@@ -29,7 +30,7 @@ class AgeFromBirthdate(DerivedAnswer):
             return None
 
         birthdate = date.fromisoformat(birthdate_text)
-        today = datetime.now(self.__timezone).date()
+        today = self.__clock().date()
 
         had_birthday = (today.month, today.day) >= (birthdate.month, birthdate.day)
         age = today.year - birthdate.year

@@ -14,17 +14,18 @@ class TestRegistration:
     CONFIRM_ALL_INPUTS = "17"
     MINIMUM_AGE = RegistrationFactory.MINIMUM_SELF_REGISTRATION_AGE
     SYMPTOM_TERMS = ("SORE THROAT",)
+    TODAY = date(2026, 10, 14)
+
+    def __clock(self):
+        return datetime(self.TODAY.year, self.TODAY.month, self.TODAY.day, tzinfo=app_constants.TIMEZONE)
 
     def __register(self, console):
-        io = IOManagerFactory.create(self.SYMPTOM_TERMS, RegistrationFactory(app_constants.TIMEZONE), console)
+        io = IOManagerFactory.create(self.SYMPTOM_TERMS, RegistrationFactory(self.__clock), console)
 
         return io.collect_registration()
 
-    @staticmethod
-    def __birthdate_for_age(age):
-        today = datetime.now(app_constants.TIMEZONE).date()
-
-        return date(today.year - age, 1, 1).isoformat()
+    def __birthdate_for_age(self, age):
+        return date(self.TODAY.year - age, 1, 1).isoformat()
 
     def test_normal_female_registration(self):
 

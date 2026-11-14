@@ -117,9 +117,9 @@ class TestMainMenu:
             "2"
         ])
         database = FakeDatabase([])
-        io = AppTestFactory.create_io(console)
+        io = AppTestFactory.create_io(console, self.__clock)
         data = AppTestFactory.create_data_manager(database, self.__clock)
-        main_menu = AppTestFactory.create_main_menu(io, data)
+        main_menu = AppTestFactory.create_main_menu(io, data, clock=self.__clock)
 
         keep_running = main_menu.run_once()
 
@@ -138,9 +138,9 @@ class TestMainMenu:
             "WRONG"
         ])
         database = FakeDatabase([])
-        io = AppTestFactory.create_io(console)
+        io = AppTestFactory.create_io(console, self.__clock)
         data = AppTestFactory.create_data_manager(database, self.__clock)
-        main_menu = AppTestFactory.create_main_menu(io, data)
+        main_menu = AppTestFactory.create_main_menu(io, data, clock=self.__clock)
 
         keep_running = main_menu.run_once()
 

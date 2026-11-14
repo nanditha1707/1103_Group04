@@ -1,4 +1,5 @@
-from datetime import date, datetime, tzinfo
+from collections.abc import Callable
+from datetime import date, datetime
 from typing import override
 
 from io_manager import constants
@@ -20,11 +21,11 @@ class BirthdateValidator(Validator):
     """
 
     def __init__(
-        self, earliest: date, timezone: tzinfo
+        self, earliest: date, clock: Callable[[], datetime]
     ) -> None:
         self.__date_validator = DateValidator(constants.BIRTHDATE_FORMAT_ERROR)
         self.__earliest = earliest
-        self.__timezone = timezone
+        self.__clock = clock
 
     @override
     def validate(self, answer: str) -> str | None:
@@ -33,7 +34,7 @@ class BirthdateValidator(Validator):
             return format_error
 
         birthdate = date.fromisoformat(answer)
-        today = datetime.now(self.__timezone).date()
+        today = self.__clock().date()
 
         if not self.__earliest <= birthdate <= today:
             return constants.BIRTHDATE_RANGE_ERROR.format(

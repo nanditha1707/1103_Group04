@@ -68,7 +68,7 @@ class TestHealthcarePortal:
 
         console = FakeConsole(["1", "2"])
         database = FakeDatabase([])
-        io = AppTestFactory.create_io(console)
+        io = AppTestFactory.create_io(console, self.__clock)
         data = AppTestFactory.create_data_manager(database, self.__clock)
         current_patient_query = CurrentPatientQuery(data, AppTestFactory.create_query_handler(io, data))
 
@@ -84,7 +84,7 @@ class TestHealthcarePortal:
 
         console = FakeConsole(["2026-10-10", "1", "2"])
         database = FakeDatabase([])
-        io = AppTestFactory.create_io(console)
+        io = AppTestFactory.create_io(console, self.__clock)
         data = AppTestFactory.create_data_manager(database, self.__clock)
         past_patient_query = PastPatientQuery(io, AppTestFactory.create_query_handler(io, data))
 

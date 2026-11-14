@@ -1,4 +1,5 @@
-from datetime import date, tzinfo
+from collections.abc import Callable
+from datetime import date, datetime
 
 from io_manager import constants
 from io_manager.derived import AgeFromBirthdate
@@ -70,17 +71,17 @@ class RegistrationFactory:
     )
 
     def __init__(
-        self, timezone: tzinfo
+        self, clock: Callable[[], datetime]
     ) -> None:
-        self.__timezone = timezone
+        self.__clock = clock
 
     @property
-    def timezone(self) -> tzinfo:
+    def clock(self) -> Callable[[], datetime]:
         """
-        The clinic's timezone, used to work out today's date for the
+        The clinic's clock, used to work out today's date for the
         birthdate check and the patient's age.
         """
-        return self.__timezone
+        return self.__clock
 
     def build_form(
         self, catalogue: SymptomCatalogue, renderer: BoxRenderer
@@ -141,7 +142,7 @@ class RegistrationFactory:
             TextQuestion(
                 "birthdate",
                 constants.BIRTHDATE_PROMPT,
-                BirthdateValidator(self.EARLIEST_BIRTHDATE, self.timezone),
+                BirthdateValidator(self.EARLIEST_BIRTHDATE, self.clock),
             ),
             TextQuestion("phone_number", constants.PHONE_PROMPT, PhoneNumberValidator()),
             TextQuestion(
@@ -197,7 +198,7 @@ class RegistrationFactory:
             ),
         ],
         [
-            AgeFromBirthdate("age", "birthdate", self.timezone, share_with_ai=True),
+            AgeFromBirthdate("age", "birthdate", self.clock, share_with_ai=True),
         ])
 
     def build_stop_rule(self) -> StopRule:

@@ -1,7 +1,7 @@
 from collections.abc import Callable
 from datetime import datetime
 
-from app import constants
+from app import ApplicationFactory, constants
 from app.interfaces import DiagnosisSource
 from app.menu import ExitAction, MainMenu, PasswordGate, PasswordProtectedAction, RegistrationAction
 from app.portal import CurrentPatientQuery, HealthcarePortal, PastPatientQuery, ReportMenu
@@ -30,31 +30,25 @@ class AppTestFactory:
     ADMIN_PASSWORD = "Password"
 
     @staticmethod
-    def now() -> datetime:
-        """Return the current time in the clinic's timezone, like
-        ApplicationFactory's clock."""
-        return datetime.now(constants.TIMEZONE)
-
-    @staticmethod
-    def create_data_manager(database: Database, clock: Callable[[], datetime] | None = None) -> DataManager:
+    def create_data_manager(database: Database, clock: Callable[[], datetime] = ApplicationFactory.now) -> DataManager:
         """Build the real DataManager on the test database with a cipher
         that leaves values unchanged and a key check that always passes,
         so the test rows can stay in plain text. A test that does not pass
         a clock gets the clinic's real time, the same as the app."""
-        if clock is None:
-            clock = AppTestFactory.now
         return DataManagerFactory.create(clock, database, FakeCipher(), FakeKeyCheckStore())
 
     @staticmethod
-    def create_io(console: Console) -> IOManager:
-        return IOManagerFactory.create([], RegistrationFactory(constants.TIMEZONE), console)
+    def create_io(console: Console, clock: Callable[[], datetime] = ApplicationFactory.now) -> IOManager:
+        return IOManagerFactory.create([], RegistrationFactory(clock), console)
 
     @staticmethod
-    def create_main_menu(io: IOManager, data: DataManager, diagnoser: DiagnosisSource | None = None) -> MainMenu:
+    def create_main_menu(
+        io: IOManager, data: DataManager, diagnoser: DiagnosisSource | None = None, clock: Callable[[], datetime] = ApplicationFactory.now
+    ) -> MainMenu:
         if diagnoser is None:
             diagnoser = FakeDiagnoser({})
 
-        logic = LogicManagerFactory.create(None, data, AppTestFactory.now)
+        logic = LogicManagerFactory.create(None, data, clock)
         triage_pipeline = TriagePipeline(screens=io, prompt=io, diagnoser=diagnoser, router=logic, records=data)
         registration = RegistrationAction(io, triage_pipeline)
         healthcare_portal = AppTestFactory.create_healthcare_portal(io, data)
