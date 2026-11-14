@@ -21,7 +21,6 @@ class MedicineClassifier:
         Returns None if the medicine is not in the HSA dataset.
         """
 
-        # Compare in lower case so "paracetamol" matches "Paracetamol".
         target = self._to_text(medicine)
 
         # An empty medicine name would match every row, so skip it.
