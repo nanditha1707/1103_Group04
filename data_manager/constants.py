@@ -6,6 +6,8 @@ from zoneinfo import ZoneInfo
 SGT = ZoneInfo("Asia/Singapore")
 
 DATABASE_URL_ENV_VAR = "POSTGRESQL_CLOUD_DATABASE_URL"
+ENCRYPTION_KEY_ENV_VAR = "PATIENT_DATA_ENCRYPTION_KEY"
+KEY_CHECK_TEXT = "PATIENT_DATA_ENCRYPTION_KEY_PASS"
 
 # Folder paths
 # Every module gets its file paths from here.
