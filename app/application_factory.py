@@ -1,11 +1,13 @@
 import os
+from collections.abc import Callable
 from datetime import datetime
 
+import pandas as pd
 from dotenv import load_dotenv
 
 from ai_manager import AIManagerFactory
 from app import constants
-from app.interfaces import Runnable
+from app.interfaces import DiagnosisSource, Runnable
 from app.menu import ExitAction, MainMenu, PasswordGate, PasswordProtectedAction, RegistrationAction
 from app.portal import CurrentPatientQuery, HealthcarePortal, PastPatientQuery, ReportMenu
 from app.queries import AllPatientsScope, PatientQueryHandler, QueryFilter, QueryResultPresenter, SinglePatientScope
@@ -40,21 +42,13 @@ class ApplicationFactory:
         admin_password = os.getenv(constants.ADMIN_PASSWORD_ENV_VAR)
         if not admin_password:
             return StartupFailure(io, constants.ADMIN_PASSWORD_MISSING_MESSAGE)
-        gate = PasswordGate(io, admin_password)
 
         # load the ICD and HSA datasets once, when the program starts
         icd_df, hsa_df = data.get_cleaned_datasets()
         # The AI manager checks every AI answer against the same datasets that logic_manager routes with,
         # so every valid medicine can be routed
         ai = AIManagerFactory.create(icd_df, hsa_df)
-        # Create the logic manager using the HSA dataset and data_manager for queue numbers.
-        logic = LogicManagerFactory.create(hsa_df, data, ApplicationFactory.now)
-
-        triage_pipeline = TriagePipeline(screens=io, prompt=io, diagnoser=ai, router=logic, records=data)
-        registration = RegistrationAction(io, triage_pipeline)
-        healthcare_portal = ApplicationFactory.__create_healthcare_portal(io, data)
-        protected_portal = PasswordProtectedAction(healthcare_portal, gate)
-        return Application(MainMenu(io, [registration, protected_portal, ExitAction(io, gate)]))
+        return Application(ApplicationFactory.create_main_menu(io, data, ai, hsa_df, admin_password, ApplicationFactory.now))
 
     @staticmethod
     def now() -> datetime:
@@ -63,19 +57,36 @@ class ApplicationFactory:
         return datetime.now(constants.TIMEZONE)
 
     @staticmethod
-    def __create_healthcare_portal(io: IOManager, data: DataManager) -> HealthcarePortal:
-        filters = [
-            QueryFilter(constants.PATIENT_INFO_FILTER_LABEL, constants.PATIENT_COLUMNS),
-            QueryFilter(constants.MEDICAL_INFO_FILTER_LABEL, constants.MEDICAL_COLUMNS),
-            QueryFilter(constants.AI_OUTPUT_FILTER_LABEL, constants.AI_OUTPUT_COLUMNS),
-            QueryFilter(constants.ALL_RECORDS_FILTER_LABEL, data.get_record_columns())
-        ]
-        query_handler = PatientQueryHandler(
-            io, filters, [SinglePatientScope(io, data), AllPatientsScope(data)], QueryResultPresenter(io, data)
-        )
+    def create_main_menu(
+        io: IOManager, data: DataManager, diagnoser: DiagnosisSource, hsa_df: pd.DataFrame | None, admin_password: str, clock: Callable[[], datetime]
+    ) -> MainMenu:
+        # Create the logic manager using the HSA dataset and data_manager for queue numbers.
+        logic = LogicManagerFactory.create(hsa_df, data, clock)
+        gate = PasswordGate(io, admin_password)
+
+        triage_pipeline = TriagePipeline(screens=io, prompt=io, diagnoser=diagnoser, router=logic, records=data)
+        registration = RegistrationAction(io, triage_pipeline)
+        healthcare_portal = ApplicationFactory.create_healthcare_portal(io, data)
+        protected_portal = PasswordProtectedAction(healthcare_portal, gate)
+        return MainMenu(io, [registration, protected_portal, ExitAction(io, gate)])
+
+    @staticmethod
+    def create_healthcare_portal(io: IOManager, data: DataManager) -> HealthcarePortal:
+        query_handler = ApplicationFactory.create_query_handler(io, data)
         reports = [MedicineCountReport(io, data), MedicineBreakdownReport(data), PatientTypeBreakdownReport(data)]
         return HealthcarePortal(io, [
             CurrentPatientQuery(data, query_handler),
             PastPatientQuery(io, query_handler),
             ReportMenu(io, io, reports)
         ])
+
+    @staticmethod
+    def create_query_handler(io: IOManager, data: DataManager) -> PatientQueryHandler:
+        filters = [
+            QueryFilter(constants.PATIENT_INFO_FILTER_LABEL, constants.PATIENT_COLUMNS),
+            QueryFilter(constants.MEDICAL_INFO_FILTER_LABEL, constants.MEDICAL_COLUMNS),
+            QueryFilter(constants.AI_OUTPUT_FILTER_LABEL, constants.AI_OUTPUT_COLUMNS),
+            QueryFilter(constants.ALL_RECORDS_FILTER_LABEL, data.get_record_columns())
+        ]
+        scopes = [SinglePatientScope(io, data), AllPatientsScope(data)]
+        return PatientQueryHandler(io, filters, scopes, QueryResultPresenter(io, data))
