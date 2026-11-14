@@ -8,19 +8,6 @@ from .record_store import RecordStore
 
 
 class PostgresRecordStore(RecordStore, RecordCounter, QueueNumberSource):
-    # Each record has 4 medicine columns. unnest() turns them into 4
-    # rows, one medicine per row, so they can be counted as a single
-    # column. Used in the FROM part of the medicine reports.
-    _MEDICINES_PER_RECORD = """
-        patient_records,
-        unnest(ARRAY[
-            primary_diagnosis_medicine_1,
-            primary_diagnosis_medicine_2,
-            secondary_diagnosis_medicine_1,
-            secondary_diagnosis_medicine_2
-        ]) AS medicine
-    """
-
     def __init__(
         self, database: Database
     ):
@@ -131,35 +118,6 @@ class PostgresRecordStore(RecordStore, RecordCounter, QueueNumberSource):
         ).format(self.__select_columns(columns))
 
         return self.__fetch_table(sql_statement, (date,), columns)
-
-    def count_medicine(self, medicine: str, date: str) -> int | None:
-        sql_statement = f"""
-            SELECT COUNT(*)
-            FROM {self._MEDICINES_PER_RECORD}
-            WHERE date = %s AND medicine = %s
-        """
-        rows = self.__database.fetch_rows(sql_statement, (date, medicine))
-        if rows is None:
-            return None
-
-        # COUNT(*) always returns exactly one row with one value.
-        return rows[0][0]
-
-    def count_each_medicine(self, date: str) -> dict[str, int] | None:
-        # Empty medicine columns are skipped so they are not counted.
-        sql_statement = f"""
-            SELECT medicine, COUNT(*) AS times_issued
-            FROM {self._MEDICINES_PER_RECORD}
-            WHERE date = %s AND medicine IS NOT NULL AND medicine <> ''
-            GROUP BY medicine
-            ORDER BY times_issued DESC, medicine
-        """
-        rows = self.__database.fetch_rows(sql_statement, (date,))
-        if rows is None:
-            return None
-
-        # Each row is (medicine, times_issued).
-        return dict(rows)
 
     def count_each_route(self, date: str) -> dict[str, int] | None:
         sql_statement = """
