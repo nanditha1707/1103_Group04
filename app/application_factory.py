@@ -6,11 +6,12 @@ from app.menu import ExitAction, MainMenu, RegistrationAction
 from app.portal import CurrentPatientQuery, HealthcarePortal, PastPatientQuery, ReportMenu
 from app.queries import AllPatientsScope, PatientQueryHandler, QueryFilter, QueryResultPresenter, SinglePatientScope
 from app.reports import MedicineBreakdownReport, MedicineCountReport, PatientTypeBreakdownReport
-from data_manager import DataManager, DataManagerFactory
+from data_manager import DataManager, DataManagerFactory, EncryptionKeyError
 from io_manager import IOManager
 from logic_manager import LogicManagerFactory
 
 from .application import Application
+from .startup_failure import StartupFailure
 from .triage_pipeline import TriagePipeline
 
 
@@ -18,16 +19,24 @@ class ApplicationFactory:
 
     @staticmethod
     def create() -> Application:
-        data = DataManagerFactory.create()
+        # The symptom list comes from a local CSV, 
+        # so the one IO manager can be created before the data manager checks the encryption key.
+        io = IOManager(symptom_terms=DataManagerFactory.load_symptoms())
+        # A missing, malformed or wrong key, 
+        # or an unreachable database stops the program here, before any patient record is touched.
+        try:
+            data = DataManagerFactory.create()
+        except EncryptionKeyError as error:
+            message = constants.STARTUP_FAILED_MESSAGE.format(error=str(error))
+            return StartupFailure(io, message)
 
         # load the ICD and HSA datasets once, when the program starts
         icd_df, hsa_df = data.get_cleaned_datasets()
         # Read the AI API keys from the local .env file
         load_dotenv(override=True)
-        # The AI manager checks every AI answer against the same datasets that
-        # logic_manager routes with, so every valid medicine can be routed
+        # The AI manager checks every AI answer against the same datasets that logic_manager routes with,
+        # so every valid medicine can be routed
         ai = AIManagerFactory.create(icd_df, hsa_df)
-        io = IOManager(symptom_terms=data.load_symptoms())
         # Create the logic manager using the HSA dataset and data_manager for queue numbers.
         logic = LogicManagerFactory.create(hsa_df, data)
 

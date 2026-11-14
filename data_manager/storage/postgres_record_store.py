@@ -13,7 +13,7 @@ class PostgresRecordStore(RecordWriter, RecordReader, RecordCounter, QueueNumber
     # rows, one medicine per row, so they can be counted as a single
     # column. Used in the FROM part of the medicine reports.
     _MEDICINES_PER_RECORD = """
-        patient_records,
+        {},
         unnest(ARRAY[
             primary_diagnosis_medicine_1,
             primary_diagnosis_medicine_2,
@@ -23,13 +23,15 @@ class PostgresRecordStore(RecordWriter, RecordReader, RecordCounter, QueueNumber
     """
 
     def __init__(
-        self, database: Database
+        self, database: Database, table_name: str
     ):
         self.__database = database
+        self.__table = sql.Identifier(table_name)
+        self.__medicines_per_record = sql.SQL(self._MEDICINES_PER_RECORD).format(self.__table)
 
     def save(self, record: dict) -> str | None:
-        sql_statement = """
-            INSERT INTO patient_records (
+        sql_statement = sql.SQL("""
+            INSERT INTO {} (
                 date,
                 time,
                 queue_number,
@@ -87,7 +89,7 @@ class PostgresRecordStore(RecordWriter, RecordReader, RecordCounter, QueueNumber
                 %(ai_confidence_score)s,
                 %(route)s
             )
-        """
+        """).format(self.__table)
         return self.__database.execute(sql_statement, record)
 
     @staticmethod
@@ -121,24 +123,24 @@ class PostgresRecordStore(RecordWriter, RecordReader, RecordCounter, QueueNumber
 
     def find_by_queue(self, queue_number: str, columns: list[str], date: str) -> pd.DataFrame | None:
         sql_statement = sql.SQL(
-            "SELECT {} FROM patient_records WHERE queue_number = %s AND date = %s"
-        ).format(self.__select_columns(columns))
+            "SELECT {} FROM {} WHERE queue_number = %s AND date = %s"
+        ).format(self.__select_columns(columns), self.__table)
 
         return self.__fetch_table(sql_statement, (queue_number, date), columns)
 
     def find_by_date(self, columns: list[str], date: str) -> pd.DataFrame | None:
         sql_statement = sql.SQL(
-            "SELECT {} FROM patient_records WHERE date = %s ORDER BY time"
-        ).format(self.__select_columns(columns))
+            "SELECT {} FROM {} WHERE date = %s ORDER BY time"
+        ).format(self.__select_columns(columns), self.__table)
 
         return self.__fetch_table(sql_statement, (date,), columns)
 
     def count_medicine(self, medicine: str, date: str) -> int | None:
-        sql_statement = f"""
+        sql_statement = sql.SQL("""
             SELECT COUNT(*)
-            FROM {self._MEDICINES_PER_RECORD}
+            FROM {}
             WHERE date = %s AND medicine = %s
-        """
+        """).format(self.__medicines_per_record)
         rows = self.__database.fetch_rows(sql_statement, (date, medicine))
         if rows is None:
             return None
@@ -148,13 +150,13 @@ class PostgresRecordStore(RecordWriter, RecordReader, RecordCounter, QueueNumber
 
     def count_each_medicine(self, date: str) -> dict[str, int] | None:
         # Empty medicine columns are skipped so they are not counted.
-        sql_statement = f"""
+        sql_statement = sql.SQL("""
             SELECT medicine, COUNT(*) AS times_issued
-            FROM {self._MEDICINES_PER_RECORD}
+            FROM {}
             WHERE date = %s AND medicine IS NOT NULL AND medicine <> ''
             GROUP BY medicine
             ORDER BY times_issued DESC, medicine
-        """
+        """).format(self.__medicines_per_record)
         rows = self.__database.fetch_rows(sql_statement, (date,))
         if rows is None:
             return None
@@ -163,12 +165,12 @@ class PostgresRecordStore(RecordWriter, RecordReader, RecordCounter, QueueNumber
         return dict(rows)
 
     def count_each_route(self, date: str) -> dict[str, int] | None:
-        sql_statement = """
+        sql_statement = sql.SQL("""
             SELECT route, COUNT(*)
-            FROM patient_records
+            FROM {}
             WHERE date = %s
             GROUP BY route
-        """
+        """).format(self.__table)
         rows = self.__database.fetch_rows(sql_statement, (date,))
         if rows is None:
             return None
@@ -177,15 +179,16 @@ class PostgresRecordStore(RecordWriter, RecordReader, RecordCounter, QueueNumber
         return dict(rows)
 
     def get_highest_queue_number(self, prefix: str, date: str) -> int | None:
-        # SUBSTRING(... FROM 2) drops the letter: "D007" -> "007".
+        # SUBSTRING(... FROM '[0-9]+$') keeps only the trailing digits, 
+        # so it works for prefixes of any length: "D007" -> "007", "PR013" -> "013".
         # CAST(... AS INTEGER) turns "007" into 7, and MAX keeps the highest.
-        # The ~ pattern only keeps queue numbers like D007 (the letter then
+        # The ~ pattern only keeps queue numbers like D007 (the prefix then
         # digits only), so corrupted queue numbers are skipped.
-        sql_statement = """
-            SELECT MAX(CAST(SUBSTRING(queue_number FROM 2) AS INTEGER))
-            FROM patient_records
+        sql_statement = sql.SQL("""
+            SELECT MAX(CAST(SUBSTRING(queue_number FROM '[0-9]+$') AS INTEGER))
+            FROM {}
             WHERE date = %s AND queue_number ~ %s
-        """
+        """).format(self.__table)
         queue_number_pattern = f"^{prefix}[0-9]+$"
         rows = self.__database.fetch_rows(sql_statement, (date, queue_number_pattern))
         if rows is None:

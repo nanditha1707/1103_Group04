@@ -6,6 +6,10 @@ from zoneinfo import ZoneInfo
 SGT = ZoneInfo("Asia/Singapore")
 
 DATABASE_URL_ENV_VAR = "POSTGRESQL_CLOUD_DATABASE_URL"
+ENCRYPTION_KEY_ENV_VAR = "PATIENT_DATA_ENCRYPTION_KEY"
+RECORDS_TABLE_ENV_VAR = "PATIENT_RECORDS_TABLE"
+DEFAULT_RECORDS_TABLE = "patient_records"
+KEY_CHECK_TEXT = "PATIENT_DATA_ENCRYPTION_KEY_PASS"
 
 # Folder paths
 # Every module gets its file paths from here.
@@ -50,6 +54,31 @@ RECORD_COLUMNS = [
     "ai_confidence_score",
     "route"
 ]
+
+MEDICINE_COLUMNS = [
+    "primary_diagnosis_medicine_1",
+    "primary_diagnosis_medicine_2",
+    "secondary_diagnosis_medicine_1",
+    "secondary_diagnosis_medicine_2"
+]
+
+ENCRYPTED_COLUMNS = [
+    "name",
+    "nric",
+    "birthdate",
+    "age",
+    "phone_number",
+    "current_symptoms",
+    "chronic_conditions",
+    "current_medications",
+    "drug_allergies",
+    "primary_diagnosis_ICD11_Code",
+    "primary_diagnosis_ICD11_Title",
+    "primary_diagnosis_explanation",
+    "secondary_diagnosis_ICD11_Code",
+    "secondary_diagnosis_ICD11_Title",
+    "secondary_diagnosis_explanation"
+] + MEDICINE_COLUMNS
 
 IDENTIFIER_COLUMNS = [
     "time",
