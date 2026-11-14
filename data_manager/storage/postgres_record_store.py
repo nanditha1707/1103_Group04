@@ -3,11 +3,11 @@ from psycopg import sql
 
 from .database import Database
 from .queue_number_source import QueueNumberSource
-from .record_counter import RecordCounter
 from .record_store import RecordStore
+from .route_counter import RouteCounter
 
 
-class PostgresRecordStore(RecordStore, RecordCounter, QueueNumberSource):
+class PostgresRecordStore(RecordStore, RouteCounter, QueueNumberSource):
     def __init__(
         self, database: Database
     ):
