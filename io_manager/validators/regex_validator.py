@@ -23,25 +23,23 @@ class RegexValidator(Validator):
 
         Since all of these only need the text to match a pattern, we used a
         common class that takes the pattern and error message as arguments.
-        Name and NRIC each create their own instance, while date uses
-        DateValidator subclass to add the calendar check. 
-        
-        Subclass is needed for date because in addition to checking whether
-        the format matches for date, it needs to check whether the date 
-        actually exists in the calendar.
+        Name and NRIC each create their own instance, while DateValidator
+        holds its own instance for the format check (composition).
+
+        DateValidator is needed for date because in addition to checking
+        whether the format matches for date, it needs to check whether the
+        date actually exists in the calendar.
     """
 
     def __init__(
         self, pattern: str, error: str
     ) -> None:
         self.__pattern = re.compile(pattern)
-        # Protected, not private: subclasses such as DateValidator return
-        # the same error for checks they add on top of the pattern.
-        self._error = error
+        self.__error = error
 
     @override
     def validate(self, answer: str) -> str | None:
         # fullmatch checks the entire text
         if self.__pattern.fullmatch(answer):
             return None
-        return self._error
+        return self.__error

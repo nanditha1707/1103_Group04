@@ -25,7 +25,7 @@ class DataManagerFactory:
             HsaDataset(constants.HSA_CSV_PATH),
             SymptomDataset(constants.SYMPTOMS_CSV_PATH),
             RecordSaver(record_store, constants.RECORD_COLUMNS),
-            PatientQuery(record_store, constants.FILTER_OPTIONS, constants.IDENTIFIER_COLUMNS),
+            PatientQuery(record_store, constants.IDENTIFIER_COLUMNS),
             QueryExporter(constants.QUERY_DIR, constants.SGT),
             ReportGenerator(record_store, constants.ROUTE_LABELS),
             record_store)
