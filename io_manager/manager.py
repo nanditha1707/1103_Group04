@@ -6,6 +6,7 @@ from io_manager import constants
 from io_manager.console import Console
 from io_manager.form import RegistrationForm
 from io_manager.menus import NumberedOptions
+from io_manager.navigation import Navigation
 from io_manager.patient_answers import PatientAnswers
 from io_manager.rendering import BoxRenderer, TableRenderer
 from io_manager.screens import ConfirmationScreen, Questionnaire, ResultView
@@ -41,9 +42,28 @@ class IOManager:
         # Ask a questiion and return raw input.
         return self.__console.ask(prompt)
 
-    def choose(self, options: Sequence[Labelled], header: str | None = None) -> Labelled | None:
+    def ask_or_quit(self, prompt: str) -> str | None:
+        """
+        Ask a question and return the raw input,
+        or None if the user typed quit.
+        """
+        text = self.__console.ask(prompt)
+        if self.__is_quit(text):
+            return None
+        return text
+
+    def choose(self, options: Sequence[Labelled], header: str | None = None, quittable: bool = False) -> Labelled | None:
+        """
+        Show a numbered menu and return the chosen option, or None if the input was not a valid option.
+        A quittable menu also shows the quit hint and returns None if the user typed quit.
+        """
         numbered = NumberedOptions(options)
-        choice = self.__prompt_menu(numbered.lines(), header)
+        lines = numbered.lines()
+        if quittable:
+            lines.append(constants.QUIT_MENU_HINT)
+        choice = self.__prompt_menu(lines, header)
+        if quittable and self.__is_quit(choice):
+            return None
         error = self.__validate_option(choice, len(numbered))
         if error is not None:
             self.show_message(error)
@@ -52,15 +72,27 @@ class IOManager:
 
     def ask_date(self, prompt: str) -> str | None:
         """
-        Ask for a YYYY-MM-DD date and return it, or show the error and
-        return None if it is not a valid date.
+        Ask for a YYYY-MM-DD date and return it, or return None if the
+        user typed quit or the date is not valid (the error is shown).
         """
         date = self.__console.ask(prompt).strip()
+        if self.__is_quit(date):
+            return None
         error = self.__date_validator.validate(date)
         if error is not None:
             self.show_message(error)
             return None
         return date
+
+    def __is_quit(self, text: str) -> bool:
+        """
+        Return True and show the quit message if the user typed quit,
+        the same command the patient types to leave registration.
+        """
+        if text.strip().upper() != Navigation.QUIT.value:
+            return False
+        self.show_message(constants.QUIT_TO_MAIN_MENU_MESSAGE)
+        return True
 
     def __prompt_menu(self, options: list[str], header: str | None = None) -> str:
         # Print the boxed menu, and return the normalised input.

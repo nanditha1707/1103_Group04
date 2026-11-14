@@ -8,6 +8,8 @@ This means that every module in the package can use these strings without having
 # SHARED PROMPTS AND ERRORS
 # ======================================================================
 MENU_OPTION_PROMPT = "Please enter one of the above options: "
+QUIT_MENU_HINT = "You can also input quit"
+QUIT_TO_MAIN_MENU_MESSAGE = "Returning to the Main Menu."
 EMPTY_INPUT_ERROR = "Input cannot be empty. Please enter a valid input."
 NOT_APPLICABLE = "Not Applicable"
 NOT_ANSWERED = "Not Answered"

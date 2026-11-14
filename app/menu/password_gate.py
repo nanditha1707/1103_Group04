@@ -17,7 +17,9 @@ class PasswordGate:
         self.__password = password
 
     def unlock(self, question: str) -> bool:
-        answer = self.__prompt.ask(question)
+        answer = self.__prompt.ask_or_quit(question)
+        if answer is None:
+            return False
         if hmac.compare_digest(answer.encode(), self.__password.encode()):
             return True
         self.__prompt.show_message(constants.WRONG_PASSWORD_MESSAGE)

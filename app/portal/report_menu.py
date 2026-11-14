@@ -20,7 +20,7 @@ class ReportMenu(PortalAction):
 
     @override
     def run(self) -> str | None:
-        report = self.__prompt.choose(self.__reports, constants.REPORT_MENU_HEADER)
+        report = self.__prompt.choose(self.__reports, constants.REPORT_MENU_HEADER, quittable=True)
         if report is None:
             return None
 

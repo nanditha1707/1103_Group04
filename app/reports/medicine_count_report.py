@@ -2,6 +2,7 @@ from typing import override
 
 from app import constants
 from app.interfaces import ReportSource, UserPrompt
+from app.quit_requested import QuitRequested
 
 from .report import Report
 
@@ -17,5 +18,7 @@ class MedicineCountReport(Report):
 
     @override
     def fetch(self, date: str) -> dict[str, int] | None:
-        medicine = self.__prompt.ask(constants.MEDICINE_PROMPT).strip().upper()
-        return self.__source.get_medicine_count(medicine, date)
+        medicine = self.__prompt.ask_or_quit(constants.MEDICINE_PROMPT)
+        if medicine is None:
+            raise QuitRequested
+        return self.__source.get_medicine_count(medicine.strip().upper(), date)
