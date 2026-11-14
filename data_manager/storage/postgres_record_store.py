@@ -3,31 +3,17 @@ from psycopg import sql
 
 from .database import Database
 from .queue_number_source import QueueNumberSource
-from .record_counter import RecordCounter
 from .record_reader import RecordReader
 from .record_writer import RecordWriter
+from .route_counter import RouteCounter
 
 
-class PostgresRecordStore(RecordWriter, RecordReader, RecordCounter, QueueNumberSource):
-    # Each record has 4 medicine columns. unnest() turns them into 4
-    # rows, one medicine per row, so they can be counted as a single
-    # column. Used in the FROM part of the medicine reports.
-    _MEDICINES_PER_RECORD = """
-        {},
-        unnest(ARRAY[
-            primary_diagnosis_medicine_1,
-            primary_diagnosis_medicine_2,
-            secondary_diagnosis_medicine_1,
-            secondary_diagnosis_medicine_2
-        ]) AS medicine
-    """
-
+class PostgresRecordStore(RecordWriter, RecordReader, RouteCounter, QueueNumberSource):
     def __init__(
         self, database: Database, table_name: str
     ):
         self.__database = database
         self.__table = sql.Identifier(table_name)
-        self.__medicines_per_record = sql.SQL(self._MEDICINES_PER_RECORD).format(self.__table)
 
     def save(self, record: dict) -> str | None:
         sql_statement = sql.SQL("""
@@ -134,35 +120,6 @@ class PostgresRecordStore(RecordWriter, RecordReader, RecordCounter, QueueNumber
         ).format(self.__select_columns(columns), self.__table)
 
         return self.__fetch_table(sql_statement, (date,), columns)
-
-    def count_medicine(self, medicine: str, date: str) -> int | None:
-        sql_statement = sql.SQL("""
-            SELECT COUNT(*)
-            FROM {}
-            WHERE date = %s AND medicine = %s
-        """).format(self.__medicines_per_record)
-        rows = self.__database.fetch_rows(sql_statement, (date, medicine))
-        if rows is None:
-            return None
-
-        # COUNT(*) always returns exactly one row with one value.
-        return rows[0][0]
-
-    def count_each_medicine(self, date: str) -> dict[str, int] | None:
-        # Empty medicine columns are skipped so they are not counted.
-        sql_statement = sql.SQL("""
-            SELECT medicine, COUNT(*) AS times_issued
-            FROM {}
-            WHERE date = %s AND medicine IS NOT NULL AND medicine <> ''
-            GROUP BY medicine
-            ORDER BY times_issued DESC, medicine
-        """).format(self.__medicines_per_record)
-        rows = self.__database.fetch_rows(sql_statement, (date,))
-        if rows is None:
-            return None
-
-        # Each row is (medicine, times_issued).
-        return dict(rows)
 
     def count_each_route(self, date: str) -> dict[str, int] | None:
         sql_statement = sql.SQL("""
