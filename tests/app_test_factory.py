@@ -1,0 +1,59 @@
+from app import constants
+from app.interfaces import DiagnosisSource
+from app.menu import ExitAction, MainMenu, RegistrationAction
+from app.portal import CurrentPatientQuery, HealthcarePortal, PastPatientQuery, ReportMenu
+from app.queries import AllPatientsScope, PatientQueryHandler, QueryFilter, QueryResultPresenter, SinglePatientScope
+from app.reports import MedicineBreakdownReport, MedicineCountReport, PatientTypeBreakdownReport
+from app.triage_pipeline import TriagePipeline
+from data_manager import DataManager
+from fakes import FakeDiagnoser
+from io_manager import IOManager
+from io_manager.console import Console
+from logic_manager import LogicManagerFactory
+
+
+class AppTestFactory:
+    """
+    Builds the real app classes the same way ApplicationFactory does, but
+    from a test console, a test database and a test diagnoser, so no
+    test reaches the terminal, Postgres or a real AI model.
+
+    No HSA dataset is loaded, so the router sends every non-emergency
+    patient to a doctor.
+    """
+
+    @staticmethod
+    def create_io(console: Console) -> IOManager:
+        return IOManager(console, symptom_terms=[])
+
+    @staticmethod
+    def create_main_menu(io: IOManager, data: DataManager, diagnoser: DiagnosisSource | None = None) -> MainMenu:
+        if diagnoser is None:
+            diagnoser = FakeDiagnoser({})
+
+        logic = LogicManagerFactory.create(None, data)
+        triage_pipeline = TriagePipeline(screens=io, prompt=io, diagnoser=diagnoser, router=logic, records=data)
+        registration = RegistrationAction(io, triage_pipeline)
+        healthcare_portal = AppTestFactory.create_healthcare_portal(io, data)
+        return MainMenu(io, [registration, healthcare_portal, ExitAction(io)])
+
+    @staticmethod
+    def create_healthcare_portal(io: IOManager, data: DataManager) -> HealthcarePortal:
+        query_handler = AppTestFactory.create_query_handler(io, data)
+        reports = [MedicineCountReport(io, data), MedicineBreakdownReport(data), PatientTypeBreakdownReport(data)]
+        return HealthcarePortal(io, [
+            CurrentPatientQuery(data, query_handler),
+            PastPatientQuery(io, query_handler),
+            ReportMenu(io, io, reports)
+        ])
+
+    @staticmethod
+    def create_query_handler(io: IOManager, data: DataManager) -> PatientQueryHandler:
+        filters = [
+            QueryFilter(constants.PATIENT_INFO_FILTER_LABEL, constants.PATIENT_COLUMNS),
+            QueryFilter(constants.MEDICAL_INFO_FILTER_LABEL, constants.MEDICAL_COLUMNS),
+            QueryFilter(constants.AI_OUTPUT_FILTER_LABEL, constants.AI_OUTPUT_COLUMNS),
+            QueryFilter(constants.ALL_RECORDS_FILTER_LABEL, data.get_record_columns())
+        ]
+        scopes = [SinglePatientScope(io, data), AllPatientsScope(data)]
+        return PatientQueryHandler(io, filters, scopes, QueryResultPresenter(io, data))
