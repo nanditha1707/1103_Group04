@@ -16,67 +16,26 @@ class PostgresRecordStore(RecordStore, RouteCounter, QueueNumberSource):
         self.__table = sql.Identifier(table_name)
 
     def save(self, record: dict) -> str | None:
-        sql_statement = sql.SQL("""
-            INSERT INTO {} (
-                date,
-                time,
-                queue_number,
-                name,
-                nric,
-                gender,
-                birthdate,
-                age,
-                phone_number,
-                pregnancy,
-                current_symptoms,
-                symptom_onset_days,
-                chronic_conditions,
-                current_medications,
-                drug_allergies,
-                primary_diagnosis_icd11_code,
-                primary_diagnosis_icd11_title,
-                primary_diagnosis_explanation,
-                primary_diagnosis_medicine_1,
-                primary_diagnosis_medicine_2,
-                secondary_diagnosis_icd11_code,
-                secondary_diagnosis_icd11_title,
-                secondary_diagnosis_explanation,
-                secondary_diagnosis_medicine_1,
-                secondary_diagnosis_medicine_2,
-                ai_confidence_score,
-                route
-            )
-            VALUES (
-                %(date)s,
-                %(time)s,
-                %(queue_number)s,
-                %(name)s,
-                %(nric)s,
-                %(gender)s,
-                %(birthdate)s,
-                %(age)s,
-                %(phone_number)s,
-                %(pregnancy)s,
-                %(current_symptoms)s,
-                %(symptom_onset_days)s,
-                %(chronic_conditions)s,
-                %(current_medications)s,
-                %(drug_allergies)s,
-                %(primary_diagnosis_ICD11_Code)s,
-                %(primary_diagnosis_ICD11_Title)s,
-                %(primary_diagnosis_explanation)s,
-                %(primary_diagnosis_medicine_1)s,
-                %(primary_diagnosis_medicine_2)s,
-                %(secondary_diagnosis_ICD11_Code)s,
-                %(secondary_diagnosis_ICD11_Title)s,
-                %(secondary_diagnosis_explanation)s,
-                %(secondary_diagnosis_medicine_1)s,
-                %(secondary_diagnosis_medicine_2)s,
-                %(ai_confidence_score)s,
-                %(route)s
-            )
-        """).format(self.__table)
+        sql_statement = self.__insert_statement(list(record))
         return self.__database.execute(sql_statement, record)
+
+    def __insert_statement(self, columns: list[str]) -> sql.Composed:
+        """Build the INSERT for a record with the given columns, e.g.
+        INSERT INTO "patient_records" ("date", "primary_diagnosis_icd11_code")
+        VALUES (%(date)s, %(primary_diagnosis_ICD11_Code)s)
+        Each database column name is the lowercase key, the same as in
+        __select_columns. Each placeholder keeps the original key so psycopg
+        fills it with the matching value from the record.
+        sql.Identifier and sql.Placeholder quote each name safely."""
+        column_names = sql.SQL(", ").join(
+            sql.Identifier(column.lower()) for column in columns
+        )
+        placeholders = sql.SQL(", ").join(
+            sql.Placeholder(column) for column in columns
+        )
+        return sql.SQL("INSERT INTO {} ({}) VALUES ({})").format(
+            self.__table, column_names, placeholders
+        )
 
     @staticmethod
     def __select_columns(columns: list[str]) -> sql.Composed:
