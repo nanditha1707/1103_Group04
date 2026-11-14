@@ -4,6 +4,7 @@
 from ai_manager import AIManagerFactory
 from data_manager import DataManagerFactory
 from io_manager import IOManager
+from io_manager.login import AuthFactory, prompt_login
 from logic_manager import LogicManagerFactory
 
 from dotenv import load_dotenv
@@ -171,6 +172,8 @@ def main_menu() -> dict | int | None:
         # if registration did not finish.
         return io.collect_registration()
     elif main_menu_option == "2":
+        if prompt_login(auth) is None:
+            return None
         choice=io.prompt_menu(HEALTHCARE_PORTAL_OPTIONS)
         option_error= io.validate_option(choice, len(HEALTHCARE_PORTAL_OPTIONS))
         if option_error is None:
@@ -201,6 +204,8 @@ ai = AIManagerFactory.create(icd_df, hsa_df)
 io = IOManager(symptom_terms=data.load_symptoms())
 # Create the logic manager using the HSA dataset and data_manager for queue numbers.
 logic = LogicManagerFactory.create(hsa_df, data)
+# Create the authentication service used for healthcare portal login.
+auth = AuthFactory.create()
 
 while True:
     # 1. I/O manager: collect the patient's answers
