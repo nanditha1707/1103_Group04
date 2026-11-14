@@ -76,7 +76,6 @@ U001
 D001
 P001
 ```
-
 ### Data Management
 
 The Data Manager is responsible for:
