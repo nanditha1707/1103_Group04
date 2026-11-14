@@ -5,7 +5,7 @@ from .cipher import Cipher
 
 class RecordEncryptor:
     """
-    Applies a Cipher to the sensitive columns of a patient record efore it is saved, 
+    Applies a Cipher to the sensitive columns of a patient record before it is saved, 
     and of a query result after it is read.
     """
 
