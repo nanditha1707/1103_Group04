@@ -140,8 +140,10 @@ Create a file named exactly `.env` in the project directory and add the required
 GEMINI_API_KEY=YOUR-GEMINI-API-KEY
 ANTHROPIC_API_KEY=YOUR-ANTHROPIC-API-KEY
 POSTGRESQL_CLOUD_DATABASE_URL=YOUR-DATABASE-URL
+PATIENT_DATA_ENCRYPTION_KEY =M9vyRR3VGLWbgFdXALGdY8TeGiSJrcHYJlgXkm6NSqo=
 ```
-
+In a real world implementation, the fernet encryption key would not be given like this.
+However, for the purposes of testing and demonstration, we have provided it.
 Do not wrap the values in quotation marks.
 
 ## Running the Project Locally
