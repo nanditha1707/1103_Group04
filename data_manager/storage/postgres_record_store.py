@@ -3,11 +3,25 @@ from psycopg import sql
 
 from .database import Database
 from .queue_number_source import QueueNumberSource
-from .record_store import RecordStore
-from .route_counter import RouteCounter
+from .record_counter import RecordCounter
+from .record_reader import RecordReader
+from .record_writer import RecordWriter
 
 
-class PostgresRecordStore(RecordStore, RouteCounter, QueueNumberSource):
+class PostgresRecordStore(RecordWriter, RecordReader, RecordCounter, QueueNumberSource):
+    # Each record has 4 medicine columns. unnest() turns them into 4
+    # rows, one medicine per row, so they can be counted as a single
+    # column. Used in the FROM part of the medicine reports.
+    _MEDICINES_PER_RECORD = """
+        patient_records,
+        unnest(ARRAY[
+            primary_diagnosis_medicine_1,
+            primary_diagnosis_medicine_2,
+            secondary_diagnosis_medicine_1,
+            secondary_diagnosis_medicine_2
+        ]) AS medicine
+    """
+
     def __init__(
         self, database: Database
     ):
@@ -119,6 +133,35 @@ class PostgresRecordStore(RecordStore, RouteCounter, QueueNumberSource):
 
         return self.__fetch_table(sql_statement, (date,), columns)
 
+    def count_medicine(self, medicine: str, date: str) -> int | None:
+        sql_statement = f"""
+            SELECT COUNT(*)
+            FROM {self._MEDICINES_PER_RECORD}
+            WHERE date = %s AND medicine = %s
+        """
+        rows = self.__database.fetch_rows(sql_statement, (date, medicine))
+        if rows is None:
+            return None
+
+        # COUNT(*) always returns exactly one row with one value.
+        return rows[0][0]
+
+    def count_each_medicine(self, date: str) -> dict[str, int] | None:
+        # Empty medicine columns are skipped so they are not counted.
+        sql_statement = f"""
+            SELECT medicine, COUNT(*) AS times_issued
+            FROM {self._MEDICINES_PER_RECORD}
+            WHERE date = %s AND medicine IS NOT NULL AND medicine <> ''
+            GROUP BY medicine
+            ORDER BY times_issued DESC, medicine
+        """
+        rows = self.__database.fetch_rows(sql_statement, (date,))
+        if rows is None:
+            return None
+
+        # Each row is (medicine, times_issued).
+        return dict(rows)
+
     def count_each_route(self, date: str) -> dict[str, int] | None:
         sql_statement = """
             SELECT route, COUNT(*)
@@ -134,12 +177,13 @@ class PostgresRecordStore(RecordStore, RouteCounter, QueueNumberSource):
         return dict(rows)
 
     def get_highest_queue_number(self, prefix: str, date: str) -> int | None:
-        # SUBSTRING(... FROM 2) drops the letter: "D007" -> "007".
+        # SUBSTRING(... FROM '[0-9]+$') keeps only the trailing digits, 
+        # so it works for prefixes of any length: "D007" -> "007", "PR013" -> "013".
         # CAST(... AS INTEGER) turns "007" into 7, and MAX keeps the highest.
-        # The ~ pattern only keeps queue numbers like D007 (the letter then
+        # The ~ pattern only keeps queue numbers like D007 (the prefix then
         # digits only), so corrupted queue numbers are skipped.
         sql_statement = """
-            SELECT MAX(CAST(SUBSTRING(queue_number FROM 2) AS INTEGER))
+            SELECT MAX(CAST(SUBSTRING(queue_number FROM '[0-9]+$') AS INTEGER))
             FROM patient_records
             WHERE date = %s AND queue_number ~ %s
         """
