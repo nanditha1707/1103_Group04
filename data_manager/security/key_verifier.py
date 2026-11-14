@@ -21,7 +21,7 @@ class KeyVerifier:
         """
         check_values = self.__check_store.get_check_values()
         if check_values is None:
-            return "The database could not be reached to check the encryption key"
+            return "The database could not be reached to check the encryption key."
 
         # If the database does not have a check_values yet, 
         # it means that the database does not have a check stored yet. 
@@ -33,7 +33,7 @@ class KeyVerifier:
                 self.__cipher.encrypt(self.__check_text)
             )
             if save_error is not None:
-                return f"the encryption key check could not be saved ({save_error})"
+                return f"The encryption key check could not be saved ({save_error}.)"
 
             return None
 

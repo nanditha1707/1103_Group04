@@ -26,6 +26,6 @@ class FernetCipher(Cipher):
             plaintext = self.__fernet.decrypt(ciphertext.encode("utf-8"))
         except InvalidToken as error:
             # Replace the default error from fernet with a custom error message.
-            raise ValueError("The value could not be decrypted") from error
+            raise ValueError("The value could not be decrypted.") from error
 
         return plaintext.decode("utf-8")
