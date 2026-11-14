@@ -24,6 +24,8 @@ class ApplicationFactory:
 
     @staticmethod
     def create() -> Runnable:
+        # Read the database URL, encryption key, AI API keys and admin password from the local .env file
+        load_dotenv(override=True)
         # The symptom list comes from a local CSV, 
         # so the one IO manager can be created before the data manager checks the encryption key.
         io = IOManagerFactory.create(DataManagerFactory.load_symptoms(), RegistrationFactory(ApplicationFactory.now))
@@ -35,8 +37,6 @@ class ApplicationFactory:
             message = constants.STARTUP_FAILED_MESSAGE.format(error=str(error))
             return StartupFailure(io, message)
 
-        # Read the AI API keys and the admin password from the local .env file
-        load_dotenv(override=True)
         admin_password = os.getenv(constants.ADMIN_PASSWORD_ENV_VAR)
         if not admin_password:
             return StartupFailure(io, constants.ADMIN_PASSWORD_MISSING_MESSAGE)

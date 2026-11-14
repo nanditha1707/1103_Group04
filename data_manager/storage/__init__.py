@@ -4,7 +4,6 @@ from .encrypted_record_store import EncryptedRecordStore
 from .postgres_database import PostgresDatabase
 from .postgres_key_check_store import PostgresKeyCheckStore
 from .postgres_record_store import PostgresRecordStore
-from .queue_number_source import QueueNumberSource
 from .record_counter import RecordCounter
 from .record_reader import RecordReader
 from .record_store import RecordStore
@@ -18,7 +17,6 @@ __all__ = [
     "PostgresDatabase",
     "PostgresKeyCheckStore",
     "PostgresRecordStore",
-    "QueueNumberSource",
     "RecordCounter",
     "RecordReader",
     "RecordStore",

@@ -7,7 +7,7 @@ from data_manager import constants
 from data_manager.patients import PatientQuery, QueryExporter, RecordSaver
 from data_manager.dataset import Dataset
 from data_manager.reports import ReportGenerator
-from data_manager.storage import QueueNumberSource
+from typedefs import QueueNumberSource
 
 
 class DataManager(QueueNumberSource):

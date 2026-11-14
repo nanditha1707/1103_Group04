@@ -1,6 +1,6 @@
 from typing import override
 
-from logic_manager import QueueNumberSource
+from typedefs import QueueNumberSource
 
 
 class FakeQueueNumberSource(QueueNumberSource):

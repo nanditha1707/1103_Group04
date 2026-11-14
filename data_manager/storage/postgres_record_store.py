@@ -1,8 +1,9 @@
 import pandas as pd
 from psycopg import sql
 
+from typedefs import QueueNumberSource
+
 from .database import Database
-from .queue_number_source import QueueNumberSource
 from .record_store import RecordStore
 from .route_counter import RouteCounter
 

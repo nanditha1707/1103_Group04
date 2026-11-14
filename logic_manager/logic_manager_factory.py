@@ -3,10 +3,11 @@ from datetime import datetime
 
 import pandas as pd
 
+from typedefs import QueueNumberSource
+
 from .manager import LogicManager
 from .medicine_classifier import MedicineClassifier
 from .queue_number_generator import QueueNumberGenerator
-from .queue_number_source import QueueNumberSource
 from .router import Router
 
 

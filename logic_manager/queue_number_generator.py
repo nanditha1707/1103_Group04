@@ -1,4 +1,5 @@
-from .queue_number_source import QueueNumberSource
+from typedefs import QueueNumberSource
+
 from .route import Route
 
 class QueueNumberGenerator:

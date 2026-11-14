@@ -2,8 +2,6 @@ import os
 from collections.abc import Callable
 from datetime import datetime
 
-from dotenv import load_dotenv
-
 from data_manager import constants
 from data_manager.dataset import HsaDataset, IcdDataset, SymptomDataset
 from data_manager.manager import DataManager
@@ -32,8 +30,6 @@ class DataManagerFactory:
     def create(
         clock: Callable[[], datetime], database: Database | None = None, cipher: Cipher | None = None, key_check_store: KeyCheckStore | None = None
     ) -> DataManager:
-        # Both the database URL and the encryption key are in the .env file.
-        load_dotenv(override=True)
         if database is None:
             database_url = os.getenv(constants.DATABASE_URL_ENV_VAR)
             database = PostgresDatabase(database_url)
