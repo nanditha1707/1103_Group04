@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 
 from ai_manager import AIManagerFactory
 from app import constants
+from app.interfaces import Runnable
 from app.menu import ExitAction, MainMenu, PasswordGate, PasswordProtectedAction, RegistrationAction
 from app.portal import CurrentPatientQuery, HealthcarePortal, PastPatientQuery, ReportMenu
 from app.queries import AllPatientsScope, PatientQueryHandler, QueryFilter, QueryResultPresenter, SinglePatientScope
@@ -22,7 +23,7 @@ from .triage_pipeline import TriagePipeline
 class ApplicationFactory:
 
     @staticmethod
-    def create() -> Application:
+    def create() -> Runnable:
         # The symptom list comes from a local CSV, 
         # so the one IO manager can be created before the data manager checks the encryption key.
         io = IOManagerFactory.create(DataManagerFactory.load_symptoms(), RegistrationFactory(ApplicationFactory.now))
