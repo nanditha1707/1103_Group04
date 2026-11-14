@@ -125,28 +125,20 @@ class TestDataManager:
         )
 
     # ==========================================================
-    # TEST 4 - PATIENT FILTER OPTIONS
+    # TEST 4 - RECORD COLUMNS
     # ==========================================================
 
-    def test_patient_filters(self):
+    def test_record_columns(self):
 
         data = DataManagerFactory.create(FakeDatabase([]))
 
-        patient_filter = data.get_patient_filter("1")
-        medical_filter = data.get_patient_filter("2")
-        ai_filter = data.get_patient_filter("3")
-        all_filter = data.get_patient_filter("4")
+        record_columns = data.get_record_columns()
 
-        print("\nSCENARIO: Patient Filters")
-        print("Option 1:", patient_filter)
-        print("Option 2:", medical_filter)
-        print("Option 3:", ai_filter)
-        print("Option 4:", all_filter)
+        print("\nSCENARIO: Record Columns For The All Records Filter")
+        print("Expected:", constants.RECORD_COLUMNS)
+        print("Actual:", record_columns)
 
-        assert patient_filter == constants.PATIENT_COLUMNS
-        assert medical_filter == constants.MEDICAL_COLUMNS
-        assert ai_filter == constants.AI_OUTPUT_COLUMNS
-        assert all_filter == constants.RECORD_COLUMNS
+        assert record_columns == constants.RECORD_COLUMNS
 
     # ==========================================================
     # TEST 5 - FIND EXISTING PATIENT
