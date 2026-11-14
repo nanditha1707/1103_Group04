@@ -11,7 +11,7 @@ from app.triage_pipeline import TriagePipeline
 from data_manager import DataManager, DataManagerFactory
 from data_manager.storage import Database
 from fakes import FakeCipher, FakeDiagnoser, FakeKeyCheckStore
-from io_manager import IOManager
+from io_manager import IOManager, IOManagerFactory
 from io_manager.console import Console
 from logic_manager import LogicManagerFactory
 
@@ -35,7 +35,7 @@ class AppTestFactory:
 
     @staticmethod
     def create_io(console: Console) -> IOManager:
-        return IOManager(console, symptom_terms=[])
+        return IOManagerFactory.create([], console)
 
     @staticmethod
     def create_main_menu(io: IOManager, data: DataManager, diagnoser: DiagnosisSource | None = None) -> MainMenu:

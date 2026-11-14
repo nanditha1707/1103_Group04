@@ -5,7 +5,7 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 
 from fakes import FakeConsole
-from io_manager import IOManager, constants
+from io_manager import IOManagerFactory, constants
 from io_manager.form import RegistrationFactory
 
 
@@ -15,7 +15,7 @@ class TestRegistration:
     SYMPTOM_TERMS = ("SORE THROAT",)
 
     def __register(self, console):
-        io = IOManager(console, symptom_terms=self.SYMPTOM_TERMS)
+        io = IOManagerFactory.create(self.SYMPTOM_TERMS, console)
 
         return io.collect_registration()
 
