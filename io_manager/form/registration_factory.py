@@ -1,5 +1,4 @@
-from datetime import date
-from zoneinfo import ZoneInfo
+from datetime import date, tzinfo
 
 from io_manager import constants
 from io_manager.derived import AgeFromBirthdate
@@ -49,7 +48,6 @@ class RegistrationFactory:
 
     # Earliest birthdate for a patient to be considered real.
     EARLIEST_BIRTHDATE = date(1900, 1, 1)
-    TIMEZONE = ZoneInfo("Asia/Singapore")
     MAXIMUM_ONSET_DAYS = 365
     # Patients under this age cannot self register. 
     # This is clinic policy, separate from the birthdate validator's range of
@@ -70,6 +68,19 @@ class RegistrationFactory:
         "signs_of_stroke",
         "self_harm",
     )
+
+    def __init__(
+        self, timezone: tzinfo
+    ) -> None:
+        self.__timezone = timezone
+
+    @property
+    def timezone(self) -> tzinfo:
+        """
+        The clinic's timezone, used to work out today's date for the
+        birthdate check and the patient's age.
+        """
+        return self.__timezone
 
     def build_form(
         self, catalogue: SymptomCatalogue, renderer: BoxRenderer
@@ -130,7 +141,7 @@ class RegistrationFactory:
             TextQuestion(
                 "birthdate",
                 constants.BIRTHDATE_PROMPT,
-                BirthdateValidator(self.EARLIEST_BIRTHDATE, self.TIMEZONE),
+                BirthdateValidator(self.EARLIEST_BIRTHDATE, self.timezone),
             ),
             TextQuestion("phone_number", constants.PHONE_PROMPT, PhoneNumberValidator()),
             TextQuestion(
@@ -186,7 +197,7 @@ class RegistrationFactory:
             ),
         ],
         [
-            AgeFromBirthdate("age", "birthdate", self.TIMEZONE, share_with_ai=True),
+            AgeFromBirthdate("age", "birthdate", self.timezone, share_with_ai=True),
         ])
 
     def build_stop_rule(self) -> StopRule:

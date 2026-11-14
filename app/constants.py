@@ -1,3 +1,9 @@
+from zoneinfo import ZoneInfo
+
+# Docker runs by default use UTC so this is used to make Docker use SGT.
+# This matters for time and date generation for patient records.
+TIMEZONE = ZoneInfo("Asia/Singapore")
+
 MAIN_MENU_HEADER = "Main Menu"
 REGISTRATION_LABEL = "Patient Registration"
 HEALTHCARE_PORTAL_LABEL = "Healthcare Professional Portal"

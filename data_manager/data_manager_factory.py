@@ -30,16 +30,13 @@ class DataManagerFactory:
 
     @staticmethod
     def create(
-        database: Database | None = None, clock: Callable[[], datetime] | None = None, cipher: Cipher | None = None, key_check_store: KeyCheckStore | None = None
+        clock: Callable[[], datetime], database: Database | None = None, cipher: Cipher | None = None, key_check_store: KeyCheckStore | None = None
     ) -> DataManager:
         # Both the database URL and the encryption key are in the .env file.
         load_dotenv(override=True)
         if database is None:
             database_url = os.getenv(constants.DATABASE_URL_ENV_VAR)
             database = PostgresDatabase(database_url)
-
-        if clock is None:
-            clock = DataManagerFactory.__now_in_sgt
 
         if cipher is None:
             encryption_key = os.getenv(constants.ENCRYPTION_KEY_ENV_VAR)
@@ -90,7 +87,3 @@ class DataManagerFactory:
             ReportGenerator(encrypted_counter, constants.ROUTE_LABELS),
             record_store,
             clock)
-
-    @staticmethod
-    def __now_in_sgt() -> datetime:
-        return datetime.now(constants.SGT)

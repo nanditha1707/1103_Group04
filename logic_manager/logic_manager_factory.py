@@ -1,8 +1,7 @@
+from collections.abc import Callable
 from datetime import datetime
 
 import pandas as pd
-
-from data_manager.constants import SGT
 
 from .manager import LogicManager
 from .medicine_classifier import MedicineClassifier
@@ -21,10 +20,11 @@ class LogicManagerFactory:
     """
 
     @staticmethod
-    def create(hsa_df: pd.DataFrame | None, queue_numbers: QueueNumberSource) -> LogicManager:
+    def create(hsa_df: pd.DataFrame | None, queue_numbers: QueueNumberSource, clock: Callable[[], datetime]) -> LogicManager:
         """
         Return a LogicManager that routes with the cleaned HSA dataset and
         asks queue_numbers for the highest queue number given out so far.
+        clock gives the current date and time stamped on each result.
 
         hsa_df can be None if it failed to load. Router then gets no
         MedicineClassifier and sends every non-emergency patient to a doctor.
@@ -37,5 +37,5 @@ class LogicManagerFactory:
         return LogicManager(
             Router(classifier),
             QueueNumberGenerator(queue_numbers),
-            lambda: datetime.now(SGT)
+            clock
         )

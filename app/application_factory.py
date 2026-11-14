@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from dotenv import load_dotenv
 
 from ai_manager import AIManagerFactory
@@ -8,6 +10,7 @@ from app.queries import AllPatientsScope, PatientQueryHandler, QueryFilter, Quer
 from app.reports import MedicineBreakdownReport, MedicineCountReport, PatientTypeBreakdownReport
 from data_manager import DataManager, DataManagerFactory, EncryptionKeyError
 from io_manager import IOManager, IOManagerFactory
+from io_manager.form import RegistrationFactory
 from logic_manager import LogicManagerFactory
 
 from .application import Application
@@ -21,11 +24,11 @@ class ApplicationFactory:
     def create() -> Application:
         # The symptom list comes from a local CSV, 
         # so the one IO manager can be created before the data manager checks the encryption key.
-        io = IOManagerFactory.create(DataManagerFactory.load_symptoms())
+        io = IOManagerFactory.create(DataManagerFactory.load_symptoms(), RegistrationFactory(constants.TIMEZONE))
         # A missing, malformed or wrong key, 
         # or an unreachable database stops the program here, before any patient record is touched.
         try:
-            data = DataManagerFactory.create()
+            data = DataManagerFactory.create(clock=ApplicationFactory.__now)
         except EncryptionKeyError as error:
             message = constants.STARTUP_FAILED_MESSAGE.format(error=str(error))
             return StartupFailure(io, message)
@@ -38,12 +41,18 @@ class ApplicationFactory:
         # so every valid medicine can be routed
         ai = AIManagerFactory.create(icd_df, hsa_df)
         # Create the logic manager using the HSA dataset and data_manager for queue numbers.
-        logic = LogicManagerFactory.create(hsa_df, data)
+        logic = LogicManagerFactory.create(hsa_df, data, ApplicationFactory.__now)
 
         triage_pipeline = TriagePipeline(screens=io, prompt=io, diagnoser=ai, router=logic, records=data)
         registration = RegistrationAction(io, triage_pipeline)
         healthcare_portal = ApplicationFactory.__create_healthcare_portal(io, data)
         return Application(MainMenu(io, [registration, healthcare_portal, ExitAction(io)]))
+
+    @staticmethod
+    def __now() -> datetime:
+        """Return the current time in the clinic's timezone. Every manager
+        reads the time from this one clock so they always agree on the date."""
+        return datetime.now(constants.TIMEZONE)
 
     @staticmethod
     def __create_healthcare_portal(io: IOManager, data: DataManager) -> HealthcarePortal:

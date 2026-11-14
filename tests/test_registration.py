@@ -4,6 +4,7 @@ from pathlib import Path
 
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 
+from app import constants as app_constants
 from fakes import FakeConsole
 from io_manager import IOManagerFactory, constants
 from io_manager.form import RegistrationFactory
@@ -15,13 +16,13 @@ class TestRegistration:
     SYMPTOM_TERMS = ("SORE THROAT",)
 
     def __register(self, console):
-        io = IOManagerFactory.create(self.SYMPTOM_TERMS, console)
+        io = IOManagerFactory.create(self.SYMPTOM_TERMS, RegistrationFactory(app_constants.TIMEZONE), console)
 
         return io.collect_registration()
 
     @staticmethod
     def __birthdate_for_age(age):
-        today = datetime.now(RegistrationFactory.TIMEZONE).date()
+        today = datetime.now(app_constants.TIMEZONE).date()
 
         return date(today.year - age, 1, 1).isoformat()
 

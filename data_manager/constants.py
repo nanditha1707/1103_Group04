@@ -1,9 +1,4 @@
 from pathlib import Path
-from zoneinfo import ZoneInfo
-
-# Docker runs by default use UTC so this is used to make Docker use SGT.
-# This matters for time and date generation for patient records.
-SGT = ZoneInfo("Asia/Singapore")
 
 DATABASE_URL_ENV_VAR = "POSTGRESQL_CLOUD_DATABASE_URL"
 ENCRYPTION_KEY_ENV_VAR = "PATIENT_DATA_ENCRYPTION_KEY"
