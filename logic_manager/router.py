@@ -9,9 +9,6 @@ class Router:
     None when the HSA data failed to load.
     """
 
-    # Key the AI output contains when it failed validation.
-    _ERROR_KEY = "error"
-
     # Keys where the medicines are stored in the AI output.
     _MEDICINE_KEYS = (
         "primary_diagnosis_medicine_1",
@@ -42,16 +39,10 @@ class Router:
     ):
         self.__classifier = classifier
 
-    def decide(self, ai_output: dict) -> Route | None:
+    def decide(self, ai_output: dict) -> Route:
         """
-        Decide where the patient should go. Returns None if the AI
-        output failed, so the patient is not routed.
+        Decide where the patient should go.
         """
-
-        # AI output failed validation, 
-        # so the patient is not routed because the AI output is not reliable.
-        if self._ERROR_KEY in ai_output:
-            return None
 
         # AI flagged an emergency, this overrides every other route.
         if self._is_emergency(ai_output):

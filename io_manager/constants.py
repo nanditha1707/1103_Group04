@@ -75,9 +75,6 @@ NAME_ERROR = (
     "only alphabets, spaces, hyphens and apostrophes are allowed."
 )
 GENDER_ERROR = "This is not a valid input, please only enter either M or F."
-POSITIVE_WHOLE_NUMBER_ERROR = (
-    "This is not a valid input, please only enter positive whole numbers."
-)
 BIRTHDATE_FORMAT_ERROR = (
     "Please enter a valid birthdate in YYYY-MM-DD format (e.g. 1990-05-14)."
 )
@@ -152,9 +149,6 @@ UNANSWERED_QUESTION = (
 # ======================================================================
 RESULT_HEADER = "Registration Complete"
 QUEUE_NUMBER_LINE = "Your Queue Number: {queue_number}"
-DIAGNOSIS_TITLE_LINE = "{diagnosis} Diagnosis: {title}"
-MEDICINES_HEADING = "  Medicines:"
-MEDICINE_LINE = "    - {medicine}"
 # What the patient should do next for each route from logic_manager.
 ROUTE_MESSAGES = {
     "EMERGENCY": (
@@ -177,7 +171,3 @@ ROUTE_MESSAGES = {
         "to be called."
     ),
 }
-RETAIL_DISCLAIMER = (
-    "This is not a final diagnosis. If your symptoms get worse or do not "
-    "improve, please see a doctor."
-)

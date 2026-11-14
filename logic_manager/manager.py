@@ -38,16 +38,11 @@ class LogicManager:
 
         current_time = now.strftime(self._TIME_FORMAT)
 
-        if route is None:
-            queue_number = None
-            route_value = None
-        else:
-            queue_number = self.__queue_generator.next_number(route, today)
-            route_value = route.value
+        queue_number = self.__queue_generator.next_number(route, today)
 
         return {
             "queue_number": queue_number,
             "date": today,
             "time": current_time,
-            "route": route_value
+            "route": route.value
         }

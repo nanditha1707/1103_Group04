@@ -38,10 +38,6 @@ class IOManager:
     # ------------------------------------------------------------------
     # MENU AND FREE-TEXT INPUT
     # ------------------------------------------------------------------
-    def ask(self, prompt: str) -> str:
-        # Ask a questiion and return raw input.
-        return self.__console.ask(prompt)
-
     def ask_or_quit(self, prompt: str) -> str | None:
         """
         Ask a question and return the raw input,

@@ -6,9 +6,6 @@ from typedefs import Labelled
 
 class UserPrompt(Protocol):
 
-    def ask(self, prompt: str) -> str:
-        pass
-
     def ask_or_quit(self, prompt: str) -> str | None:
         pass
 
