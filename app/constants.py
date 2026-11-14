@@ -12,6 +12,9 @@ RECORD_SAVE_FAILED_MESSAGE = ("The program has encountered an error. "
                               "Please approach a nurse or clerk for manual registration.\n"
                               "Error: {error}")
 
+STARTUP_FAILED_MESSAGE = ("The program could not start: {error}.\n"
+                          "Please check PATIENT_DATA_ENCRYPTION_KEY in the .env file.")
+
 CURRENT_PATIENT_QUERY_LABEL = "Query Current Patient Information"
 PAST_PATIENT_QUERY_LABEL = "Query Past Patient Information"
 REPORTS_LABEL = "Reports"
