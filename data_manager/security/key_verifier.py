@@ -43,7 +43,7 @@ class KeyVerifier:
         try:
             decrypted_text = self.__cipher.decrypt(check_value)
         except ValueError:
-            # In the scenario where the key is invalidit changes the text to None.
+            # In the scenario where the key is invalid, it changes the text to None.
             decrypted_text = None
 
         # Wraps both the wrong key possibility, 
@@ -51,3 +51,4 @@ class KeyVerifier:
         if decrypted_text != self.__check_text:
             return ("The encryption key does not match this database." 
                     "Either the key is invalid, or it is meant for a different databse.")
+        
