@@ -76,6 +76,7 @@ class Question(ABC):
         raised as an exception, so the caller can show the error and ask
         again.
         """
+        pass
 
     @abstractmethod
     def display_value(self, value: Answer) -> str:
@@ -86,3 +87,4 @@ class Question(ABC):
         symptoms can be joined into one line. This lets the confirmation
         screen show every answer the same way without checking its type.
         """
+        pass

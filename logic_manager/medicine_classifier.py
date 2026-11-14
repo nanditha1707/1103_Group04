@@ -17,7 +17,7 @@ class MedicineClassifier:
         Return the HSA classification of a medicine. 
         If the medicine matches several rows, the least restrictive classification is returned, 
         because if the same medicine is available at a retail store, 
-        they can be routed to a pharmacist for assessmentcrather then seeing the doctor.
+        they can be routed to a pharmacist for assessment rather than seeing the doctor.
         Returns None if the medicine is not in the HSA dataset.
         """
 

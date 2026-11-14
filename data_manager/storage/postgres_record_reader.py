@@ -40,7 +40,8 @@ class PostgresRecordReader(RecordReader):
         if rows is None:
             return None
 
-        # The DataFrame is only used to print the table or export it to CSV.
+        # The DataFrame is used to show the table, export it to CSV,
+        # or count the medicines for the reports.
         return pd.DataFrame(rows, columns=columns)
 
     def find_by_queue(self, queue_number: str, columns: list[str], date: str) -> pd.DataFrame | None:

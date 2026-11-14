@@ -28,11 +28,13 @@ class AIProvider(ABC):
         Any other error comes from the provider's SDK and is passed to
         classify_error().
         """
+        pass
 
     @abstractmethod
     def classify_error(self, error: Exception) -> Action | None:
         """Return the Action for an error raised by send(), or None if this
         provider does not recognise the error."""
+        pass
 
     @staticmethod
     def _read_api_key(variable: str) -> str:

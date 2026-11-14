@@ -6,7 +6,7 @@ import pandas as pd
 
 
 class Dataset(ABC):
-    """A dataset (ICD-11 or HSA) can be loaded from a CSV
+    """A dataset (ICD-11, HSA or symptoms) can be loaded from a CSV
     and cleaned. Each subclass says which columns to keep and how to
     clean them."""
 

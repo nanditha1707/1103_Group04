@@ -31,6 +31,7 @@ class AddSymptomAction(SymptomMenuAction):
         """
         Returns the symptom to add, or None if no symptom was selected.
         """
+        pass
 
     @staticmethod
     def __add_unique(console: Console, symptoms: list[str], symptom: str) -> None:

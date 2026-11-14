@@ -7,7 +7,7 @@ from .reply_parser import ReplyParser
 
 
 class AIManager:
-    """The class main.py uses to get a diagnosis from the AI.
+    """The class TriagePipeline uses to get a diagnosis from the AI.
 
     It is given the objects that do the work through its constructor:
     - PromptBuilder turns the patient's answers into a request.
@@ -16,7 +16,7 @@ class AIManager:
     - ReplyParser and OutputValidator turn a reply into a checked output.
 
     It does not create any of them, so it does not depend on any provider.
-    AIManagerFactory builds the one main.py uses, with the Claude and
+    AIManagerFactory builds the one the app uses, with the Claude and
     Gemini models in constants.py. Tests can build one directly e.g. with
     a ModelFallback of fake providers.
     """

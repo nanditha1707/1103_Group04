@@ -16,7 +16,7 @@ from typedefs import Answer, Labelled
 
 class IOManager:
     """
-    The orchestrator class main.py uses for all input and output.
+    The orchestrator class the app uses for all input and output.
 
     IOManagerFactory builds every object it needs and passes them in through the constructor.
     It creates none of them itself so a test can pass in its own console or screens
@@ -116,7 +116,7 @@ class IOManager:
         confirmed = self.__confirm(patient_answers)
         if confirmed is not None:
             self.show_message(constants.CONFIRMED_MESSAGE)
-        # If program gets to this step, it means None is returned
+        # None here means the patient quit or a stop rule ended the confirmation screen.
         return confirmed
 
     def filter_for_ai(self, answers: Mapping[str, Answer]) -> dict[str, Answer]:

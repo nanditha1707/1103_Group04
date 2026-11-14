@@ -26,8 +26,8 @@ class EncryptedRecordReader(RecordReader):
         return self.__decrypt(table)
 
     def __decrypt(self, table: pd.DataFrame | None) -> pd.DataFrame | None:
-        # None means the database could not be reached,
-        # so it returns None to main.py to show the database error message.
+        # None means the database could not be reached
+        # so it returns None for the portal to show the database error message.
         if table is None:
             return None
 

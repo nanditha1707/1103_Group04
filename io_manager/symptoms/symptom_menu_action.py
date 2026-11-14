@@ -27,3 +27,4 @@ class SymptomMenuAction(ABC):
         which it may change in place. 
         Return True only occurs when the patient is finished with the menu.
         """
+        pass

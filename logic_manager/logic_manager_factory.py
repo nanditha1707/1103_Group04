@@ -13,7 +13,7 @@ from .router import Router
 
 class LogicManagerFactory:
     """
-    Builds the LogicManager that main.py uses.
+    Builds the LogicManager that ApplicationFactory uses.
 
     This is the only class that creates logic_manager's concrete classes.
     LogicManager and Router are given the objects they need instead so
