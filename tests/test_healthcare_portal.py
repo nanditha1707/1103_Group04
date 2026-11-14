@@ -3,12 +3,24 @@ from pathlib import Path
 
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 
+from app import constants
+from app.portal import CurrentPatientQuery, PastPatientQuery
+from app_test_factory import AppTestFactory
+from data_manager import DataManagerFactory
 from fakes import FakeConsole, FakeDatabase
-from support import MainProgram
+from io_manager import constants as io_constants
 
 
 class TestHealthcarePortal:
     TODAY = "2026-10-14"
+    SCOPE_OPTIONS = 2
+
+    @staticmethod
+    def __query_handler(console, database):
+        io = AppTestFactory.create_io(console)
+        data = DataManagerFactory.create(database)
+
+        return AppTestFactory.create_query_handler(io, data)
 
     def test_current_patient_found(self):
 
@@ -16,9 +28,9 @@ class TestHealthcarePortal:
         database = FakeDatabase([
             ("NANI", "T0111111C", "F", "2006-01-01", 20, "+65 91111111")
         ])
-        program = MainProgram(console, database)
+        query_handler = self.__query_handler(console, database)
 
-        result = program.patient_query_handler(
+        result = query_handler.handle(
             self.TODAY
         )
 
@@ -36,9 +48,9 @@ class TestHealthcarePortal:
     def test_patient_not_found(self):
 
         console = FakeConsole(["1", "1", "D999"])
-        program = MainProgram(console, FakeDatabase([]))
+        query_handler = self.__query_handler(console, FakeDatabase([]))
 
-        result = program.patient_query_handler(
+        result = query_handler.handle(
             self.TODAY
         )
 
@@ -47,69 +59,60 @@ class TestHealthcarePortal:
         print("Expected: Patient not found message")
         print("Actual:", result)
 
-        assert result == (
-            "There is no such patient, "
-            "please enter a valid queue number!"
-        )
+        assert result == constants.PATIENT_NOT_FOUND_MESSAGE
 
     def test_current_patient_uses_today(self, monkeypatch):
 
-        dates = []
-
-        program = MainProgram(FakeConsole(), FakeDatabase([]))
+        console = FakeConsole(["1", "2"])
+        database = FakeDatabase([])
+        io = AppTestFactory.create_io(console)
+        data = DataManagerFactory.create(database)
+        current_patient_query = CurrentPatientQuery(data, AppTestFactory.create_query_handler(io, data))
 
         monkeypatch.setattr(
-            program.data,
+            data,
             "get_current_date",
             lambda: self.TODAY
         )
 
-        program.replace_function(
-            "patient_query_handler",
-            lambda date: dates.append(date)
-        )
-
-        program.healthcare_portal_routing("1")
+        current_patient_query.run()
 
         print("\nSCENARIO: Current Patient")
         print("Expected Date:", self.TODAY)
-        print("Actual:", dates)
+        print("Actual:", database.fetched_parameters)
 
-        assert dates == [self.TODAY]
+        assert database.fetched_parameters == [(self.TODAY,)]
 
     def test_past_patient_uses_selected_date(self, monkeypatch):
 
-        dates = []
-
-        program = MainProgram(FakeConsole(["2026-10-10"]), FakeDatabase([]))
+        console = FakeConsole(["2026-10-10", "1", "2"])
+        database = FakeDatabase([])
+        io = AppTestFactory.create_io(console)
+        data = DataManagerFactory.create(database)
+        past_patient_query = PastPatientQuery(io, AppTestFactory.create_query_handler(io, data))
 
         monkeypatch.setattr(
-            program.data,
+            data,
             "get_current_date",
             lambda: self.TODAY
         )
 
-        program.replace_function(
-            "patient_query_handler",
-            lambda date: dates.append(date)
-        )
-
-        program.healthcare_portal_routing("2")
+        past_patient_query.run()
 
         print("\nSCENARIO: Past Patient Query")
         print("Selected Date: 2026-10-10")
         print("Expected Date Used: 2026-10-10")
-        print("Actual:", dates)
+        print("Actual:", database.fetched_parameters)
 
-        assert dates == ["2026-10-10"]
+        assert database.fetched_parameters == [("2026-10-10",)]
 
     def test_patient_query_database_down(self):
 
         # The database returns None when it cannot be reached.
         console = FakeConsole(["1", "1", "D001"])
-        program = MainProgram(console, FakeDatabase(None))
+        query_handler = self.__query_handler(console, FakeDatabase(None))
 
-        result = program.patient_query_handler(
+        result = query_handler.handle(
             self.TODAY
         )
 
@@ -117,7 +120,7 @@ class TestHealthcarePortal:
         print("Expected: Database error message")
         print("Actual:", result)
 
-        assert result == program.constant("DATABASE_ERROR_MESSAGE")
+        assert result == constants.DATABASE_ERROR_MESSAGE
 
     def test_all_patients_on_date(self):
 
@@ -126,9 +129,9 @@ class TestHealthcarePortal:
             ("09:00:00", "D001", "NANI", "T0111111C", "F", "2006-01-01", 20, "+65 91111111"),
             ("09:30:00", "P001", "ALEX", "S0012345B", "M", "2001-01-01", 25, "+65 91234567")
         ])
-        program = MainProgram(console, database)
+        query_handler = self.__query_handler(console, database)
 
-        result = program.patient_query_handler(
+        result = query_handler.handle(
             self.TODAY
         )
 
@@ -145,9 +148,9 @@ class TestHealthcarePortal:
     def test_all_patients_none_on_date(self):
 
         console = FakeConsole(["1", "2"])
-        program = MainProgram(console, FakeDatabase([]))
+        query_handler = self.__query_handler(console, FakeDatabase([]))
 
-        result = program.patient_query_handler(
+        result = query_handler.handle(
             self.TODAY
         )
 
@@ -155,19 +158,24 @@ class TestHealthcarePortal:
         print("Expected: No records message")
         print("Actual:", result)
 
-        assert result == "There are no patient records for this date!"
+        assert result == constants.NO_PATIENTS_ON_DATE_MESSAGE
 
     def test_invalid_query_scope(self):
 
         console = FakeConsole(["1", "3"])
-        program = MainProgram(console, FakeDatabase([]))
+        database = FakeDatabase([])
+        query_handler = self.__query_handler(console, database)
 
-        result = program.patient_query_handler(
+        result = query_handler.handle(
             self.TODAY
         )
 
-        print("\nSCENARIO: Invalid One Patient / All Patients Option")
-        print("Expected: Invalid option message")
-        print("Actual:", result)
+        expected = io_constants.INVALID_MENU_OPTION.format(maximum=self.SCOPE_OPTIONS)
 
-        assert result == "This is not a valid option number!"
+        print("\nSCENARIO: Invalid One Patient / All Patients Option")
+        print("Expected:", expected)
+        print("Actual:", console.shown[-1])
+
+        assert result is None
+        assert console.shown[-1] == expected
+        assert database.fetched == []
