@@ -11,11 +11,10 @@ from data_manager.storage import QueueNumberSource
 
 class DataManager(QueueNumberSource):
     def __init__(
-        self, icd_dataset: Dataset, hsa_dataset: Dataset, symptom_dataset: Dataset, record_saver: RecordSaver, patient_query: PatientQuery, query_exporter: QueryExporter, report_generator: ReportGenerator, queue_numbers: QueueNumberSource
+        self, icd_dataset: Dataset, hsa_dataset: Dataset, record_saver: RecordSaver, patient_query: PatientQuery, query_exporter: QueryExporter, report_generator: ReportGenerator, queue_numbers: QueueNumberSource
     ):
         self.__icd_dataset = icd_dataset
         self.__hsa_dataset = hsa_dataset
-        self.__symptom_dataset = symptom_dataset
         self.__record_saver = record_saver
         self.__patient_query = patient_query
         self.__query_exporter = query_exporter
@@ -29,16 +28,6 @@ class DataManager(QueueNumberSource):
             self.__icd_dataset.load_cleaned(),
             self.__hsa_dataset.load_cleaned()
         )
-
-    def load_symptoms(self) -> list[str]:
-        """Reads the symptoms dataset. Returns all symptom names in
-        uppercase since user input is uppercased before matching."""
-        symptoms_df = self.__symptom_dataset.load_cleaned()
-
-        if symptoms_df is None:
-            return []
-
-        return symptoms_df["term"].tolist()
 
     def export_record(
         self,
