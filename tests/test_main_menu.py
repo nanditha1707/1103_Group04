@@ -111,6 +111,7 @@ class TestMainMenu:
 
         console = FakeConsole([
             "2",    # Main menu
+            AppTestFactory.ADMIN_PASSWORD,
             "1",    # Current patient query
             "1",
             "2"
@@ -130,11 +131,32 @@ class TestMainMenu:
         assert database.fetched_parameters == [(self.TODAY,)]
         assert console.shown[-1] == constants.NO_PATIENTS_ON_DATE_MESSAGE
 
+    def test_healthcare_portal_wrong_password(self):
+
+        console = FakeConsole([
+            "2",
+            "WRONG"
+        ])
+        database = FakeDatabase([])
+        io = AppTestFactory.create_io(console)
+        data = AppTestFactory.create_data_manager(database, self.__clock)
+        main_menu = AppTestFactory.create_main_menu(io, data)
+
+        keep_running = main_menu.run_once()
+
+        print("\nSCENARIO: Wrong Healthcare Portal Password")
+        print("Expected:", constants.WRONG_PASSWORD_MESSAGE)
+        print("Actual:", console.shown[-1])
+
+        assert keep_running is True
+        assert database.fetched_parameters == []
+        assert console.shown[-1] == constants.WRONG_PASSWORD_MESSAGE
+
     def test_correct_exit_password(self):
 
         console = FakeConsole([
             "3",
-            "Password"
+            AppTestFactory.ADMIN_PASSWORD
         ])
         io = AppTestFactory.create_io(console)
         data = AppTestFactory.create_data_manager(FakeDatabase([]))

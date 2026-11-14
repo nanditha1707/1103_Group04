@@ -1,10 +1,11 @@
+import os
 from datetime import datetime
 
 from dotenv import load_dotenv
 
 from ai_manager import AIManagerFactory
 from app import constants
-from app.menu import ExitAction, MainMenu, RegistrationAction
+from app.menu import ExitAction, MainMenu, PasswordGate, PasswordProtectedAction, RegistrationAction
 from app.portal import CurrentPatientQuery, HealthcarePortal, PastPatientQuery, ReportMenu
 from app.queries import AllPatientsScope, PatientQueryHandler, QueryFilter, QueryResultPresenter, SinglePatientScope
 from app.reports import MedicineBreakdownReport, MedicineCountReport, PatientTypeBreakdownReport
@@ -33,10 +34,15 @@ class ApplicationFactory:
             message = constants.STARTUP_FAILED_MESSAGE.format(error=str(error))
             return StartupFailure(io, message)
 
+        # Read the AI API keys and the admin password from the local .env file
+        load_dotenv(override=True)
+        admin_password = os.getenv(constants.ADMIN_PASSWORD_ENV_VAR)
+        if not admin_password:
+            return StartupFailure(io, constants.ADMIN_PASSWORD_MISSING_MESSAGE)
+        gate = PasswordGate(io, admin_password)
+
         # load the ICD and HSA datasets once, when the program starts
         icd_df, hsa_df = data.get_cleaned_datasets()
-        # Read the AI API keys from the local .env file
-        load_dotenv(override=True)
         # The AI manager checks every AI answer against the same datasets that logic_manager routes with,
         # so every valid medicine can be routed
         ai = AIManagerFactory.create(icd_df, hsa_df)
@@ -46,7 +52,8 @@ class ApplicationFactory:
         triage_pipeline = TriagePipeline(screens=io, prompt=io, diagnoser=ai, router=logic, records=data)
         registration = RegistrationAction(io, triage_pipeline)
         healthcare_portal = ApplicationFactory.__create_healthcare_portal(io, data)
-        return Application(MainMenu(io, [registration, healthcare_portal, ExitAction(io)]))
+        protected_portal = PasswordProtectedAction(healthcare_portal, gate)
+        return Application(MainMenu(io, [registration, protected_portal, ExitAction(io, gate)]))
 
     @staticmethod
     def __now() -> datetime:

@@ -9,7 +9,10 @@ REGISTRATION_LABEL = "Patient Registration"
 HEALTHCARE_PORTAL_LABEL = "Healthcare Professional Portal"
 EXIT_LABEL = "Exit"
 
-ADMIN_PASSWORD = "Password"
+ADMIN_PASSWORD_ENV_VAR = "ADMIN_PASSWORD"
+ADMIN_PASSWORD_PROMPT = "Enter the admin password here: "
+ADMIN_PASSWORD_MISSING_MESSAGE = ("The program could not start: no admin password is set.\n"
+                                  "Please set ADMIN_PASSWORD in the .env file.")
 EXIT_CODE_PROMPT = "Enter the exit code here: "
 MENU_EXIT_MESSAGE = "Admin Password Inputted, Exiting Program Now!"
 WRONG_PASSWORD_MESSAGE = "This is not the right password!"

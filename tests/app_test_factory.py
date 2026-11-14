@@ -3,7 +3,7 @@ from datetime import datetime
 
 from app import constants
 from app.interfaces import DiagnosisSource
-from app.menu import ExitAction, MainMenu, RegistrationAction
+from app.menu import ExitAction, MainMenu, PasswordGate, PasswordProtectedAction, RegistrationAction
 from app.portal import CurrentPatientQuery, HealthcarePortal, PastPatientQuery, ReportMenu
 from app.queries import AllPatientsScope, PatientQueryHandler, QueryFilter, QueryResultPresenter, SinglePatientScope
 from app.reports import MedicineBreakdownReport, MedicineCountReport, PatientTypeBreakdownReport
@@ -26,6 +26,8 @@ class AppTestFactory:
     No HSA dataset is loaded, so the router sends every non-emergency
     patient to a doctor.
     """
+
+    ADMIN_PASSWORD = "Password"
 
     @staticmethod
     def now() -> datetime:
@@ -56,7 +58,9 @@ class AppTestFactory:
         triage_pipeline = TriagePipeline(screens=io, prompt=io, diagnoser=diagnoser, router=logic, records=data)
         registration = RegistrationAction(io, triage_pipeline)
         healthcare_portal = AppTestFactory.create_healthcare_portal(io, data)
-        return MainMenu(io, [registration, healthcare_portal, ExitAction(io)])
+        gate = PasswordGate(io, AppTestFactory.ADMIN_PASSWORD)
+        protected_portal = PasswordProtectedAction(healthcare_portal, gate)
+        return MainMenu(io, [registration, protected_portal, ExitAction(io, gate)])
 
     @staticmethod
     def create_healthcare_portal(io: IOManager, data: DataManager) -> HealthcarePortal:

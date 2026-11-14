@@ -149,7 +149,10 @@ GEMINI_API_KEY=YOUR-GEMINI-API-KEY
 ANTHROPIC_API_KEY=YOUR-ANTHROPIC-API-KEY
 POSTGRESQL_CLOUD_DATABASE_URL=YOUR-DATABASE-URL
 PATIENT_DATA_ENCRYPTION_KEY=YOUR-ENCRYPTION-KEY
+ADMIN_PASSWORD=YOUR-ADMIN-PASSWORD
 ```
+`ADMIN_PASSWORD` is asked for before the Healthcare Professional Portal opens and before the program exits.
+The program will not start without it.
 In a real world implementation, the fernet encryption key would not be given like this.
 However, for the purposes of testing and demonstration, we have provided it.
 Do not wrap the values in quotation marks.
@@ -192,6 +195,8 @@ Add the API keys and the cloud database URL:
 GEMINI_API_KEY=YOUR-GEMINI-API-KEY
 ANTHROPIC_API_KEY=YOUR-ANTHROPIC-API-KEY
 POSTGRESQL_CLOUD_DATABASE_URL=YOUR-DATABASE-URL
+PATIENT_DATA_ENCRYPTION_KEY=YOUR-ENCRYPTION-KEY
+ADMIN_PASSWORD=YOUR-ADMIN-PASSWORD
 ```
 
 Important:
