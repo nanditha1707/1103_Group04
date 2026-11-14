@@ -9,7 +9,7 @@ from data_manager.dataset import HsaDataset, IcdDataset, SymptomDataset
 from data_manager.manager import DataManager
 from data_manager.patients import PatientQuery, QueryExporter, RecordSaver
 from data_manager.reports import ReportGenerator
-from data_manager.security import Cipher, EncryptionKeyError, FernetCipher, KeyVerifier
+from data_manager.security import Cipher, EncryptionKeyError, FernetCipher, KeyCheckStore, KeyVerifier
 from data_manager.storage import (
     Database,
     EncryptedRecordCounter,
@@ -30,7 +30,7 @@ class DataManagerFactory:
 
     @staticmethod
     def create(
-        database: Database | None = None, clock: Callable[[], datetime] | None = None, cipher: Cipher | None = None
+        database: Database | None = None, clock: Callable[[], datetime] | None = None, cipher: Cipher | None = None, key_check_store: KeyCheckStore | None = None
     ) -> DataManager:
         # Both the database URL and the encryption key are in the .env file.
         load_dotenv(override=True)
@@ -49,10 +49,13 @@ class DataManagerFactory:
             except ValueError as error:
                 raise EncryptionKeyError(str(error)) from error
 
+        if key_check_store is None:
+            key_check_store = PostgresKeyCheckStore(database)
+
         # Check the key against the database before anything can be saved.
         key_verifier = KeyVerifier(
             cipher,
-            PostgresKeyCheckStore(database),
+            key_check_store,
             constants.KEY_CHECK_TEXT
         )
         key_error = key_verifier.verify()

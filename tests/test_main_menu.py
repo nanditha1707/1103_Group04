@@ -6,7 +6,6 @@ sys.path.append(str(Path(__file__).resolve().parent.parent))
 
 from app import constants
 from app_test_factory import AppTestFactory
-from data_manager import DataManagerFactory
 from fakes import FakeConsole, FakeDatabase, FakeDiagnoser
 from io_manager import constants as io_constants
 
@@ -56,7 +55,7 @@ class TestMainMenu:
         database = FakeDatabase([(None,)])
         diagnoser = FakeDiagnoser(ai_output)
         io = AppTestFactory.create_io(console)
-        data = DataManagerFactory.create(database)
+        data = AppTestFactory.create_data_manager(database)
         main_menu = AppTestFactory.create_main_menu(io, data, diagnoser)
 
         monkeypatch.setattr(
@@ -93,7 +92,7 @@ class TestMainMenu:
             "5"
         ])
         io = AppTestFactory.create_io(console)
-        data = DataManagerFactory.create(FakeDatabase([]))
+        data = AppTestFactory.create_data_manager(FakeDatabase([]))
         main_menu = AppTestFactory.create_main_menu(io, data)
 
         keep_running = main_menu.run_once()
@@ -118,7 +117,7 @@ class TestMainMenu:
         ])
         database = FakeDatabase([])
         io = AppTestFactory.create_io(console)
-        data = DataManagerFactory.create(database, self.__clock)
+        data = AppTestFactory.create_data_manager(database, self.__clock)
         main_menu = AppTestFactory.create_main_menu(io, data)
 
         keep_running = main_menu.run_once()
@@ -138,7 +137,7 @@ class TestMainMenu:
             "Password"
         ])
         io = AppTestFactory.create_io(console)
-        data = DataManagerFactory.create(FakeDatabase([]))
+        data = AppTestFactory.create_data_manager(FakeDatabase([]))
         main_menu = AppTestFactory.create_main_menu(io, data)
 
         keep_running = main_menu.run_once()
@@ -157,7 +156,7 @@ class TestMainMenu:
             "WRONG"
         ])
         io = AppTestFactory.create_io(console)
-        data = DataManagerFactory.create(FakeDatabase([]))
+        data = AppTestFactory.create_data_manager(FakeDatabase([]))
         main_menu = AppTestFactory.create_main_menu(io, data)
 
         keep_running = main_menu.run_once()

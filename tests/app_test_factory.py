@@ -1,3 +1,6 @@
+from collections.abc import Callable
+from datetime import datetime
+
 from app import constants
 from app.interfaces import DiagnosisSource
 from app.menu import ExitAction, MainMenu, RegistrationAction
@@ -5,8 +8,9 @@ from app.portal import CurrentPatientQuery, HealthcarePortal, PastPatientQuery, 
 from app.queries import AllPatientsScope, PatientQueryHandler, QueryFilter, QueryResultPresenter, SinglePatientScope
 from app.reports import MedicineBreakdownReport, MedicineCountReport, PatientTypeBreakdownReport
 from app.triage_pipeline import TriagePipeline
-from data_manager import DataManager
-from fakes import FakeDiagnoser
+from data_manager import DataManager, DataManagerFactory
+from data_manager.storage import Database
+from fakes import FakeCipher, FakeDiagnoser, FakeKeyCheckStore
 from io_manager import IOManager
 from io_manager.console import Console
 from logic_manager import LogicManagerFactory
@@ -21,6 +25,13 @@ class AppTestFactory:
     No HSA dataset is loaded, so the router sends every non-emergency
     patient to a doctor.
     """
+
+    @staticmethod
+    def create_data_manager(database: Database, clock: Callable[[], datetime] | None = None) -> DataManager:
+        """Build the real DataManager on the test database with a cipher
+        that leaves values unchanged and a key check that always passes,
+        so the test rows can stay in plain text."""
+        return DataManagerFactory.create(database, clock, FakeCipher(), FakeKeyCheckStore())
 
     @staticmethod
     def create_io(console: Console) -> IOManager:

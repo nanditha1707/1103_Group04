@@ -3,16 +3,19 @@ from pathlib import Path
 
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 
-from data_manager import DataManagerFactory
+from app_test_factory import AppTestFactory
 from fakes import FakeDatabase
 
 
 class TestReports:
     def test_medicine_count(self):
 
-        # COUNT(*) returns one row with one value.
-        database = FakeDatabase([(2,)])
-        data = DataManagerFactory.create(database)
+        # Each row is one patient's 4 medicine columns.
+        database = FakeDatabase([
+            ("PARACETAMOL", None, None, None),
+            ("CETIRIZINE", "PARACETAMOL", None, None)
+        ])
+        data = AppTestFactory.create_data_manager(database)
 
         result = data.get_medicine_count(
             "PARACETAMOL",
@@ -25,11 +28,13 @@ class TestReports:
         print("Actual:", result)
 
         assert result == {"PARACETAMOL": 2}
-        assert database.fetched_parameters == [("2026-10-14", "PARACETAMOL")]
+        assert database.fetched_parameters == [("2026-10-14",)]
 
     def test_medicine_not_issued(self):
 
-        data = DataManagerFactory.create(FakeDatabase([(0,)]))
+        data = AppTestFactory.create_data_manager(FakeDatabase([
+            ("PARACETAMOL", None, None, None)
+        ]))
 
         result = data.get_medicine_count(
             "IBUPROFEN",
@@ -45,11 +50,10 @@ class TestReports:
     def test_medicine_breakdown(self):
 
         database = FakeDatabase([
-            ("PARACETAMOL", 2),
-            ("CETIRIZINE", 1),
-            ("IBUPROFEN", 1)
+            ("PARACETAMOL", "CETIRIZINE", None, None),
+            ("PARACETAMOL", None, "IBUPROFEN", None)
         ])
-        data = DataManagerFactory.create(database)
+        data = AppTestFactory.create_data_manager(database)
 
         result = data.get_medicine_breakdown(
             "2026-10-14"
@@ -70,7 +74,7 @@ class TestReports:
 
     def test_patient_type_breakdown(self):
 
-        data = DataManagerFactory.create(FakeDatabase([
+        data = AppTestFactory.create_data_manager(FakeDatabase([
             ("Retail", 1),
             ("Doctor", 1),
             ("Pharmacist", 1)
@@ -96,7 +100,7 @@ class TestReports:
 
     def test_reports_database_down(self):
 
-        data = DataManagerFactory.create(FakeDatabase(None))
+        data = AppTestFactory.create_data_manager(FakeDatabase(None))
 
         print("\nSCENARIO: Database Cannot Be Reached")
         print("Expected: None from every report")

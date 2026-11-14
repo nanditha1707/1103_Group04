@@ -6,7 +6,8 @@ import psycopg
 
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 
-from data_manager import DataManagerFactory, constants
+from app_test_factory import AppTestFactory
+from data_manager import constants
 from data_manager.dataset import HsaDataset, IcdDataset
 from data_manager.patients import RecordSaver
 from data_manager.storage import PostgresDatabase
@@ -130,7 +131,7 @@ class TestDataManager:
 
     def test_record_columns(self):
 
-        data = DataManagerFactory.create(FakeDatabase([]))
+        data = AppTestFactory.create_data_manager(FakeDatabase([]))
 
         record_columns = data.get_record_columns()
 
@@ -148,7 +149,7 @@ class TestDataManager:
 
         # The database returns one row, with the columns in the order asked.
         database = FakeDatabase([("Alex Tan", 25)])
-        data = DataManagerFactory.create(database)
+        data = AppTestFactory.create_data_manager(database)
 
         result = data.get_patient_by_queue(
             "D001",
@@ -173,7 +174,7 @@ class TestDataManager:
 
     def test_patient_not_found(self):
 
-        data = DataManagerFactory.create(FakeDatabase([]))
+        data = AppTestFactory.create_data_manager(FakeDatabase([]))
 
         result = data.get_patient_by_queue(
             "D999",
@@ -196,7 +197,7 @@ class TestDataManager:
     def test_export_record(self):
 
         database = FakeDatabase([])
-        data = DataManagerFactory.create(database)
+        data = AppTestFactory.create_data_manager(database)
 
         user_answers = {
             "name": "Charlie Ng",
@@ -256,7 +257,7 @@ class TestDataManager:
 
         assert result is None
         assert len(executed) == 1
-        assert "INSERT INTO patient_records" in executed[0][0]
+        assert 'INSERT INTO "patient_records"' in executed[0][0].as_string()
         assert saved_record["name"] == "Charlie Ng"
         assert saved_record["birthdate"] == "1988-03-21"
         assert saved_record["queue_number"] == "D001"
@@ -275,7 +276,7 @@ class TestDataManager:
             ("09:00:00", "D001", "Alex Tan"),
             ("09:30:00", "P001", "Betty Lim")
         ])
-        data = DataManagerFactory.create(database)
+        data = AppTestFactory.create_data_manager(database)
 
         result = data.get_patients_by_date(
             ["name"],
@@ -294,7 +295,7 @@ class TestDataManager:
 
     def test_get_patients_by_date_keeps_existing_columns(self):
 
-        data = DataManagerFactory.create(FakeDatabase([]))
+        data = AppTestFactory.create_data_manager(FakeDatabase([]))
 
         result = data.get_patients_by_date(
             constants.RECORD_COLUMNS,
@@ -327,7 +328,7 @@ class TestPostgresDatabase:
         )
 
         database = PostgresDatabase("postgresql://unreachable")
-        data = DataManagerFactory.create(database)
+        data = AppTestFactory.create_data_manager(database)
 
         fetch_result = database.fetch_rows(
             "SELECT 1",

@@ -7,7 +7,6 @@ sys.path.append(str(Path(__file__).resolve().parent.parent))
 from app import constants
 from app.portal import CurrentPatientQuery, PastPatientQuery
 from app_test_factory import AppTestFactory
-from data_manager import DataManagerFactory
 from fakes import FakeConsole, FakeDatabase
 from io_manager import constants as io_constants
 
@@ -19,7 +18,7 @@ class TestHealthcarePortal:
     @staticmethod
     def __query_handler(console, database):
         io = AppTestFactory.create_io(console)
-        data = DataManagerFactory.create(database)
+        data = AppTestFactory.create_data_manager(database)
 
         return AppTestFactory.create_query_handler(io, data)
 
@@ -70,7 +69,7 @@ class TestHealthcarePortal:
         console = FakeConsole(["1", "2"])
         database = FakeDatabase([])
         io = AppTestFactory.create_io(console)
-        data = DataManagerFactory.create(database, self.__clock)
+        data = AppTestFactory.create_data_manager(database, self.__clock)
         current_patient_query = CurrentPatientQuery(data, AppTestFactory.create_query_handler(io, data))
 
         current_patient_query.run()
@@ -86,7 +85,7 @@ class TestHealthcarePortal:
         console = FakeConsole(["2026-10-10", "1", "2"])
         database = FakeDatabase([])
         io = AppTestFactory.create_io(console)
-        data = DataManagerFactory.create(database, self.__clock)
+        data = AppTestFactory.create_data_manager(database, self.__clock)
         past_patient_query = PastPatientQuery(io, AppTestFactory.create_query_handler(io, data))
 
         past_patient_query.run()
