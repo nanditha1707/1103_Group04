@@ -41,9 +41,7 @@ class RecordEncryptor:
         for column in self.__encrypted_columns:
             # Checks if any of the columns in the query need to be decrypted.
             if column in decrypted_table.columns:
-                # Calls decrypt_value once for each of the values in the column
-                decrypted_table[column] = decrypted_table[column].map(self.__decrypt_value)
-                # Calls decrypt_value once for each of the values in the column. 
+                # Calls cipher.decrypt once for each of the values in the column. 
                 # Empty values are skipped and left as they are.
                 decrypted_table[column] = decrypted_table[column].map(
                     self.__cipher.decrypt, na_action="ignore")
