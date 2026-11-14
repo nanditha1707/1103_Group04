@@ -1,6 +1,6 @@
-from .password_hasher import PasswordHasher
-from .user_repository import UserRepository
-from .user import User
+from password_hasher import PasswordHasher
+from user import User
+from user_repository import UserRepository
 
 class AuthService:
     """Validates healthcare professional login credentials."""
