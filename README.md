@@ -4,6 +4,15 @@ INF1103 Programming Fundamentals project Group 4
 
 **Team Members:** Darrell Lee (2605569), Moe Han (2605699), Joana (2604246), Borra Nanditha (2605399), Thach Ke Vin (2604693), and Song En (2605357)
 
+## Important run steps
+
+For security reasons, we will not be pasting any keys here as the repo
+is public. To obtain the keys needed to run the project, please look in 
+the Appendix in the engineering report.
+
+Docker run:
+docker run -it --rm --env-file .env -v "${PWD}/query:/app/query" kevinwuyckens/group04-healthcare:latest
+
 ## Main Idea
 
 Hospitals in Singapore can experience long waiting times due to patients seeking hospital care for conditions that may be manageable through a GP clinic, pharmacy, or retail medication.
@@ -140,7 +149,7 @@ Create a file named exactly `.env` in the project directory and add the required
 GEMINI_API_KEY=YOUR-GEMINI-API-KEY
 ANTHROPIC_API_KEY=YOUR-ANTHROPIC-API-KEY
 POSTGRESQL_CLOUD_DATABASE_URL=YOUR-DATABASE-URL
-PATIENT_DATA_ENCRYPTION_KEY =M9vyRR3VGLWbgFdXALGdY8TeGiSJrcHYJlgXkm6NSqo=
+PATIENT_DATA_ENCRYPTION_KEY=YOUR-ENCRYPTION-KEY
 ```
 In a real world implementation, the fernet encryption key would not be given like this.
 However, for the purposes of testing and demonstration, we have provided it.
