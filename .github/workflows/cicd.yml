@@ -49,10 +49,14 @@ jobs:
           POSTGRESQL_CLOUD_DATABASE_URL: ${{ secrets.POSTGRESQL_CLOUD_DATABASE_URL }}
           PATIENT_DATA_ENCRYPTION_KEY: ${{ secrets.PATIENT_DATA_ENCRYPTION_KEY }}
           PATIENT_RECORDS_TABLE: patient_records_test
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
           for test_file in tests/*.txt; do
             echo "::group::$test_file"
             grep -v '^#' "$test_file" | docker run --rm -i \
+              -e GEMINI_API_KEY \
+              -e ANTHROPIC_API_KEY \
               -e POSTGRESQL_CLOUD_DATABASE_URL \
               -e PATIENT_DATA_ENCRYPTION_KEY \
               -e PATIENT_RECORDS_TABLE \
