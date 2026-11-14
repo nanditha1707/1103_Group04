@@ -7,7 +7,7 @@ def prompt_login(auth_service: AuthService, max_attempts: int = 3) -> User | Non
     """Prompt for NRIC and password in the terminal until login succeeds or attempts run out."""
     for attempt in range(1, max_attempts + 1):
         nric = input("Enter NRIC: ")
-        password = getpass("Enter Password: ")
+        password = input("Enter Password: ")
 
         user = auth_service.authenticate(nric, password)
         if user is not None:
