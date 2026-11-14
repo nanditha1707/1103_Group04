@@ -52,7 +52,8 @@ class DataManagerFactory:
         if key_error is not None:
             raise EncryptionKeyError(key_error)
 
-        record_store = PostgresRecordStore(database)
+        table_name = os.getenv(constants.RECORDS_TABLE_ENV_VAR) or constants.DEFAULT_RECORDS_TABLE
+        record_store = PostgresRecordStore(database, table_name)
 
         # Saving and patient queries go through the encrypted store.
         # Queue numbers only use columns that are not encrypted, so they keep using the plain record store.
