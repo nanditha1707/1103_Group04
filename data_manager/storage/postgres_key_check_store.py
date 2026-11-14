@@ -25,15 +25,3 @@ class PostgresKeyCheckStore(KeyCheckStore):
             return []
 
         return [rows[0][0]]
-
-    def save_check_value(self, check_value: str) -> str | None:
-        # Edge case guard. It saves the key check value, but if there is a conflict, 
-        # possibly due to two users starting the program for the first time at the same time, 
-        # only the first inserted check value will be kept.
-        sql_statement = """
-            INSERT INTO encryption_check (id, check_value)
-            VALUES (1, %(check_value)s)
-            ON CONFLICT (id) DO NOTHING
-        """
-        # Executes the sql statement.
-        return self.__database.execute(sql_statement, {"check_value": check_value})

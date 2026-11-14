@@ -16,26 +16,15 @@ class KeyVerifier:
 
     def verify(self) -> str | None:
         """
-        Return None if the key is correct, 
-        or the error message if the database could not be reached.
+        Return None if the key is correct, or the error message if the database
+        could not be reached, has no check value, or the key does not match.
         """
         check_values = self.__check_store.get_check_values()
         if check_values is None:
             return "The database could not be reached to check the encryption key."
 
-        # If the database does not have a check_values yet, 
-        # it means that the database does not have a check stored yet. 
-        # The program will then treat the encryption key as the databases encryption key, 
-        # and encrypt the test check text, before storing it.
         if not check_values:
-            # This stores the encrypted check value into the database.
-            save_error = self.__check_store.save_check_value(
-                self.__cipher.encrypt(self.__check_text)
-            )
-            if save_error is not None:
-                return f"The encryption key check could not be saved ({save_error}.)"
-
-            return None
+            return "The database has no encryption check value to verify the key against."
 
         return self.__check_value_matches(check_values[0])
 
@@ -50,5 +39,5 @@ class KeyVerifier:
         # and invalid key possibility into one error message.
         if decrypted_text != self.__check_text:
             return ("The encryption key does not match this database." 
-                    "Either the key is invalid, or it is meant for a different databse.")
+                    "Either the key is invalid, or it is meant for different database.")
         
