@@ -1,362 +1,172 @@
-import ast
+import sys
+from datetime import datetime
 from pathlib import Path
 
-import pandas as pd
-
-
-def load_main():
-
-    main_path = Path(__file__).resolve().parent.parent / "main.py"
-
-    source = main_path.read_text(encoding="utf-8")
-    tree = ast.parse(source)
-
-    safe_nodes = []
-
-    for node in tree.body:
-        if isinstance(
-            node,
-            (
-                ast.Import,
-                ast.ImportFrom,
-                ast.Assign,
-                ast.AnnAssign,
-                ast.FunctionDef
-            )
-        ):
-            safe_nodes.append(node)
-
-    safe_tree = ast.Module(
-        body=safe_nodes,
-        type_ignores=[]
-    )
-
-    namespace = {}
-
-    exec(
-        compile(
-            safe_tree,
-            str(main_path),
-            "exec"
-        ),
-        namespace
-    )
-
-    return namespace
-
-
-main = load_main()
-
-
-def test_current_patient_found(monkeypatch):
-
-    fake_patient = pd.DataFrame([
-        {
-            "name": "NANI",
-            "nric": "T0111111C",
-            "gender": "F",
-            "age": "20",
-            "phone_number": "+65 91111111"
-        }
-    ])
-
-    monkeypatch.setattr(
-        main["io"],
-        "dynamic_menu_print",
-        lambda *args: "1"
-    )
-
-    monkeypatch.setattr(
-        main["io"],
-        "validate_option",
-        lambda option: None
-    )
-
-    monkeypatch.setattr(
-        main["data"],
-        "get_patient_filter",
-        lambda option: [
-            "name",
-            "nric",
-            "gender",
-            "age",
-            "phone_number"
-        ]
-    )
-
-    monkeypatch.setattr(
-        "builtins.input",
-        lambda prompt="": "D001"
-    )
-
-    monkeypatch.setattr(
-        main["data"],
-        "get_patient_by_queue",
-        lambda queue, filters, date: fake_patient
-    )
-
-    printed = []
-
-    monkeypatch.setattr(
-        main["data"],
-        "print_or_export",
-        lambda filters: "print"
-    )
-    
-    monkeypatch.setattr(
-        main["io"],
-        "print_df_and_reports",
-        lambda df, *args: printed.append(df)
-    )
-
-    result = main["patient_query_handler"](
-        "2026-10-14"
-    )
-
-    print("\nSCENARIO: Existing Patient Query")
-    print("Queue: D001")
-    print("Expected Patient: NANI")
-    print("Actual:")
-    print(fake_patient)
-
-    assert result is None
-    assert len(printed) == 1
-
-
-def test_patient_not_found(monkeypatch):
-
-    monkeypatch.setattr(
-        main["io"],
-        "dynamic_menu_print",
-        lambda *args: "1"
-    )
-
-    monkeypatch.setattr(
-        main["io"],
-        "validate_option",
-        lambda option: None
-    )
-
-    monkeypatch.setattr(
-        main["data"],
-        "get_patient_filter",
-        lambda option: ["name"]
-    )
-
-    monkeypatch.setattr(
-        "builtins.input",
-        lambda prompt="": "D999"
-    )
-
-    monkeypatch.setattr(
-        main["data"],
-        "get_patient_by_queue",
-        lambda queue, filters, date: pd.DataFrame()
-    )
-
-    result = main["patient_query_handler"](
-        "2026-10-14"
-    )
-
-    print("\nSCENARIO: Patient Does Not Exist")
-    print("Queue: D999")
-    print("Expected: Patient not found message")
-    print("Actual:", result)
-
-    assert result == (
-        "There is no such patient, "
-        "please enter a valid queue number!"
-    )
-
-
-def test_current_patient_uses_today(monkeypatch):
-
-    dates = []
-
-    monkeypatch.setattr(
-        main["data"],
-        "get_current_date",
-        lambda: "2026-10-14"
-    )
-
-    monkeypatch.setitem(
-        main,
-        "patient_query_handler",
-        lambda date: dates.append(date)
-    )
+sys.path.append(str(Path(__file__).resolve().parent.parent))
 
-    main["healthcare_portal_routing"]("1")
-
-    print("\nSCENARIO: Current Patient")
-    print("Expected Date: 2026-10-14")
-    print("Actual:", dates)
+from app import constants
+from app.portal import CurrentPatientQuery, PastPatientQuery
+from app_test_factory import AppTestFactory
+from fakes import FakeConsole, FakeDatabase
+from io_manager import constants as io_constants
 
-    assert dates == ["2026-10-14"]
 
+class TestHealthcarePortal:
+    TODAY = "2026-10-14"
+    SCOPE_OPTIONS = 2
 
-def test_past_patient_uses_selected_date(monkeypatch):
+    @staticmethod
+    def __query_handler(console, database):
+        io = AppTestFactory.create_io(console)
+        data = AppTestFactory.create_data_manager(database)
 
-    dates = []
+        return AppTestFactory.create_query_handler(io, data)
 
-    monkeypatch.setattr(
-        main["data"],
-        "get_current_date",
-        lambda: "2026-10-14"
-    )
+    def __clock(self):
+        return datetime.fromisoformat(self.TODAY)
 
-    monkeypatch.setattr(
-        "builtins.input",
-        lambda prompt="": "2026-10-10"
-    )
+    def test_current_patient_found(self):
 
-    monkeypatch.setattr(
-        main["io"],
-        "validate_date",
-        lambda date: None
-    )
-
-    monkeypatch.setitem(
-        main,
-        "patient_query_handler",
-        lambda date: dates.append(date)
-    )
+        console = FakeConsole(["1", "1", "D001"])
+        database = FakeDatabase([
+            ("NANI", "T0111111C", "F", "2006-01-01", 20, "+65 91111111")
+        ])
+        query_handler = self.__query_handler(console, database)
 
-    main["healthcare_portal_routing"]("2")
-
-    print("\nSCENARIO: Past Patient Query")
-    print("Selected Date: 2026-10-10")
-    print("Expected Date Used: 2026-10-10")
-    print("Actual:", dates)
+        result = query_handler.handle(
+            self.TODAY
+        )
 
-    assert dates == ["2026-10-10"]
+        print("\nSCENARIO: Existing Patient Query")
+        print("Queue: D001")
+        print("Expected Patient: NANI")
+        print("Actual:")
+        print(console.shown[-1])
 
-def test_patient_query_database_down(monkeypatch):
+        assert result is None
+        assert "NANI" in console.shown[-1]
+        assert "T0111111C" in console.shown[-1]
+        assert database.fetched_parameters == [("D001", self.TODAY)]
 
-    monkeypatch.setattr(
-        main["io"],
-        "dynamic_menu_print",
-        lambda *args: "1"
-    )
+    def test_patient_not_found(self):
 
-    monkeypatch.setattr(
-        main["io"],
-        "validate_option",
-        lambda option: None
-    )
+        console = FakeConsole(["1", "1", "D999"])
+        query_handler = self.__query_handler(console, FakeDatabase([]))
 
-    monkeypatch.setattr(
-        "builtins.input",
-        lambda prompt="": "D001"
-    )
+        result = query_handler.handle(
+            self.TODAY
+        )
 
-    # get_patient_by_queue returns None when the database cannot be reached.
-    monkeypatch.setattr(
-        main["data"],
-        "get_patient_by_queue",
-        lambda queue, filters, date: None
-    )
+        print("\nSCENARIO: Patient Does Not Exist")
+        print("Queue: D999")
+        print("Expected: Patient not found message")
+        print("Actual:", result)
 
-    result = main["patient_query_handler"](
-        "2026-10-14"
-    )
+        assert result == constants.PATIENT_NOT_FOUND_MESSAGE
 
-    print("\nSCENARIO: Database Cannot Be Reached")
-    print("Expected: Database error message")
-    print("Actual:", result)
+    def test_current_patient_uses_today(self):
 
-    assert result == main["DATABASE_ERROR_MESSAGE"]
+        console = FakeConsole(["1", "2"])
+        database = FakeDatabase([])
+        io = AppTestFactory.create_io(console)
+        data = AppTestFactory.create_data_manager(database, self.__clock)
+        current_patient_query = CurrentPatientQuery(data, AppTestFactory.create_query_handler(io, data))
 
+        current_patient_query.run()
 
-def answer_menus(monkeypatch, filter_option, scope_option):
-    """Make the filter menu return filter_option, then the one patient
-    or all patients menu return scope_option."""
+        print("\nSCENARIO: Current Patient")
+        print("Expected Date:", self.TODAY)
+        print("Actual:", database.fetched_parameters)
 
-    answers = iter([filter_option, scope_option])
+        assert database.fetched_parameters == [(self.TODAY,)]
 
-    monkeypatch.setattr(
-        main["io"],
-        "dynamic_menu_print",
-        lambda *args: next(answers)
-    )
+    def test_past_patient_uses_selected_date(self):
 
+        console = FakeConsole(["2026-10-10", "1", "2"])
+        database = FakeDatabase([])
+        io = AppTestFactory.create_io(console)
+        data = AppTestFactory.create_data_manager(database, self.__clock)
+        past_patient_query = PastPatientQuery(io, AppTestFactory.create_query_handler(io, data))
 
-def test_all_patients_on_date(monkeypatch):
+        past_patient_query.run()
 
-    fake_patients = pd.DataFrame([
-        {"time": "09:00:00", "queue_number": "D001", "name": "NANI"},
-        {"time": "09:30:00", "queue_number": "P001", "name": "ALEX"}
-    ])
+        print("\nSCENARIO: Past Patient Query")
+        print("Selected Date: 2026-10-10")
+        print("Expected Date Used: 2026-10-10")
+        print("Actual:", database.fetched_parameters)
 
-    answer_menus(monkeypatch, "1", "2")
+        assert database.fetched_parameters == [("2026-10-10",)]
 
-    dates = []
+    def test_patient_query_database_down(self):
 
-    monkeypatch.setattr(
-        main["data"],
-        "get_patients_by_date",
-        lambda filters, date: dates.append(date) or fake_patients
-    )
+        # The database returns None when it cannot be reached.
+        console = FakeConsole(["1", "1", "D001"])
+        query_handler = self.__query_handler(console, FakeDatabase(None))
 
-    monkeypatch.setattr(
-        main["data"],
-        "print_or_export",
-        lambda columns: "print"
-    )
+        result = query_handler.handle(
+            self.TODAY
+        )
 
-    printed = []
+        print("\nSCENARIO: Database Cannot Be Reached")
+        print("Expected: Database error message")
+        print("Actual:", result)
 
-    monkeypatch.setattr(
-        main["io"],
-        "print_df_and_reports",
-        lambda df, *args: printed.append(df)
-    )
+        assert result == constants.DATABASE_ERROR_MESSAGE
 
-    result = main["patient_query_handler"](
-        "2026-10-14"
-    )
+    def test_all_patients_on_date(self):
 
-    print("\nSCENARIO: All Patients On A Date")
-    print("Expected: Both patients printed, no error")
-    print("Actual:", result)
-    print(fake_patients)
+        console = FakeConsole(["1", "2"])
+        database = FakeDatabase([
+            ("09:00:00", "D001", "NANI", "T0111111C", "F", "2006-01-01", 20, "+65 91111111"),
+            ("09:30:00", "P001", "ALEX", "S0012345B", "M", "2001-01-01", 25, "+65 91234567")
+        ])
+        query_handler = self.__query_handler(console, database)
 
-    assert result is None
-    assert dates == ["2026-10-14"]
-    assert len(printed) == 1
-    assert len(printed[0]) == 2
+        result = query_handler.handle(
+            self.TODAY
+        )
 
+        print("\nSCENARIO: All Patients On A Date")
+        print("Expected: Both patients printed, no error")
+        print("Actual:", result)
+        print(console.shown[-1])
 
-def test_all_patients_none_on_date(monkeypatch):
+        assert result is None
+        assert database.fetched_parameters == [(self.TODAY,)]
+        assert "NANI" in console.shown[-1]
+        assert "ALEX" in console.shown[-1]
 
-    answer_menus(monkeypatch, "1", "2")
+    def test_all_patients_none_on_date(self):
 
-    monkeypatch.setattr(
-        main["data"],
-        "get_patients_by_date",
-        lambda filters, date: pd.DataFrame()
-    )
+        console = FakeConsole(["1", "2"])
+        query_handler = self.__query_handler(console, FakeDatabase([]))
 
-    result = main["patient_query_handler"](
-        "2026-10-14"
-    )
+        result = query_handler.handle(
+            self.TODAY
+        )
 
-    print("\nSCENARIO: No Patients On The Date")
-    print("Expected: No records message")
-    print("Actual:", result)
+        print("\nSCENARIO: No Patients On The Date")
+        print("Expected: No records message")
+        print("Actual:", result)
 
-    assert result == "There are no patient records for this date!"
+        assert result == constants.NO_PATIENTS_ON_DATE_MESSAGE
 
+    def test_invalid_query_scope(self):
 
-def test_invalid_query_scope(monkeypatch):
+        console = FakeConsole(["1", "3"])
+        database = FakeDatabase([])
+        query_handler = self.__query_handler(console, database)
 
-    answer_menus(monkeypatch, "1", "3")
+        result = query_handler.handle(
+            self.TODAY
+        )
 
-    result = main["patient_query_handler"](
-        "2026-10-14"
-    )
+        expected = io_constants.INVALID_MENU_OPTION.format(maximum=self.SCOPE_OPTIONS)
 
-    print("\nSCENARIO: Invalid One Patient / All Patients Option")
-    print("Expected: Invalid option message")
-    print("Actual:", result)
+        print("\nSCENARIO: Invalid One Patient / All Patients Option")
+        print("Expected:", expected)
+        print("Actual:", console.shown[-1])
 
-    assert result == "This is not a valid option number!"
+        assert result is None
+        assert console.shown[-1] == expected
+        assert database.fetched == []

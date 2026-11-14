@@ -7,215 +7,222 @@ sys.path.append(
     str(Path(__file__).resolve().parent.parent)
     )
 
-import logic_manager as logic
+from fakes import FakeQueueNumberSource
+from logic_manager import LogicManagerFactory
 
 
-# ==========================================================
-# FAKE HSA DATA
-# ==========================================================
-# This replaces the need to use live external data during testing.
+class TestLogicManager:
+    HIGHEST_QUEUE_NUMBER = 7
 
-def get_fake_hsa_data():
+    def setup_method(self):
+        self.__logic = LogicManagerFactory.create(
+            self.__fake_hsa_data(),
+            FakeQueueNumberSource(self.HIGHEST_QUEUE_NUMBER)
+        )
 
-    return pd.DataFrame([
-        {
-            "DrugName": "PARACETAMOL",
-            "ActiveIngredients": "PARACETAMOL",
-            "Classification": "General Sale List"
-        },
-        {
-            "DrugName": "CETIRIZINE",
-            "ActiveIngredients": "CETIRIZINE",
-            "Classification": "General Sale List"
-        },
-        {
-            "DrugName": "IBUPROFEN",
-            "ActiveIngredients": "IBUPROFEN",
-            "Classification": "General Sale List"
-        },
-        {
-            "DrugName": "LOZENGES",
-            "ActiveIngredients": "LOZENGES",
-            "Classification": "General Sale List"
-        },
-        {
-            "DrugName": "CHLORPHENIRAMINE",
-            "ActiveIngredients": "CHLORPHENIRAMINE",
-            "Classification": "Pharmacy Only"
-        },
-        {
-            "DrugName": "AMOXICILLIN",
-            "ActiveIngredients": "AMOXICILLIN",
-            "Classification": "Prescription Only"
+    # ==========================================================
+    # FAKE HSA DATA
+    # ==========================================================
+    # This replaces the need to use live external data during testing.
+
+    @staticmethod
+    def __fake_hsa_data():
+
+        return pd.DataFrame([
+            {
+                "DrugName": "PARACETAMOL",
+                "ActiveIngredients": "PARACETAMOL",
+                "Classification": "General Sale List"
+            },
+            {
+                "DrugName": "CETIRIZINE",
+                "ActiveIngredients": "CETIRIZINE",
+                "Classification": "General Sale List"
+            },
+            {
+                "DrugName": "IBUPROFEN",
+                "ActiveIngredients": "IBUPROFEN",
+                "Classification": "General Sale List"
+            },
+            {
+                "DrugName": "LOZENGES",
+                "ActiveIngredients": "LOZENGES",
+                "Classification": "General Sale List"
+            },
+            {
+                "DrugName": "CHLORPHENIRAMINE",
+                "ActiveIngredients": "CHLORPHENIRAMINE",
+                "Classification": "Pharmacy Only"
+            },
+            {
+                "DrugName": "AMOXICILLIN",
+                "ActiveIngredients": "AMOXICILLIN",
+                "Classification": "Prescription Only"
+            }
+        ])
+
+    # ==========================================================
+    # CASE 1 - ALL 4 MEDICINES ARE RETAIL
+    # ==========================================================
+
+    def test_all_retail_medicines(self):
+
+        # Hardcoded sample AI response.
+        ai_output = {
+            "primary_diagnosis_explanation":
+                "Patient has mild cold symptoms.",
+
+            "secondary_diagnosis_explanation":
+                "No emergency symptoms detected.",
+
+            "primary_diagnosis_medicine_1":
+                "PARACETAMOL",
+
+            "primary_diagnosis_medicine_2":
+                "CETIRIZINE",
+
+            "secondary_diagnosis_medicine_1":
+                "IBUPROFEN",
+
+            "secondary_diagnosis_medicine_2":
+                "LOZENGES"
         }
-    ])
 
+        result = self.__logic.process_result(ai_output)
 
-# ==========================================================
-# CASE 1 - ALL 4 MEDICINES ARE RETAIL
-# ==========================================================
+        print("\nCASE 1: ALL RETAIL MEDICINES")
+        print("PARACETAMOL -> Retail")
+        print("CETIRIZINE -> Retail")
+        print("IBUPROFEN -> Retail")
+        print("LOZENGES -> Retail")
+        print("Expected Route: Retail")
+        print("Expected Queue Number: PR008")
+        print("Actual Route:", result["route"])
+        print("Actual Queue Number:", result["queue_number"])
 
-def test_all_retail_medicines():
+        assert result["route"] == "Retail"
+        assert result["queue_number"] == "PR008"
 
-    # Hardcoded sample AI response.
-    ai_output = {
-        "primary_diagnosis_explanation":
-            "Patient has mild cold symptoms.",
+    # ==========================================================
+    # CASE 2 - 3 RETAIL + 1 PHARMACY ONLY
+    # ==========================================================
 
-        "secondary_diagnosis_explanation":
-            "No emergency symptoms detected.",
+    def test_pharmacy_medicine_overrides_retail(self):
 
-        "primary_diagnosis_medicine_1":
-            "PARACETAMOL",
+        # Hardcoded sample AI response.
+        ai_output = {
+            "primary_diagnosis_explanation":
+                "Patient has flu-like symptoms.",
 
-        "primary_diagnosis_medicine_2":
-            "CETIRIZINE",
+            "secondary_diagnosis_explanation":
+                "No emergency symptoms detected.",
 
-        "secondary_diagnosis_medicine_1":
-            "IBUPROFEN",
+            "primary_diagnosis_medicine_1":
+                "PARACETAMOL",
 
-        "secondary_diagnosis_medicine_2":
-            "LOZENGES"
-    }
+            "primary_diagnosis_medicine_2":
+                "CETIRIZINE",
 
-    result = logic.decide_route(
-        ai_output,
-        get_fake_hsa_data()
-    )
+            "secondary_diagnosis_medicine_1":
+                "IBUPROFEN",
 
-    print("\nCASE 1: ALL RETAIL MEDICINES")
-    print("PARACETAMOL -> Retail")
-    print("CETIRIZINE -> Retail")
-    print("IBUPROFEN -> Retail")
-    print("LOZENGES -> Retail")
-    print("Expected Route: Retail")
-    print("Actual Route:", result)
+            "secondary_diagnosis_medicine_2":
+                "CHLORPHENIRAMINE"
+        }
 
-    assert result == "Retail"
+        result = self.__logic.process_result(ai_output)
 
+        print("\nCASE 2: 3 RETAIL + 1 PHARMACY")
+        print("PARACETAMOL -> Retail")
+        print("CETIRIZINE -> Retail")
+        print("IBUPROFEN -> Retail")
+        print("CHLORPHENIRAMINE -> Pharmacy Only")
+        print("Expected Route: Pharmacist")
+        print("Expected Queue Number: P008")
+        print("Actual Route:", result["route"])
+        print("Actual Queue Number:", result["queue_number"])
 
-# ==========================================================
-# CASE 2 - 3 RETAIL + 1 PHARMACY ONLY
-# ==========================================================
+        assert result["route"] == "Pharmacist"
+        assert result["queue_number"] == "P008"
 
-def test_pharmacy_medicine_overrides_retail():
+    # ==========================================================
+    # CASE 3 - PRESCRIPTION MEDICINE OVERRIDES PHARMACY/RETAIL
+    # ==========================================================
 
-    # Hardcoded sample AI response.
-    ai_output = {
-        "primary_diagnosis_explanation":
-            "Patient has flu-like symptoms.",
+    def test_prescription_medicine_overrides_other_routes(self):
 
-        "secondary_diagnosis_explanation":
-            "No emergency symptoms detected.",
+        # Hardcoded sample AI response.
+        ai_output = {
+            "primary_diagnosis_explanation":
+                "Patient may have a bacterial infection.",
 
-        "primary_diagnosis_medicine_1":
-            "PARACETAMOL",
+            "secondary_diagnosis_explanation":
+                "No emergency symptoms detected.",
 
-        "primary_diagnosis_medicine_2":
-            "CETIRIZINE",
+            "primary_diagnosis_medicine_1":
+                "PARACETAMOL",
 
-        "secondary_diagnosis_medicine_1":
-            "IBUPROFEN",
+            "primary_diagnosis_medicine_2":
+                "CHLORPHENIRAMINE",
 
-        "secondary_diagnosis_medicine_2":
-            "CHLORPHENIRAMINE"
-    }
+            "secondary_diagnosis_medicine_1":
+                "AMOXICILLIN",
 
-    result = logic.decide_route(
-        ai_output,
-        get_fake_hsa_data()
-    )
+            "secondary_diagnosis_medicine_2":
+                "CETIRIZINE"
+        }
 
-    print("\nCASE 2: 3 RETAIL + 1 PHARMACY")
-    print("PARACETAMOL -> Retail")
-    print("CETIRIZINE -> Retail")
-    print("IBUPROFEN -> Retail")
-    print("CHLORPHENIRAMINE -> Pharmacy Only")
-    print("Expected Route: Pharmacist")
-    print("Actual Route:", result)
+        result = self.__logic.process_result(ai_output)
 
-    assert result == "Pharmacist"
+        print("\nCASE 3: PRESCRIPTION MEDICINE PRESENT")
+        print("PARACETAMOL -> Retail")
+        print("CHLORPHENIRAMINE -> Pharmacy Only")
+        print("AMOXICILLIN -> Prescription Only")
+        print("CETIRIZINE -> Retail")
+        print("Expected Route: Doctor")
+        print("Expected Queue Number: D008")
+        print("Actual Route:", result["route"])
+        print("Actual Queue Number:", result["queue_number"])
 
+        assert result["route"] == "Doctor"
+        assert result["queue_number"] == "D008"
 
-# ==========================================================
-# CASE 3 - PRESCRIPTION MEDICINE OVERRIDES PHARMACY/RETAIL
-# ==========================================================
+    # ==========================================================
+    # CASE 4 - EMERGENCY OVERRIDES ALL MEDICINES
+    # ==========================================================
 
-def test_prescription_medicine_overrides_other_routes():
+    def test_emergency_overrides_medicine_routing(self):
 
-    # Hardcoded sample AI response.
-    ai_output = {
-        "primary_diagnosis_explanation":
-            "Patient may have a bacterial infection.",
+        # Hardcoded sample AI response.
+        ai_output = {
+            "primary_diagnosis_explanation":
+                "EMERGENCY: Patient requires immediate medical attention.",
 
-        "secondary_diagnosis_explanation":
-            "No emergency symptoms detected.",
+            "secondary_diagnosis_explanation":
+                "Urgent assessment is required.",
 
-        "primary_diagnosis_medicine_1":
-            "PARACETAMOL",
+            "primary_diagnosis_medicine_1":
+                "PARACETAMOL",
 
-        "primary_diagnosis_medicine_2":
-            "CHLORPHENIRAMINE",
+            "primary_diagnosis_medicine_2":
+                "CETIRIZINE",
 
-        "secondary_diagnosis_medicine_1":
-            "AMOXICILLIN",
+            "secondary_diagnosis_medicine_1":
+                "IBUPROFEN",
 
-        "secondary_diagnosis_medicine_2":
-            "CETIRIZINE"
-    }
+            "secondary_diagnosis_medicine_2":
+                "LOZENGES"
+        }
 
-    result = logic.decide_route(
-        ai_output,
-        get_fake_hsa_data()
-    )
+        result = self.__logic.process_result(ai_output)
 
-    print("\nCASE 3: PRESCRIPTION MEDICINE PRESENT")
-    print("PARACETAMOL -> Retail")
-    print("CHLORPHENIRAMINE -> Pharmacy Only")
-    print("AMOXICILLIN -> Prescription Only")
-    print("CETIRIZINE -> Retail")
-    print("Expected Route: Doctor")
-    print("Actual Route:", result)
+        print("\nCASE 4: EMERGENCY")
+        print("All medicines are Retail.")
+        print("AI explanation contains EMERGENCY.")
+        print("Expected Route: EMERGENCY")
+        print("Expected Queue Number: U008")
+        print("Actual Route:", result["route"])
+        print("Actual Queue Number:", result["queue_number"])
 
-    assert result == "Doctor"
-
-
-# ==========================================================
-# CASE 4 - EMERGENCY OVERRIDES ALL MEDICINES
-# ==========================================================
-
-def test_emergency_overrides_medicine_routing():
-
-    # Hardcoded sample AI response.
-    ai_output = {
-        "primary_diagnosis_explanation":
-            "EMERGENCY: Patient requires immediate medical attention.",
-
-        "secondary_diagnosis_explanation":
-            "Urgent assessment is required.",
-
-        "primary_diagnosis_medicine_1":
-            "PARACETAMOL",
-
-        "primary_diagnosis_medicine_2":
-            "CETIRIZINE",
-
-        "secondary_diagnosis_medicine_1":
-            "IBUPROFEN",
-
-        "secondary_diagnosis_medicine_2":
-            "LOZENGES"
-    }
-
-    result = logic.decide_route(
-        ai_output,
-        get_fake_hsa_data()
-    )
-
-    print("\nCASE 4: EMERGENCY")
-    print("All medicines are Retail.")
-    print("AI explanation contains EMERGENCY.")
-    print("Expected Route: EMERGENCY")
-    print("Actual Route:", result)
-
-    assert result == "EMERGENCY"
+        assert result["route"] == "EMERGENCY"
+        assert result["queue_number"] == "U008"

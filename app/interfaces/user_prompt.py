@@ -1,7 +1,7 @@
 from collections.abc import Sequence
 from typing import Protocol
 
-from io_manager.menus import Labelled
+from typedefs import Labelled
 
 
 class UserPrompt(Protocol):

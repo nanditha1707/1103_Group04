@@ -257,10 +257,10 @@ pytest tests/ -v -s
 To run the automated test suite inside the Docker container, use:
 
 ```bash
-docker run --rm kevinwuyckens/group04-healthcare:latest python centralised.py
+docker run --rm kevinwuyckens/group04-healthcare:latest python run_tests.py
 ```
 
-The `centralised.py` script runs the automated test cases inside the Docker image.
+The `run_tests.py` script runs the automated test cases inside the Docker image.
 
 These tests verify the core application logic, including `logic_manager`, using hardcoded sample AI responses so that the tests can run independently without requiring a live Gemini or Claude API connection.
 

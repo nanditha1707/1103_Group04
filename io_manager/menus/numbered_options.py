@@ -1,6 +1,6 @@
 from collections.abc import Sequence
 
-from .labelled import Labelled
+from typedefs import Labelled
 
 
 class NumberedOptions:

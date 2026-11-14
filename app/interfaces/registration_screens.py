@@ -1,7 +1,7 @@
 from collections.abc import Mapping
 from typing import Protocol
 
-from io_manager.patient_answers import Answer
+from typedefs import Answer
 
 
 class RegistrationScreens(Protocol):

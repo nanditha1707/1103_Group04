@@ -1,6 +1,6 @@
 from app import constants
 from app.interfaces import DiagnosisSource, PatientRouter, RecordExporter, RegistrationScreens, UserPrompt
-from io_manager.patient_answers import Answer
+from typedefs import Answer
 
 
 class TriagePipeline:

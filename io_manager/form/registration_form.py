@@ -1,8 +1,9 @@
 from collections.abc import Mapping, Sequence
 
 from io_manager.derived import DerivedAnswer
-from io_manager.patient_answers import Answer, PatientAnswers
+from io_manager.patient_answers import PatientAnswers
 from io_manager.questions import Question
+from typedefs import Answer
 
 
 class RegistrationForm:

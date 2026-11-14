@@ -7,7 +7,7 @@ from app.portal import CurrentPatientQuery, HealthcarePortal, PastPatientQuery, 
 from app.queries import AllPatientsScope, PatientQueryHandler, QueryFilter, QueryResultPresenter, SinglePatientScope
 from app.reports import MedicineBreakdownReport, MedicineCountReport, PatientTypeBreakdownReport
 from data_manager import DataManager, DataManagerFactory, EncryptionKeyError
-from io_manager import IOManager
+from io_manager import IOManager, IOManagerFactory
 from logic_manager import LogicManagerFactory
 
 from .application import Application
@@ -21,7 +21,7 @@ class ApplicationFactory:
     def create() -> Application:
         # The symptom list comes from a local CSV, 
         # so the one IO manager can be created before the data manager checks the encryption key.
-        io = IOManager(symptom_terms=DataManagerFactory.load_symptoms())
+        io = IOManagerFactory.create(DataManagerFactory.load_symptoms())
         # A missing, malformed or wrong key, 
         # or an unreachable database stops the program here, before any patient record is touched.
         try:

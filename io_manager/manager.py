@@ -1,60 +1,38 @@
-from collections.abc import Iterable, Mapping, Sequence
+from collections.abc import Mapping, Sequence
 
 import pandas as pd
 
 from io_manager import constants
-from io_manager.console import Console, TerminalConsole
-from io_manager.form import RegistrationFactory
-from io_manager.menus import Labelled, NumberedOptions
-from io_manager.patient_answers import Answer, PatientAnswers
+from io_manager.console import Console
+from io_manager.form import RegistrationForm
+from io_manager.menus import NumberedOptions
+from io_manager.patient_answers import PatientAnswers
 from io_manager.rendering import BoxRenderer, TableRenderer
 from io_manager.screens import ConfirmationScreen, Questionnaire, ResultView
-from io_manager.symptoms import SymptomCatalogue
 from io_manager.validators import DateValidator, MenuOptionValidator
+from typedefs import Answer, Labelled
 
 
 class IOManager:
     """
     The orchestrator class main.py uses for all input and output.
 
-    It builds the shared objects the other classes need,
-    and passes them in through each constructor, so every part uses the same ones. 
-    The console can be passed in, such as a GUI, otherwise,
-    it defaults to a TerminalConsole, and the questions and stop rules come from a RegistrationFactory, 
-    so a new front end or clinic setup needs no change to this class.
+    IOManagerFactory builds every object it needs and passes them in through the constructor.
+    It creates none of them itself so a test can pass in its own console or screens
+    and a new front end or clinic setup needs no change to this class.
     """
 
     def __init__(
-        self, console: Console | None = None, *, symptom_terms: Iterable[str], factory: RegistrationFactory | None = None
+        self, console: Console, form: RegistrationForm, questionnaire: Questionnaire, confirmation: ConfirmationScreen, result_view: ResultView, box_renderer: BoxRenderer, table_renderer: TableRenderer, date_validator: DateValidator
     ) -> None:
-        # Sets the default console to TerminalConsole, unless a separate console is fed to it during init.
-        # Currently doesnt occur, will only come into play if other custom GUI's are created.
-        if console is not None:
-            self.__console = console
-        else:
-            self.__console = TerminalConsole()
-
-        # Sets the default factory/ registration setup to the RegistrationFactory class.
-        if factory is None:
-            factory = RegistrationFactory()
-
-        self.__box_renderer = BoxRenderer()
-        self.__table_renderer = TableRenderer()
-        self.__date_validator = DateValidator()
-
-        catalogue = SymptomCatalogue(symptom_terms)
-        self.__form = factory.build_form(catalogue, self.__box_renderer)
-        # Shared by both screens, so they always stop for the same reasons.
-        stop_rule = factory.build_stop_rule()
-
-        self.__questionnaire = Questionnaire(self.__console, self.__form, stop_rule)
-        self.__confirmation = ConfirmationScreen(
-            self.__console,
-            self.__form,
-            stop_rule,
-            self.__box_renderer
-        )
-        self.__result_view = ResultView()
+        self.__console = console
+        self.__form = form
+        self.__questionnaire = questionnaire
+        self.__confirmation = confirmation
+        self.__result_view = result_view
+        self.__box_renderer = box_renderer
+        self.__table_renderer = table_renderer
+        self.__date_validator = date_validator
 
     # ------------------------------------------------------------------
     # MENU AND FREE-TEXT INPUT

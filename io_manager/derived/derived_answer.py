@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 
-from io_manager.patient_answers import Answer, PatientAnswers
+from io_manager.patient_answers import PatientAnswers
+from typedefs import Answer
 
 
 class DerivedAnswer(ABC):

@@ -1,152 +1,168 @@
 import sys
+from datetime import date, datetime
 from pathlib import Path
 
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 
-import io_manager as io
+from fakes import FakeConsole
+from io_manager import IOManagerFactory, constants
+from io_manager.form import RegistrationFactory
 
 
-def give_inputs(monkeypatch, answers):
-    fake_inputs = iter(answers)
+class TestRegistration:
+    CONFIRM_ALL_INPUTS = "17"
+    MINIMUM_AGE = RegistrationFactory.MINIMUM_SELF_REGISTRATION_AGE
+    SYMPTOM_TERMS = ("SORE THROAT",)
 
-    monkeypatch.setattr(
-        "builtins.input",
-        lambda prompt="": next(fake_inputs)
-    )
+    def __register(self, console):
+        io = IOManagerFactory.create(self.SYMPTOM_TERMS, console)
 
+        return io.collect_registration()
 
-def test_normal_female_registration(monkeypatch):
+    @staticmethod
+    def __birthdate_for_age(age):
+        today = datetime.now(RegistrationFactory.TIMEZONE).date()
 
-    # Automatically answers every registration question.
-    give_inputs(monkeypatch, [
-        "Y",                # Consent
-        "NANI",             # Name
-        "T0111111C",        # NRIC
-        "F",                # Gender
-        "20",               # Age
-        "+65 91111111",     # Phone
-        "N",                # Pregnant
-        "N",                # Chest pain
-        "N",                # Breathing difficulties
-        "N",                # Signs of stroke
-        "N",                # Self-harm
-        "1",                # Symptom: Cough
-        "7",                # Done adding symptoms
-        "2",                # Symptoms started 2 days ago
-        "N",                # Chronic conditions
-        "N",                # Current medication
-        "N"                 # Drug allergies
-    ])
+        return date(today.year - age, 1, 1).isoformat()
 
-    result = io.run_questions()
+    def test_normal_female_registration(self):
 
-    print("\nSCENARIO: Normal Female Registration")
-    print("Expected: Registration completes")
-    print("Expected Gender: F")
-    print("Expected Pregnancy: N")
-    print("Expected Symptoms: ['COUGH']")
-    print("Actual:")
-    print(result)
+        # Automatically answers every registration question.
+        console = FakeConsole([
+            "Y",                            # Consent
+            "NANI",                         # Name
+            "T0111111C",                    # NRIC
+            "F",                            # Gender
+            self.__birthdate_for_age(20),   # Birthdate
+            "+65 91111111",                 # Phone
+            "N",                            # Pregnant
+            "N",                            # Chest pain
+            "N",                            # Breathing difficulties
+            "N",                            # Signs of stroke
+            "N",                            # Self-harm
+            "1",                            # Symptom: Cough
+            "7",                            # Done adding symptoms
+            "2",                            # Symptoms started 2 days ago
+            "N",                            # Chronic conditions
+            "N",                            # Current medication
+            "N",                            # Drug allergies
+            self.CONFIRM_ALL_INPUTS
+        ])
 
-    assert result is not None
-    assert result["name"] == "NANI"
-    assert result["gender"] == "F"
-    assert result["pregnancy"] == "N"
-    assert result["current_symptoms"] == ["COUGH"]
+        result = self.__register(console)
 
+        print("\nSCENARIO: Normal Female Registration")
+        print("Expected: Registration completes")
+        print("Expected Gender: F")
+        print("Expected Age: 20")
+        print("Expected Pregnancy: N")
+        print("Expected Symptoms: ['COUGH']")
+        print("Actual:")
+        print(result)
 
-def test_normal_male_registration(monkeypatch):
+        assert result is not None
+        assert result["name"] == "NANI"
+        assert result["gender"] == "F"
+        assert result["birthdate"] == self.__birthdate_for_age(20)
+        assert result["age"] == "20"
+        assert result["pregnancy"] == "N"
+        assert result["current_symptoms"] == ["COUGH"]
+        assert console.shown[-1] == constants.CONFIRMED_MESSAGE
 
-    # The program should automatically skip pregnancy for males.
-    give_inputs(monkeypatch, [
-        "Y",
-        "ALEX TAN",
-        "S0012345B",
-        "M",
-        "25",
-        "+65 91234567",
-        # Pregnancy is skipped here.
-        "N",                # Chest pain
-        "N",                # Breathing difficulties
-        "N",                # Signs of stroke
-        "N",                # Self-harm
-        "2",                # Flu
-        "7",                # Done
-        "3",                # 3 days
-        "N",
-        "N",
-        "N"
-    ])
+    def test_normal_male_registration(self):
 
-    result = io.run_questions()
+        # The program should automatically skip pregnancy for males.
+        console = FakeConsole([
+            "Y",
+            "ALEX TAN",
+            "S0012345B",
+            "M",
+            self.__birthdate_for_age(25),
+            "+65 91234567",
+            # Pregnancy is skipped here.
+            "N",                # Chest pain
+            "N",                # Breathing difficulties
+            "N",                # Signs of stroke
+            "N",                # Self-harm
+            "2",                # Flu
+            "7",                # Done
+            "3",                # 3 days
+            "N",
+            "N",
+            "N",
+            self.CONFIRM_ALL_INPUTS
+        ])
 
-    print("\nSCENARIO: Normal Male Registration")
-    print("Expected: Pregnancy question skipped")
-    print("Expected Pregnancy Value: None")
-    print("Actual:")
-    print(result)
+        result = self.__register(console)
 
-    assert result is not None
-    assert result["gender"] == "M"
-    assert result["pregnancy"] is None
-    assert result["current_symptoms"] == ["FLU"]
+        print("\nSCENARIO: Normal Male Registration")
+        print("Expected: Pregnancy question skipped")
+        print("Expected Pregnancy Value: None")
+        print("Actual:")
+        print(result)
 
+        assert result is not None
+        assert result["gender"] == "M"
+        assert result["pregnancy"] is None
+        assert result["current_symptoms"] == ["FLU"]
+        assert constants.PREGNANCY_PROMPT not in console.prompts
 
-def test_no_consent(monkeypatch):
+    def test_no_consent(self):
 
-    give_inputs(monkeypatch, [
-        "N"
-    ])
+        console = FakeConsole([
+            "N"
+        ])
 
-    result = io.run_questions()
+        result = self.__register(console)
 
-    print("\nSCENARIO: Patient Does Not Consent")
-    print("Expected: Registration stops")
-    print("Actual:", result)
+        print("\nSCENARIO: Patient Does Not Consent")
+        print("Expected: Registration stops")
+        print("Actual:", result)
 
-    assert result is None
+        assert result is None
+        assert console.shown[-1] == constants.REG_EXIT_MESSAGE
 
+    def test_emergency_chest_pain(self):
 
-def test_emergency_chest_pain(monkeypatch):
+        console = FakeConsole([
+            "Y",
+            "CHARLIE NG",
+            "S8812345C",
+            "M",
+            self.__birthdate_for_age(58),
+            "+65 92345678",
 
-    give_inputs(monkeypatch, [
-        "Y",
-        "CHARLIE NG",
-        "S8812345C",
-        "M",
-        "58",
-        "+65 92345678",
+            # Pregnancy skipped.
 
-        # Pregnancy skipped.
+            "Y"                 # Chest pain
+        ])
 
-        "Y"                 # Chest pain
-    ])
+        result = self.__register(console)
 
-    result = io.run_questions()
+        print("\nSCENARIO: Emergency Chest Pain")
+        print("Chest Pain: Y")
+        print("Expected: Registration stops and patient is sent to nurse")
+        print("Actual:", result)
 
-    print("\nSCENARIO: Emergency Chest Pain")
-    print("Chest Pain: Y")
-    print("Expected: Registration stops and patient is sent to nurse")
-    print("Actual:", result)
+        assert result is None
+        assert console.shown[-1] == constants.NURSE_ALERT_MESSAGE
 
-    assert result is None
+    def test_underage_patient(self):
 
+        console = FakeConsole([
+            "Y",
+            "JANE TAN",
+            "T1111111A",
+            "F",
+            self.__birthdate_for_age(self.MINIMUM_AGE - 1)      # Birthdate
+        ])
 
-def test_underage_patient(monkeypatch):
+        result = self.__register(console)
 
-    give_inputs(monkeypatch, [
-        "Y",
-        "JANE TAN",
-        "T1111111A",
-        "F",
-        "17"                # Age
-    ])
+        print("\nSCENARIO: Underage Patient")
+        print("Age:", self.MINIMUM_AGE - 1)
+        print("Expected: Registration stops and patient is sent to manual registration")
+        print("Actual:", result)
 
-    result = io.run_questions()
-
-    print("\nSCENARIO: Underage Patient")
-    print("Age: 17")
-    print("Expected: Registration stops and patient is sent to manual registration")
-    print("Actual:", result)
-
-    assert result is None
+        assert result is None
+        assert console.shown[-1] == constants.UNDERAGE_MESSAGE.format(minimum=self.MINIMUM_AGE)

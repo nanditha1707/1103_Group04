@@ -3,124 +3,108 @@ from pathlib import Path
 
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 
-import data_manager as data
+from app_test_factory import AppTestFactory
+from fakes import FakeDatabase
 
 
-def fake_database(monkeypatch, rows):
-    """Replace the database with one that always returns rows.
-    Returns a list that records the parameters of every query, so a
-    test can check the right date and medicine were sent."""
+class TestReports:
+    def test_medicine_count(self):
 
-    sent_parameters = []
+        # Each row is one patient's 4 medicine columns.
+        database = FakeDatabase([
+            ("PARACETAMOL", None, None, None),
+            ("CETIRIZINE", "PARACETAMOL", None, None)
+        ])
+        data = AppTestFactory.create_data_manager(database)
 
-    def fake_fetch_rows(sql_statement, parameters):
-        sent_parameters.append(parameters)
-        return rows
+        result = data.get_medicine_count(
+            "PARACETAMOL",
+            "2026-10-14"
+        )
 
-    monkeypatch.setattr(
-        data,
-        "fetch_rows",
-        fake_fetch_rows
-    )
+        print("\nSCENARIO: Specific Medicine Count")
+        print("Medicine: PARACETAMOL")
+        print("Expected: {'PARACETAMOL': 2}")
+        print("Actual:", result)
 
-    return sent_parameters
+        assert result == {"PARACETAMOL": 2}
+        assert database.fetched_parameters == [("2026-10-14",)]
 
+    def test_medicine_not_issued(self):
 
-def test_medicine_count(monkeypatch):
+        data = AppTestFactory.create_data_manager(FakeDatabase([
+            ("PARACETAMOL", None, None, None)
+        ]))
 
-    # COUNT(*) returns one row with one value.
-    sent_parameters = fake_database(monkeypatch, [(2,)])
+        result = data.get_medicine_count(
+            "IBUPROFEN",
+            "2026-10-14"
+        )
 
-    result = data.get_medicine_count(
-        "PARACETAMOL",
-        "2026-10-14"
-    )
+        print("\nSCENARIO: Medicine Not Issued")
+        print("Expected: {}")
+        print("Actual:", result)
 
-    print("\nSCENARIO: Specific Medicine Count")
-    print("Medicine: PARACETAMOL")
-    print("Expected: {'PARACETAMOL': 2}")
-    print("Actual:", result)
+        assert result == {}
 
-    assert result == {"PARACETAMOL": 2}
-    assert sent_parameters == [("2026-10-14", "PARACETAMOL")]
+    def test_medicine_breakdown(self):
 
+        database = FakeDatabase([
+            ("PARACETAMOL", "CETIRIZINE", None, None),
+            ("PARACETAMOL", None, "IBUPROFEN", None)
+        ])
+        data = AppTestFactory.create_data_manager(database)
 
-def test_medicine_not_issued(monkeypatch):
+        result = data.get_medicine_breakdown(
+            "2026-10-14"
+        )
 
-    fake_database(monkeypatch, [(0,)])
+        print("\nSCENARIO: Medicine Breakdown")
+        print("Expected:")
+        print("PARACETAMOL = 2")
+        print("IBUPROFEN = 1")
+        print("CETIRIZINE = 1")
+        print("Actual:")
+        print(result)
 
-    result = data.get_medicine_count(
-        "IBUPROFEN",
-        "2026-10-14"
-    )
+        assert result["PARACETAMOL"] == 2
+        assert result["IBUPROFEN"] == 1
+        assert result["CETIRIZINE"] == 1
+        assert database.fetched_parameters == [("2026-10-14",)]
 
-    print("\nSCENARIO: Medicine Not Issued")
-    print("Expected: {}")
-    print("Actual:", result)
+    def test_patient_type_breakdown(self):
 
-    assert result == {}
+        data = AppTestFactory.create_data_manager(FakeDatabase([
+            ("Retail", 1),
+            ("Doctor", 1),
+            ("Pharmacist", 1)
+        ]))
 
+        result = data.get_patient_type_breakdown(
+            "2026-10-14"
+        )
 
-def test_medicine_breakdown(monkeypatch):
+        print("\nSCENARIO: Patient Type Breakdown")
+        print("Expected:")
+        print("Doctor = 1")
+        print("Pharmacy = 1")
+        print("Retail = 1")
+        print("Actual:")
+        print(result)
 
-    sent_parameters = fake_database(monkeypatch, [
-        ("PARACETAMOL", 2),
-        ("CETIRIZINE", 1),
-        ("IBUPROFEN", 1)
-    ])
+        # Labels follow the order of ROUTE_LABELS, not the database order.
+        assert list(result) == ["Doctor", "Pharmacy", "Retail"]
+        assert result["Doctor"] == 1
+        assert result["Pharmacy"] == 1
+        assert result["Retail"] == 1
 
-    result = data.get_medicine_breakdown(
-        "2026-10-14"
-    )
+    def test_reports_database_down(self):
 
-    print("\nSCENARIO: Medicine Breakdown")
-    print("Expected:")
-    print("PARACETAMOL = 2")
-    print("IBUPROFEN = 1")
-    print("CETIRIZINE = 1")
-    print("Actual:")
-    print(result)
+        data = AppTestFactory.create_data_manager(FakeDatabase(None))
 
-    assert result["PARACETAMOL"] == 2
-    assert result["IBUPROFEN"] == 1
-    assert result["CETIRIZINE"] == 1
-    assert sent_parameters == [("2026-10-14",)]
+        print("\nSCENARIO: Database Cannot Be Reached")
+        print("Expected: None from every report")
 
-
-def test_patient_type_breakdown(monkeypatch):
-
-    fake_database(monkeypatch, [
-        ("Retail", 1),
-        ("Doctor", 1),
-        ("Pharmacist", 1)
-    ])
-
-    result = data.get_patient_type_breakdown(
-        "2026-10-14"
-    )
-
-    print("\nSCENARIO: Patient Type Breakdown")
-    print("Expected:")
-    print("Doctor = 1")
-    print("Pharmacy = 1")
-    print("Retail = 1")
-    print("Actual:")
-    print(result)
-
-    # Labels follow the order of ROUTE_LABELS, not the database order.
-    assert list(result) == ["Doctor", "Pharmacy", "Retail"]
-    assert result["Doctor"] == 1
-    assert result["Pharmacy"] == 1
-    assert result["Retail"] == 1
-
-
-def test_reports_database_down(monkeypatch):
-
-    fake_database(monkeypatch, None)
-
-    print("\nSCENARIO: Database Cannot Be Reached")
-    print("Expected: None from every report")
-
-    assert data.get_medicine_count("PARACETAMOL", "2026-10-14") is None
-    assert data.get_medicine_breakdown("2026-10-14") is None
-    assert data.get_patient_type_breakdown("2026-10-14") is None
+        assert data.get_medicine_count("PARACETAMOL", "2026-10-14") is None
+        assert data.get_medicine_breakdown("2026-10-14") is None
+        assert data.get_patient_type_breakdown("2026-10-14") is None

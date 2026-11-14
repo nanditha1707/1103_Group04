@@ -3,9 +3,9 @@ from typing import override
 from io_manager import constants
 from io_manager.console import Console
 from io_manager.navigation import QuestionResult
-from io_manager.patient_answers import Answer
 from io_manager.rules import SkipRule
 from io_manager.validators import Validator
+from typedefs import Answer
 
 from .question import Question
 

@@ -1,7 +1,8 @@
 from datetime import date, datetime, tzinfo
 from typing import override
 
-from io_manager.patient_answers import Answer, PatientAnswers
+from io_manager.patient_answers import PatientAnswers
+from typedefs import Answer
 
 from .derived_answer import DerivedAnswer
 
