@@ -1,4 +1,5 @@
 import sys
+from datetime import datetime
 from pathlib import Path
 
 sys.path.append(str(Path(__file__).resolve().parent.parent))
@@ -21,6 +22,9 @@ class TestHealthcarePortal:
         data = DataManagerFactory.create(database)
 
         return AppTestFactory.create_query_handler(io, data)
+
+    def __clock(self):
+        return datetime.fromisoformat(self.TODAY)
 
     def test_current_patient_found(self):
 
@@ -61,19 +65,13 @@ class TestHealthcarePortal:
 
         assert result == constants.PATIENT_NOT_FOUND_MESSAGE
 
-    def test_current_patient_uses_today(self, monkeypatch):
+    def test_current_patient_uses_today(self):
 
         console = FakeConsole(["1", "2"])
         database = FakeDatabase([])
         io = AppTestFactory.create_io(console)
-        data = DataManagerFactory.create(database)
+        data = DataManagerFactory.create(database, self.__clock)
         current_patient_query = CurrentPatientQuery(data, AppTestFactory.create_query_handler(io, data))
-
-        monkeypatch.setattr(
-            data,
-            "get_current_date",
-            lambda: self.TODAY
-        )
 
         current_patient_query.run()
 
@@ -83,19 +81,13 @@ class TestHealthcarePortal:
 
         assert database.fetched_parameters == [(self.TODAY,)]
 
-    def test_past_patient_uses_selected_date(self, monkeypatch):
+    def test_past_patient_uses_selected_date(self):
 
         console = FakeConsole(["2026-10-10", "1", "2"])
         database = FakeDatabase([])
         io = AppTestFactory.create_io(console)
-        data = DataManagerFactory.create(database)
+        data = DataManagerFactory.create(database, self.__clock)
         past_patient_query = PastPatientQuery(io, AppTestFactory.create_query_handler(io, data))
-
-        monkeypatch.setattr(
-            data,
-            "get_current_date",
-            lambda: self.TODAY
-        )
 
         past_patient_query.run()
 

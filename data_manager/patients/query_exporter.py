@@ -1,4 +1,5 @@
-from datetime import datetime, tzinfo
+from collections.abc import Callable
+from datetime import datetime
 from pathlib import Path
 
 import pandas as pd
@@ -6,16 +7,16 @@ import pandas as pd
 
 class QueryExporter:
     def __init__(
-        self, query_dir: Path, timezone: tzinfo
+        self, query_dir: Path, clock: Callable[[], datetime]
     ):
         self.__query_dir = query_dir
-        self.__timezone = timezone
+        self.__clock = clock
 
     def export(self, query_df: pd.DataFrame) -> bool:
         """Save the query results to a new timestamped CSV in the query
         folder. Return True if saved, False if the file could not be
         written."""
-        timestamp = datetime.now(self.__timezone).strftime("%Y%m%d_%H%M%S")
+        timestamp = self.__clock().strftime("%Y%m%d_%H%M%S")
         query_csv_path = self.__query_dir / f"query_{timestamp}.csv"
 
         try:

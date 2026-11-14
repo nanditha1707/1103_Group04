@@ -1,3 +1,4 @@
+from collections.abc import Callable
 from datetime import datetime
 
 import pandas as pd
@@ -11,7 +12,7 @@ from data_manager.storage import QueueNumberSource
 
 class DataManager(QueueNumberSource):
     def __init__(
-        self, icd_dataset: Dataset, hsa_dataset: Dataset, symptom_dataset: Dataset, record_saver: RecordSaver, patient_query: PatientQuery, query_exporter: QueryExporter, report_generator: ReportGenerator, queue_numbers: QueueNumberSource
+        self, icd_dataset: Dataset, hsa_dataset: Dataset, symptom_dataset: Dataset, record_saver: RecordSaver, patient_query: PatientQuery, query_exporter: QueryExporter, report_generator: ReportGenerator, queue_numbers: QueueNumberSource, clock: Callable[[], datetime]
     ):
         self.__icd_dataset = icd_dataset
         self.__hsa_dataset = hsa_dataset
@@ -21,6 +22,7 @@ class DataManager(QueueNumberSource):
         self.__query_exporter = query_exporter
         self.__report_generator = report_generator
         self.__queue_numbers = queue_numbers
+        self.__clock = clock
 
     def get_cleaned_datasets(self) -> tuple[pd.DataFrame | None, pd.DataFrame | None]:
         """Load and clean the ICD-11 and HSA datasets. Either one is None
@@ -59,11 +61,10 @@ class DataManager(QueueNumberSource):
         are saved."""
         return list(constants.RECORD_COLUMNS)
 
-    @staticmethod
-    def get_current_date() -> str:
-        """Return today's date as YYYY-MM-DD, the same format as the date
-        column in the patient records."""
-        return datetime.now(constants.SGT).strftime("%Y-%m-%d")
+    def get_current_date(self) -> str:
+        """Return today's date from the clock as YYYY-MM-DD, the same
+        format as the date column in the patient records."""
+        return self.__clock().strftime("%Y-%m-%d")
 
     def get_patient_by_queue(
         self,

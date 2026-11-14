@@ -1,4 +1,5 @@
 import sys
+from datetime import datetime
 from pathlib import Path
 
 sys.path.append(str(Path(__file__).resolve().parent.parent))
@@ -13,6 +14,9 @@ from io_manager import constants as io_constants
 class TestMainMenu:
     TODAY = "2026-10-14"
     MAIN_MENU_OPTIONS = 3
+
+    def __clock(self):
+        return datetime.fromisoformat(self.TODAY)
 
     def test_successful_patient_registration(self, monkeypatch):
 
@@ -104,7 +108,7 @@ class TestMainMenu:
         assert keep_running is True
         assert console.shown[-1] == expected
 
-    def test_healthcare_portal_selected(self, monkeypatch):
+    def test_healthcare_portal_selected(self):
 
         console = FakeConsole([
             "2",    # Main menu
@@ -114,14 +118,8 @@ class TestMainMenu:
         ])
         database = FakeDatabase([])
         io = AppTestFactory.create_io(console)
-        data = DataManagerFactory.create(database)
+        data = DataManagerFactory.create(database, self.__clock)
         main_menu = AppTestFactory.create_main_menu(io, data)
-
-        monkeypatch.setattr(
-            data,
-            "get_current_date",
-            lambda: self.TODAY
-        )
 
         keep_running = main_menu.run_once()
 
