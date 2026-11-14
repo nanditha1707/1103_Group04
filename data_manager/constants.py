@@ -65,6 +65,8 @@ MEDICINE_COLUMNS = [
 ENCRYPTED_COLUMNS = [
     "name",
     "nric",
+    "birthdate",
+    "age",
     "phone_number",
     "current_symptoms",
     "chronic_conditions",
