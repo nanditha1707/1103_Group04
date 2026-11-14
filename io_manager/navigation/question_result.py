@@ -1,5 +1,5 @@
-from io_manager.patient_answers import Answer
 from io_manager.validators import Validator
+from typedefs import Answer
 
 from .navigation import Navigation
 

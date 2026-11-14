@@ -5,12 +5,13 @@ import pandas as pd
 from io_manager import constants
 from io_manager.console import Console, TerminalConsole
 from io_manager.form import RegistrationFactory
-from io_manager.menus import Labelled, NumberedOptions
-from io_manager.patient_answers import Answer, PatientAnswers
+from io_manager.menus import NumberedOptions
+from io_manager.patient_answers import PatientAnswers
 from io_manager.rendering import BoxRenderer, TableRenderer
 from io_manager.screens import ConfirmationScreen, Questionnaire, ResultView
 from io_manager.symptoms import SymptomCatalogue
 from io_manager.validators import DateValidator, MenuOptionValidator
+from typedefs import Answer, Labelled
 
 
 class IOManager:

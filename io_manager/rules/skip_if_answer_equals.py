@@ -1,6 +1,7 @@
 from typing import override
 
-from io_manager.patient_answers import Answer, PatientAnswers
+from io_manager.patient_answers import PatientAnswers
+from typedefs import Answer
 
 from .skip_rule import SkipRule
 
