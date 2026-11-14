@@ -41,7 +41,7 @@ class ResultView:
             ]
 
         Example 2: result from logic manager is {"route": "Retail",
-        "queue_number": "P013"}. Retail patients go to the pharmacy.
+        "queue_number": "PR013"}. Retail patients go to the pharmacy.
         Returns:
 
             [
@@ -63,8 +63,9 @@ class ResultView:
             lines.append("")
 
         # Then add what the patient should do next for their route.
-        route_message = constants.ROUTE_MESSAGES[route]
-        lines.extend(self.__wrap(route_message))
+        if route is not None:
+            route_message = constants.ROUTE_MESSAGES[route]
+            lines.extend(self.__wrap(route_message))
 
         return lines
 

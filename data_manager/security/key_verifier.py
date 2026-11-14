@@ -38,6 +38,7 @@ class KeyVerifier:
         # Wraps both the wrong key possibility, 
         # and invalid key possibility into one error message.
         if decrypted_text != self.__check_text:
-            return ("The encryption key does not match this database." 
-                    "Either the key is invalid, or it is meant for different database.")
-        
+            return ("The encryption key does not match this database. "
+                    "Either the key is invalid, or it is meant for a different database.")
+
+        return None
