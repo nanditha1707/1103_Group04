@@ -86,6 +86,29 @@ AI_OUTPUT_COLUMNS = [
     "ai_confidence_score"
 ]
 
+MEDICINE_COLUMNS = [
+    "primary_diagnosis_medicine_1",
+    "primary_diagnosis_medicine_2",
+    "secondary_diagnosis_medicine_1",
+    "secondary_diagnosis_medicine_2"
+]
+
+ENCRYPTED_COLUMNS = [
+    "name",
+    "nric",
+    "phone_number",
+    "current_symptoms",
+    "chronic_conditions",
+    "current_medications",
+    "drug_allergies",
+    "primary_diagnosis_ICD11_Code",
+    "primary_diagnosis_ICD11_Title",
+    "primary_diagnosis_explanation",
+    "secondary_diagnosis_ICD11_Code",
+    "secondary_diagnosis_ICD11_Title",
+    "secondary_diagnosis_explanation"
+] + MEDICINE_COLUMNS
+
 FILTER_OPTIONS = {
     1: PATIENT_COLUMNS,
     2: MEDICAL_COLUMNS,
