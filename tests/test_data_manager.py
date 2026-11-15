@@ -13,7 +13,7 @@ from data_manager import constants
 from data_manager.dataset import HsaDataset, IcdDataset
 from data_manager.patients import RecordSaver
 from data_manager.security import FernetCipher, RecordEncryptor
-from data_manager.storage import PostgresDatabase
+from data_manager.storage import PostgresDatabase, PostgresRecordWriter
 from fakes import FakeDatabase
 
 
@@ -117,7 +117,12 @@ class TestDataManager:
             ]
         }
 
-        result = RecordSaver.join_symptoms(fake_patient)
+        database = FakeDatabase([])
+        writer = PostgresRecordWriter(database, constants.DEFAULT_RECORDS_TABLE)
+        saver = RecordSaver(writer, ["name", "current_symptoms"])
+
+        saver.save(fake_patient, {}, {})
+        result = database.executed[0][1]
 
         print("\nSCENARIO: Join Symptoms")
         print("Input:", ["COUGH", "FEVER", "HEADACHE"])

@@ -53,7 +53,7 @@ class RegistrationFactory:
     # Patients under this age cannot self register. 
     # This is clinic policy, separate from the birthdate validator's range of
     # _EARLIEST_BIRTHDATE to today, which only rejects birthdates that cannot be real.
-    MINIMUM_SELF_REGISTRATION_AGE = 18
+    _MINIMUM_SELF_REGISTRATION_AGE = 18
     # Regex pattern to ensure a name starts with a letter,
     # and may only contain letters, spaces, hyphens and apostrophes.
     _NAME_PATTERN = r"[A-Z][A-Z' \-]*"
@@ -212,5 +212,5 @@ class RegistrationFactory:
         return ChainStopRule([
             ConsentRequiredRule("consent"),
             EmergencyAnswerRule(self._EMERGENCY_KEYS),
-            MinimumAgeRule("age", self.MINIMUM_SELF_REGISTRATION_AGE),
+            MinimumAgeRule("age", self._MINIMUM_SELF_REGISTRATION_AGE),
         ])

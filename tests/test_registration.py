@@ -12,7 +12,7 @@ from io_manager.form import RegistrationFactory
 
 class TestRegistration:
     CONFIRM_ALL_INPUTS = "17"
-    MINIMUM_AGE = RegistrationFactory.MINIMUM_SELF_REGISTRATION_AGE
+    MINIMUM_AGE = 18
     SYMPTOM_TERMS = ("SORE THROAT",)
     TODAY = date(2026, 10, 14)
 
