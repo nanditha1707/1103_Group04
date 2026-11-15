@@ -9,7 +9,7 @@ class QueueNumberGenerator:
     """
 
     # Letter at the start of each queue number to differentiate.
-    _PREFIXES = {
+    __PREFIXES = {
         Route.EMERGENCY: "U",
         Route.DOCTOR: "D",
         Route.PHARMACIST: "P",
@@ -26,7 +26,7 @@ class QueueNumberGenerator:
         Return the next queue number for the route on the given date, e.g. D008.
         The queue starts from 001 if the records could not be read.
         """
-        prefix = self._PREFIXES[route]
+        prefix = self.__PREFIXES[route]
         highest_number = self.__queue_numbers.get_highest_queue_number(prefix, date)
 
         if highest_number is None:

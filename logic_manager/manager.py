@@ -14,8 +14,8 @@ class LogicManager:
     """
 
     # Formats used for the date and time in the result.
-    _DATE_FORMAT = "%Y-%m-%d"
-    _TIME_FORMAT = "%H:%M:%S"
+    __DATE_FORMAT = "%Y-%m-%d"
+    __TIME_FORMAT = "%H:%M:%S"
 
     def __init__(
         self, router: Router, queue_generator: QueueNumberGenerator, clock: Callable[[], datetime]
@@ -34,9 +34,9 @@ class LogicManager:
         route = self.__router.decide(ai_output)
 
         now = self.__clock()
-        today = now.strftime(self._DATE_FORMAT)
+        today = now.strftime(self.__DATE_FORMAT)
 
-        current_time = now.strftime(self._TIME_FORMAT)
+        current_time = now.strftime(self.__TIME_FORMAT)
 
         queue_number = self.__queue_generator.next_number(route, today)
 

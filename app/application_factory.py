@@ -66,12 +66,12 @@ class ApplicationFactory:
 
         triage_pipeline = TriagePipeline(screens=io, prompt=io, diagnoser=diagnoser, router=logic, records=data)
         registration = RegistrationAction(io, triage_pipeline)
-        healthcare_portal = ApplicationFactory.create_healthcare_portal(io, data)
+        healthcare_portal = ApplicationFactory.__create_healthcare_portal(io, data)
         protected_portal = PasswordProtectedAction(healthcare_portal, gate)
         return MainMenu(io, [registration, protected_portal, ExitAction(io, gate)])
 
     @staticmethod
-    def create_healthcare_portal(io: IOManager, data: DataManager) -> HealthcarePortal:
+    def __create_healthcare_portal(io: IOManager, data: DataManager) -> HealthcarePortal:
         query_handler = ApplicationFactory.create_query_handler(io, data)
         reports = [MedicineCountReport(data), MedicineBreakdownReport(data), PatientTypeBreakdownReport(data)]
         return HealthcarePortal(io, [

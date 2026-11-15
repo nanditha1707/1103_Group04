@@ -17,7 +17,7 @@ class OutputValidator:
     """
 
     # Word the AI puts in an explanation when the patient needs urgent care.
-    _EMERGENCY_WORD = "EMERGENCY"
+    __EMERGENCY_WORD = "EMERGENCY"
 
     def __init__(
         self, icd_df: pd.DataFrame | None, hsa_df: pd.DataFrame | None
@@ -33,7 +33,7 @@ class OutputValidator:
         be checked."""
         return self.__icd_df is not None
 
-    def diagnosis_is_valid(self, title: str, code: str) -> bool:
+    def __diagnosis_is_valid(self, title: str, code: str) -> bool:
             """Return True only if the title and code are an exact match on
             the same row, so a real title paired with the wrong code fails.
     
@@ -47,7 +47,7 @@ class OutputValidator:
     
             return bool(is_match.any())
     
-    def medicine_is_valid(self, medicine: str) -> bool:
+    def __medicine_is_valid(self, medicine: str) -> bool:
         """Return True if the medicine is found inside any HSA product name
         or active ingredient, e.g. 'PARACETAMOL' is found in
         'SUNNY PARACETAMOL TABLET 500 MG'.
@@ -73,7 +73,7 @@ class OutputValidator:
         """Return True if the output passes one of the 2 cases above."""
         # Step 1: Both diagnoses must match the ICD-11 dataset.
         diagnosis_checks = [
-            self.diagnosis_is_valid(output[title_field], output[code_field])
+            self.__diagnosis_is_valid(output[title_field], output[code_field])
             for title_field, code_field in DIAGNOSIS_FIELDS
         ]
         if not all(diagnosis_checks):
@@ -87,7 +87,7 @@ class OutputValidator:
 
         # Step 2a (normal case): all 4 medicines match the HSA dataset.
         medicine_checks = [
-            self.medicine_is_valid(output[field])
+            self.__medicine_is_valid(output[field])
             for field in MEDICINE_FIELDS
         ]
         if all(medicine_checks):
@@ -103,6 +103,6 @@ class OutputValidator:
         # For text in explanation fields, if emergency word in text then return
         # True else return False.
         return any(
-            self._EMERGENCY_WORD in text
+            self.__EMERGENCY_WORD in text
             for text in explanations
         )

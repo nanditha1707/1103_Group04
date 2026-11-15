@@ -17,14 +17,14 @@ class PhoneNumberValidator(Validator):
     valid phone number based on the country code entered.
     """
 
-    DEFAULT_REGION = "SG"
+    __DEFAULT_REGION = "SG"
 
     @override
     def validate(self, answer: str) -> str | None:
         # Parsing ignores spaces, so "+65 88880000" and "+6588880000"
         # are both accepted. A parse failure means the format is wrong.
         try:
-            parsed_number = phonenumbers.parse(answer, self.DEFAULT_REGION)
+            parsed_number = phonenumbers.parse(answer, self.__DEFAULT_REGION)
         except phonenumbers.NumberParseException:
             return constants.PHONE_FORMAT_ERROR
 

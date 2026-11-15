@@ -8,7 +8,7 @@ class ReplyParser:
     """Turns the AI's JSON reply into a dictionary that can be compared
     with the cleaned datasets."""
 
-    _PYTHON_TYPES = {"string": str, "integer": int}
+    __PYTHON_TYPES = {"string": str, "integer": int}
 
     def __init__(
         self, free_text_fields: Collection[str] = EXPLANATION_FIELDS, output_fields: Mapping[str, dict] = AI_OUTPUT_FIELDS
@@ -63,7 +63,7 @@ class ReplyParser:
         if isinstance(value, bool):
             return False
 
-        return isinstance(value, self._PYTHON_TYPES[json_type])
+        return isinstance(value, self.__PYTHON_TYPES[json_type])
 
     def __normalise(self, key: str, value: object) -> object:
         """Return the value stripped and uppercased, unless it is free text

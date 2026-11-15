@@ -21,7 +21,7 @@ class MedicineClassifier:
         Returns None if the medicine is not in the HSA dataset.
         """
 
-        target = self._to_text(medicine)
+        target = self.__to_text(medicine)
 
         # An empty medicine name would match every row, so skip it.
         if not target:
@@ -38,7 +38,7 @@ class MedicineClassifier:
             self.__hsa_df["ActiveIngredients"],
             self.__hsa_df["Classification"]
         ):
-            if not self._matches(target, drug_name, ingredient):
+            if not self.__matches(target, drug_name, ingredient):
                 continue
 
             classification = Classification.from_text(classification_text)
@@ -51,12 +51,12 @@ class MedicineClassifier:
 
         return Classification.least_restrictive(found)
 
-    def _matches(self, target: str, drug_name, ingredient) -> bool:
+    def __matches(self, target: str, drug_name, ingredient) -> bool:
         """
         Return True if the medicine appears in the drug name or the active ingredients of a row.
         """
-        drug_name_text = self._to_text(drug_name)
-        ingredient_text = self._to_text(ingredient)
+        drug_name_text = self.__to_text(drug_name)
+        ingredient_text = self.__to_text(ingredient)
 
         in_drug_name = target in drug_name_text
         in_ingredient = target in ingredient_text
@@ -64,7 +64,7 @@ class MedicineClassifier:
         return in_drug_name or in_ingredient
 
     @staticmethod
-    def _to_text(value) -> str:
+    def __to_text(value) -> str:
         if pd.isna(value):
             return ""
         return str(value)

@@ -14,8 +14,8 @@ class FeverSymptomAction(AddSymptomAction):
     Otherwise, FEVER is added. 
     """
 
-    HIGH_FEVER = "HIGH FEVER"
-    FEVER = "FEVER"
+    __HIGH_FEVER = "HIGH FEVER"
+    __FEVER = "FEVER"
 
     def __init__(
         self, yes_no_prompt: YesNoPrompt
@@ -26,5 +26,5 @@ class FeverSymptomAction(AddSymptomAction):
     @override
     def _choose(self, console: Console) -> str:
         if self.__yes_no_prompt.confirm(console, constants.FEVER_PROMPT):
-            return self.HIGH_FEVER
-        return self.FEVER
+            return self.__HIGH_FEVER
+        return self.__FEVER

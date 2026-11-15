@@ -8,16 +8,16 @@ KEY_CHECK_TEXT = "PATIENT_DATA_ENCRYPTION_KEY_PASS"
 
 # Folder paths
 # Every module gets its file paths from here.
-PROJECT_DIR = Path(__file__).resolve().parent.parent
+_PROJECT_DIR = Path(__file__).resolve().parent.parent
 # Read-only datasets
-DATASETS_DIR = PROJECT_DIR / "datasets"
+_DATASETS_DIR = _PROJECT_DIR / "datasets"
 # Exported query results.
-QUERY_DIR = PROJECT_DIR / "query"
+QUERY_DIR = _PROJECT_DIR / "query"
 
 # File paths.
-ICD_CSV_PATH = DATASETS_DIR / "icd11.csv"
-HSA_CSV_PATH = DATASETS_DIR / "hsa.csv"
-SYMPTOMS_CSV_PATH = DATASETS_DIR / "symptoms_umls.csv"
+ICD_CSV_PATH = _DATASETS_DIR / "icd11.csv"
+HSA_CSV_PATH = _DATASETS_DIR / "hsa.csv"
+SYMPTOMS_CSV_PATH = _DATASETS_DIR / "symptoms_umls.csv"
 
 # Fixed column order for a patient record
 RECORD_COLUMNS = [

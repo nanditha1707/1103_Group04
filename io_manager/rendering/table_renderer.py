@@ -42,7 +42,7 @@ class TableRenderer:
         +---------------+-------------+------------+
     """
 
-    MAX_COLUMN_WIDTH = 10
+    __MAX_COLUMN_WIDTH = 10
 
     def render(
         self, report: pd.DataFrame | Mapping[str, object], title: str = ""
@@ -63,7 +63,7 @@ class TableRenderer:
             index=False,
             tablefmt="grid",
             floatfmt=".2f",
-            maxcolwidths=self.MAX_COLUMN_WIDTH,
+            maxcolwidths=self.__MAX_COLUMN_WIDTH,
         )
 
         # If no title then don't need to build title box
@@ -88,10 +88,10 @@ class TableRenderer:
         Return True if a table with these column names fits in the
         given width, or False if it is too wide.
         """
-        # Each column is at least MAX_COLUMN_WIDTH characters wide,
+        # Each column is at least __MAX_COLUMN_WIDTH characters wide,
         # but a long column name needs more than that.
         width_needed = max(
-            len(columns) * self.MAX_COLUMN_WIDTH,
+            len(columns) * self.__MAX_COLUMN_WIDTH,
             sum(len(column) for column in columns)
         )
         return width >= width_needed
