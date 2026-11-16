@@ -80,6 +80,11 @@ class DataManager(QueueNumberSource):
         written."""
         return self.__query_exporter.export(query_df)
 
+    def clear_exports(self) -> None:
+        """Delete every exported query CSV so decrypted patient data
+        does not stay on disk after the program stops."""
+        self.__query_exporter.clear()
+
     def get_medicine_count(self, medicine: str, date: str) -> dict[str, int] | None:
         """Return a dict with how many times a specific medicine was
         issued on a given date. Returns an empty dict if it was not

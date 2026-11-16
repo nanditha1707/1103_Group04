@@ -99,11 +99,13 @@ Personal details such as name, NRIC, birthdate, phone number and symptoms are en
 
 The table name can be changed with the optional `PATIENT_RECORDS_TABLE` environment variable. If it is not set, `patient_records` is used.
 
-Queried CSV files are stored in:
+Query results that are too wide for the terminal are exported as CSV files to:
 
 ```text
 query/
 ```
+
+These files hold decrypted patient data, so they are temporary. They are deleted when the program exits including through Ctrl+C or an error. Any file left behind because the program was force-closed is deleted the next time the program starts. A file that is still open in another program (e.g. Excel) cannot be deleted and is removed on the next run instead.
 
 ## Business Rules
 
@@ -246,6 +248,8 @@ Queried CSV files will appear in the `query/` folder, which is created in the di
 ```text
 query/
 ```
+
+Open them while the program is running. They are deleted when the program exits.
 
 ## Docker Image Build
 

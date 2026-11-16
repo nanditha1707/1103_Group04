@@ -43,12 +43,15 @@ class ApplicationFactory:
         if not admin_password:
             return StartupFailure(io, constants.ADMIN_PASSWORD_MISSING_MESSAGE)
 
+        data.clear_exports()
+
         # load the ICD and HSA datasets once, when the program starts
         icd_df, hsa_df = data.get_cleaned_datasets()
         # The AI manager checks every AI answer against the same datasets that logic_manager routes with,
         # so every valid medicine can be routed
         ai = AIManagerFactory.create(icd_df, hsa_df)
-        return Application(ApplicationFactory.create_main_menu(io, data, ai, hsa_df, admin_password, ApplicationFactory.now))
+        main_menu = ApplicationFactory.create_main_menu(io, data, ai, hsa_df, admin_password, ApplicationFactory.now)
+        return Application(main_menu, data.clear_exports)
 
     @staticmethod
     def now() -> datetime:
