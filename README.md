@@ -291,7 +291,94 @@ docker run --rm kevinwuyckens/group04-healthcare:latest python run_tests.py
 
 The `run_tests.py` script runs the automated test cases inside the Docker image.
 
-These tests verify the core application logic, including `logic_manager`, using hardcoded sample AI responses so that the tests can run independently without requiring a live Gemini or Claude API connection.
+
+### Test Cases
+
+There are 48 automated tests across 12 files in the `tests/` folder.
+
+#### `test_ai_manager.py`
+
+- `test_falls_back_to_next_provider`: if Claude fails because its key is invalid the app moves on to Gemini and uses Gemini's diagnosis.
+- `test_every_model_fails`: if every AI model fails the app returns the "contact support" error.
+
+#### `test_data_manager.py`
+
+- `test_join_symptoms`: a list of symptoms is saved as one text value, like "COUGH, FEVER, HEADACHE".
+- `test_record_columns`: the app reports the full correct list of record columns.
+- `test_get_patient_by_queue`: looking up a queue number on a date returns that patient's details.
+- `test_patient_not_found`: an unknown queue number returns an empty result.
+- `test_export_record`: a full registration is saved as one record with the right values, and extras like consent are left out.
+- `test_get_patients_by_date`: all patients on a date are returned, with time and queue number added so the rows can be told apart.
+- `test_get_patients_by_date_keeps_existing_columns`: when every column is requested, time and queue number are not added a second time.
+
+#### `test_dataset_cleaning.py`
+
+- `test_clean_icd_data`: the diagnosis code list is trimmed and uppercased, and duplicates and blank rows are removed.
+- `test_clean_hsa_data`: the medicine list is trimmed and uppercased, and duplicates are removed.
+
+#### `test_encryption.py`
+
+- `test_fernet_round_trip`: encrypted data decrypts back with the right key and cannot be read with the wrong one.
+- `test_record_encryptor_sensitive_columns`: only sensitive fields are encrypted, and they decrypt correctly afterwards.
+
+#### `test_healthcare_portal.py`
+
+- `test_current_patient_found`: searching for todays patient by queue number shows their details.
+- `test_patient_not_found`: an unknown queue number shows the "patient not found" message.
+- `test_current_patient_uses_today`: a search for current patients uses today's date.
+- `test_past_patient_uses_selected_date`: a search for past patients uses the date the user picked.
+- `test_patient_query_database_down`: if the database cannot be reached a database error message is shown.
+- `test_all_patients_on_date`: listing all patients on a date shows every patient.
+- `test_all_patients_none_on_date`: a date with no patients shows the "no records" message.
+- `test_invalid_query_scope`: an invalid choice between one patient and all patients shows an error and does not search.
+
+#### `test_key_verifier.py`
+
+- `test_correct_key_passes`: the startup check passes when the encryption key matches the database.
+- `test_wrong_key_fails`: the startup check warns when the encryption key does not match.
+- `test_no_check_value_to_verify`: the startup check warns when the database cannot be reached or has no check value saved.
+
+#### `test_logic_manager.py`
+
+- `test_all_retail_medicines`: a patient who medicines are all over-the-counter goes to Retail.
+- `test_pharmacy_medicine_overrides_retail`: one pharmacy-only medicine sends the patient to the Pharmacist.
+- `test_prescription_medicine_overrides_other_routes`: one prescription medicine sends the patient to the Doctor.
+- `test_emergency_overrides_medicine_routing`: an emergency goes to Emergency, whatever the medicines are.
+
+#### `test_main_menu.py`
+
+- `test_successful_patient_registration`: a full registration saves the record, gives a queue number and does not send the name or NRIC to the AI.
+- `test_invalid_main_menu_option`: an invalid menu choice shows an error.
+- `test_healthcare_portal_selected`: the right password opens the healthcare portal.
+- `test_healthcare_portal_wrong_password`: a wrong portal password is rejected and no data is looked up.
+- `test_correct_exit_password`: the right exit password closes the program.
+- `test_wrong_exit_password`: a wrong exit password keeps the program running.
+
+#### `test_postgres_database.py`
+
+- `test_database_down`: if the database cannot be reached, looking up and saving records fail without crashing.
+- `test_missing_database_url`: if the database URL is missing or empty the app shows a "no database URL was given" error instead of crashing.
+- `test_invalid_database_url`: if the database URL is badly formatted, the app shows an error instead of crashing.
+
+#### `test_query_export.py`
+
+- `test_clear_deletes_exported_queries`: exported search results are deleted at exit, so no decrypted patient data stays on disk.
+
+#### `test_registration.py`
+
+- `test_normal_female_registration`: a female patient completes registration and is asked the pregnancy question.
+- `test_normal_male_registration`: a male patient completes registration and the pregnancy question is skipped.
+- `test_no_consent`: a patient who does not consent has registration stopped.
+- `test_emergency_chest_pain`: chest pain stops registration and sends the patient to a nurse.
+- `test_underage_patient`: an underage patient is sent to manual registration.
+
+#### `test_reports.py`
+
+- `test_medicine_count`: counts how many times one medicine was given out on a date.
+- `test_medicine_not_issued`: a medicine that was not given out returns an empty count.
+- `test_medicine_breakdown`: counts every medicine given out on a date.
+- `test_patient_type_breakdown`: counts patients by route (Doctor, Pharmacy, Retail).
+- `test_reports_database_down`: if the database cannot be reached, every report returns nothing instead of crashing.
 
 
 ## GitHub Link
