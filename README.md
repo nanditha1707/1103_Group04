@@ -294,7 +294,7 @@ The `run_tests.py` script runs the automated test cases inside the Docker image.
 
 ### Test Cases
 
-There are 48 automated tests across 12 files in the `tests/` folder.
+There are 49 automated tests across 12 files in the `tests/` folder.
 
 #### `test_ai_manager.py`
 
@@ -368,6 +368,7 @@ There are 48 automated tests across 12 files in the `tests/` folder.
 
 - `test_normal_female_registration`: a female patient completes registration and is asked the pregnancy question.
 - `test_normal_male_registration`: a male patient completes registration and the pregnancy question is skipped.
+- `test_gender_changed_to_female_needs_pregnancy_answer`: if a male patient changes their gender to F on the confirmation screen, they must answer the pregnancy question before they can confirm their inputs.
 - `test_no_consent`: a patient who does not consent has registration stopped.
 - `test_emergency_chest_pain`: chest pain stops registration and sends the patient to a nurse.
 - `test_underage_patient`: an underage patient is sent to manual registration.

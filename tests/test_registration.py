@@ -12,6 +12,8 @@ from io_manager.form import RegistrationFactory
 
 class TestRegistration:
     CONFIRM_ALL_INPUTS = "17"
+    EDIT_GENDER = "4"
+    EDIT_PREGNANCY = "7"
     MINIMUM_AGE = 18
     SYMPTOM_TERMS = ("SORE THROAT",)
     TODAY = date(2026, 10, 14)
@@ -108,6 +110,59 @@ class TestRegistration:
         assert result["pregnancy"] is None
         assert result["current_symptoms"] == ["FLU"]
         assert constants.PREGNANCY_PROMPT not in console.prompts
+
+    def test_gender_changed_to_female_needs_pregnancy_answer(self):
+        """
+        A male patient changes gender to F on the confirmation screen.
+        Pregnancy now applies but has no answer, so Confirm All Inputs is
+        blocked until the patient answers it.
+        """
+
+        console = FakeConsole([
+            "Y",
+            "ALEX TAN",
+            "S0012345B",
+            "M",
+            self.__birthdate_for_age(25),
+            "+65 91234567",
+            # Pregnancy is skipped here.
+            "N",                # Chest pain
+            "N",                # Breathing difficulties
+            "N",                # Signs of stroke
+            "N",                # Self-harm
+            "2",                # Flu
+            "7",                # Done
+            "3",                # 3 days
+            "N",
+            "N",
+            "N",
+            self.EDIT_GENDER,
+            "F",
+            self.CONFIRM_ALL_INPUTS,
+            self.EDIT_PREGNANCY,
+            "N",
+            self.CONFIRM_ALL_INPUTS
+        ])
+
+        result = self.__register(console)
+
+        unanswered_message = constants.UNANSWERED_QUESTION.format(
+            prompt=constants.PREGNANCY_PROMPT.strip()
+        )
+
+        print("\nSCENARIO: Gender Changed From M To F On Confirmation Screen")
+        print("Expected: confirming is blocked with:", unanswered_message)
+        print("Expected: after answering pregnancy, registration completes")
+        print("Expected Gender: F, Pregnancy: N")
+        print("Actual:")
+        print(result)
+
+        assert unanswered_message in console.shown
+        assert console.prompts.count(constants.PREGNANCY_PROMPT) == 1
+        assert result is not None
+        assert result["gender"] == "F"
+        assert result["pregnancy"] == "N"
+        assert console.shown[-1] == constants.CONFIRMED_MESSAGE
 
     def test_no_consent(self):
 
