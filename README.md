@@ -172,8 +172,8 @@ ADMIN_PASSWORD=YOUR-ADMIN-PASSWORD
 ```
 `ADMIN_PASSWORD` is asked for before the Healthcare Professional Portal opens and before the program exits.
 The program will not start without it.
-In a real world implementation, the fernet encryption key would not be given like this.
-However, for the purposes of testing and demonstration, we have provided it.
+The Fernet encryption key is given in the Appendix of the Engineering Report for testing and demonstration.
+In a real world implementation, the key would not be shared like this.
 Do not wrap the values in quotation marks.
 
 ## Running the Project Locally
@@ -354,7 +354,7 @@ There are 49 automated tests across 12 files in the `tests/` folder.
 - `test_correct_exit_password`: the right exit password closes the program.
 - `test_wrong_exit_password`: a wrong exit password keeps the program running.
 
-#### `test_postgres_database.py`
+#### `test_database_connection.py`
 
 - `test_database_down`: if the database cannot be reached, looking up and saving records fail without crashing.
 - `test_missing_database_url`: if the database URL is missing or empty the app shows a "no database URL was given" error instead of crashing.
