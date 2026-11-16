@@ -159,7 +159,7 @@ Install the required packages:
 pip install -r requirements.txt
 ```
 
-Create a file named exactly `.env` in the project directory. The easiest way is to copy `.env.example`, which already lists every key and where to get the API keys. Then add the required API keys and the cloud database URL:
+Create a file named exactly `.env` in the project directory. The easiest way is to copy `.env.example`, which already lists every key and where to get the API keys. Then add the required API keys, the cloud database URL, the encryption key and the admin password:
 
 ```text
 GEMINI_API_KEY=YOUR-GEMINI-API-KEY
@@ -206,7 +206,7 @@ Create a file named exactly:
 .env
 ```
 
-Add the API keys and the cloud database URL. You can find the keys needed
+Add the API keys, the cloud database URL, the encryption key and the admin password. You can find the keys needed
 in the Engineering Report:
 
 ```text
@@ -222,6 +222,7 @@ Important:
 - Do not use quotes such as `"` or `'` around the values because Docker may not read them correctly.
 - Ensure the `.env` file is located in the current working directory where the Docker command is being run.
 - Without `POSTGRESQL_CLOUD_DATABASE_URL`, patient records cannot be saved or queried.
+- Without `ADMIN_PASSWORD`, the program will not start.
 
 ### 3. Run the Docker Container
 
@@ -234,7 +235,7 @@ docker run -it --rm --env-file .env -v "${PWD}/query:/app/query" kevinwuyckens/g
 The command:
 
 - Runs the application interactively.
-- Loads the API keys and database URL from `.env`.
+- Loads the API keys, database URL, encryption key and admin password from `.env`.
 - Mounts the local `query/` folder to `/app/query` inside the container.
 - Automatically removes the temporary Docker container after the application exits.
 
