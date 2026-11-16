@@ -75,18 +75,29 @@ Example:
 U001
 D001
 P001
+PR001
 ```
+
+`U` is used for Emergency, `D` for Doctor, `P` for Pharmacist and `PR` for Retail.
+
 ### Data Management
 
 The Data Manager is responsible for:
 
 - Loading and cleaning the ICD-11 dataset.
 - Loading and cleaning the HSA medicine dataset.
-- Saving patient records.
-- Searching for patient records.
-- Generating medicine and patient-type breakdowns.
+- Loading the symptom list (from the NIH UMLS Metathesaurus) used to match symptoms typed under "Other Symptoms".
+- Encrypting and saving patient records.
+- Finding and decrypting patient records.
+- Counting the records used for the medicine and patient-type reports.
+
+The Healthcare Professional Portal in `app/` handles the search menus (`app/queries/`) and turns the counts into reports (`app/reports/`).
 
 Patient records are stored in the `patient_records` table of a cloud PostgreSQL database hosted on Neon. Searches and reports query the database directly, so they always include records saved by other users.
+
+Personal details such as name, NRIC, birthdate, phone number and symptoms are encrypted with a Fernet key (`PATIENT_DATA_ENCRYPTION_KEY`) before they are saved, and decrypted when they are read back.
+
+The table name can be changed with the optional `PATIENT_RECORDS_TABLE` environment variable. If it is not set, `patient_records` is used.
 
 Queried CSV files are stored in:
 
@@ -110,16 +121,21 @@ Some of the main rules used by the system include:
 
 ```text
 main.py
+app/
 io_manager/
 ai_manager/
-logic_manager.py
+logic_manager/
 data_manager/
+typedefs/
 datasets/
-query/
 tests/
+run_tests.py
 requirements.txt
+.env.example
 dockerfile
 ```
+
+The `query/` folder is not part of the repository. It is created when the first query is exported.
 
 ## Technologies Used
 
@@ -127,6 +143,7 @@ dockerfile
 - Pandas
 - NumPy
 - PostgreSQL (Neon) with psycopg
+- cryptography (Fernet encryption)
 - Google Gemini API
 - Anthropic Claude API
 - Docker
@@ -142,7 +159,7 @@ Install the required packages:
 pip install -r requirements.txt
 ```
 
-Create a file named exactly `.env` in the project directory and add the required API keys and the cloud database URL:
+Create a file named exactly `.env` in the project directory. The easiest way is to copy `.env.example`, which already lists every key and where to get the API keys. Then add the required API keys and the cloud database URL:
 
 ```text
 GEMINI_API_KEY=YOUR-GEMINI-API-KEY
@@ -189,7 +206,8 @@ Create a file named exactly:
 .env
 ```
 
-Add the API keys and the cloud database URL:
+Add the API keys and the cloud database URL. You can find the keys needed
+in the Engineering Report:
 
 ```text
 GEMINI_API_KEY=YOUR-GEMINI-API-KEY
@@ -245,7 +263,8 @@ linux/arm64
 
 This allows the application to run on both standard Intel/AMD systems and ARM64 systems such as Apple Silicon Macs.
 
-ARM64 support allows Mac users with Apple Silicon to run the Docker image natively instead of relying on emulation, improving application performance.
+ARM64 support allows Mac users with Apple Silicon to run the Docker image natively instead of relying on emulation improving application performance
+on Apple silicon Macs.
 
 ## Testing
 
@@ -269,16 +288,6 @@ The `run_tests.py` script runs the automated test cases inside the Docker image.
 
 These tests verify the core application logic, including `logic_manager`, using hardcoded sample AI responses so that the tests can run independently without requiring a live Gemini or Claude API connection.
 
-The system can also be manually tested by checking whether:
-
-- Inputs are validated correctly.
-- AI output is generated successfully.
-- Patients are routed correctly.
-- Queue numbers are generated correctly.
-- Patient records are saved properly.
-- Healthcare professionals can retrieve patient information.
-- Medicine reports are generated correctly.
-- Patient-type reports are generated correctly.
 
 ## GitHub Link
 
