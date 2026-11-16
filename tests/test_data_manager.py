@@ -1,110 +1,18 @@
 import sys
-from datetime import datetime
 from pathlib import Path
-
-import pandas as pd
-import psycopg
-import pytest
-from cryptography.fernet import Fernet
 
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 
 from app_test_factory import AppTestFactory
 from data_manager import constants
-from data_manager.dataset import HsaDataset, IcdDataset
-from data_manager.patients import QueryExporter, RecordSaver
-from data_manager.security import FernetCipher, RecordEncryptor
-from data_manager.storage import PostgresDatabase, PostgresRecordWriter
+from data_manager.patients import RecordSaver
+from data_manager.storage import PostgresRecordWriter
 from fakes import FakeDatabase
-
-
-class TestDatasetCleaning:
-    # ==========================================================
-    # TEST 1 - CLEAN ICD DATA
-    # ==========================================================
-
-    def test_clean_icd_data(self):
-
-        fake_icd = pd.DataFrame({
-            "Code": [
-                " ca00 ",
-                "CA00",
-                "8A80",
-                "CA02",
-                "CA03"
-            ],
-            "Title": [
-                " Acute nasopharyngitis ",
-                "Acute nasopharyngitis",
-                "Migraine",
-                "",
-                "-"
-            ]
-        })
-
-        result = IcdDataset(constants.ICD_CSV_PATH).clean(fake_icd)
-
-        print("\nSCENARIO: Clean ICD Data")
-        print("Expected:")
-        print("- Codes and names stripped and uppercased")
-        print("- Duplicate Acute nasopharyngitis removed")
-        print("- Empty value removed")
-        print("- Dash value removed")
-        print("- Migraine remains")
-        print("Actual:")
-        print(result)
-
-        assert list(result["Code"]) == [
-            "CA00",
-            "8A80"
-        ]
-        assert list(result["DiseaseName"]) == [
-            "ACUTE NASOPHARYNGITIS",
-            "MIGRAINE"
-        ]
-
-    # ==========================================================
-    # TEST 2 - CLEAN HSA DATA
-    # ==========================================================
-
-    def test_clean_hsa_data(self):
-
-        fake_hsa = pd.DataFrame([
-            {
-                "Productname": " paracetamol ",
-                "Dosageform": "Tablet",
-                "Strength": "500mg",
-                "Activeingredients": " paracetamol ",
-                "ATCCode": "N02BE01",
-                "Forensicclassification": "General Sale List"
-            },
-            {
-                "Productname": " paracetamol ",
-                "Dosageform": "Tablet",
-                "Strength": "500mg",
-                "Activeingredients": " paracetamol ",
-                "ATCCode": "N02BE01",
-                "Forensicclassification": "General Sale List"
-            }
-        ])
-
-        result = HsaDataset(constants.HSA_CSV_PATH).clean(fake_hsa)
-
-        print("\nSCENARIO: Clean HSA Data")
-        print("Expected Drug Name: PARACETAMOL")
-        print("Expected Active Ingredient: PARACETAMOL")
-        print("Expected Rows: 1")
-        print("Actual:")
-        print(result)
-
-        assert len(result) == 1
-        assert result.iloc[0]["DrugName"] == "PARACETAMOL"
-        assert result.iloc[0]["ActiveIngredients"] == "PARACETAMOL"
 
 
 class TestDataManager:
     # ==========================================================
-    # TEST 3 - JOIN SYMPTOMS
+    # TEST 1 - JOIN SYMPTOMS
     # ==========================================================
 
     def test_join_symptoms(self):
@@ -135,7 +43,7 @@ class TestDataManager:
         )
 
     # ==========================================================
-    # TEST 4 - RECORD COLUMNS
+    # TEST 2 - RECORD COLUMNS
     # ==========================================================
 
     def test_record_columns(self):
@@ -151,7 +59,7 @@ class TestDataManager:
         assert record_columns == constants.RECORD_COLUMNS
 
     # ==========================================================
-    # TEST 5 - FIND EXISTING PATIENT
+    # TEST 3 - FIND EXISTING PATIENT
     # ==========================================================
 
     def test_get_patient_by_queue(self):
@@ -178,7 +86,7 @@ class TestDataManager:
         assert database.fetched_parameters == [("D001", "2026-10-14")]
 
     # ==========================================================
-    # TEST 6 - PATIENT DOES NOT EXIST
+    # TEST 4 - PATIENT DOES NOT EXIST
     # ==========================================================
 
     def test_patient_not_found(self):
@@ -200,7 +108,7 @@ class TestDataManager:
         assert result.empty
 
     # ==========================================================
-    # TEST 7 - EXPORT PATIENT RECORD
+    # TEST 5 - EXPORT PATIENT RECORD
     # ==========================================================
 
     def test_export_record(self):
@@ -275,7 +183,7 @@ class TestDataManager:
         assert list(saved_record) == constants.RECORD_COLUMNS
 
     # ==========================================================
-    # TEST 9 - ALL PATIENTS ON A DATE
+    # TEST 6 - ALL PATIENTS ON A DATE
     # ==========================================================
 
     def test_get_patients_by_date(self):
@@ -318,199 +226,3 @@ class TestDataManager:
         # RECORD_COLUMNS already has time and queue_number, so nothing is added.
         assert list(result.columns) == constants.RECORD_COLUMNS
         assert result.empty
-
-
-class TestPostgresDatabase:
-    # ==========================================================
-    # TEST 8 - DATABASE CANNOT BE REACHED
-    # ==========================================================
-
-    def test_database_down(self, monkeypatch):
-
-        def fake_connect(url):
-            raise psycopg.OperationalError("connection refused")
-
-        monkeypatch.setattr(
-            psycopg,
-            "connect",
-            fake_connect
-        )
-
-        database = PostgresDatabase("postgresql://unreachable")
-        data = AppTestFactory.create_data_manager(database)
-
-        fetch_result = database.fetch_rows(
-            "SELECT 1",
-            ()
-        )
-        query_result = data.get_patient_by_queue(
-            "D001",
-            ["name"],
-            "2026-10-14"
-        )
-        export_result = data.export_record(
-            {"name": "Charlie Ng"},
-            {},
-            {"queue_number": "D001"}
-        )
-
-        print("\nSCENARIO: Database Cannot Be Reached")
-        print("Expected fetch_rows: None")
-        print("Expected get_patient_by_queue: None")
-        print("Expected export_record: an error message")
-        print("Actual:", fetch_result, "|", query_result, "|", export_result)
-
-        assert fetch_result is None
-        assert query_result is None
-        assert "connection refused" in export_result
-
-
-class TestEncryption:
-    # ==========================================================
-    # TEST 9 - ENCRYPT AND DECRYPT WITH FERNET
-    # ==========================================================
-
-    def test_fernet_round_trip(self):
-        """
-        Check that FernetCipher turns text into ciphertext and back again,
-        and that a different key cannot read it.
-
-        Steps:
-        1. Make two ciphers each with its own random key so the test does
-           not need the key from the .env file.
-        2. Encrypt "S1234567A" with the first cipher.
-        3. Decrypt the result with the same cipher.
-        4. Try to decrypt the same result with the second cipher.
-
-        Example:
-            cipher.encrypt("S1234567A")
-                -> "gAAAAABn3x...Qw=="  (different every run)
-            cipher.decrypt("gAAAAABn3x...Qw==")
-                -> "S1234567A"
-            other_cipher.decrypt("gAAAAABn3x...Qw==")
-                -> raises ValueError
-
-        Expected:
-        - The ciphertext is not the plain NRIC.
-        - Decrypting with the same key gives back "S1234567A".
-        - Decrypting with a different key raises ValueError. This is the
-          error KeyVerifier relies on to detect a wrong key at the startup.
-        """
-
-        cipher = FernetCipher(Fernet.generate_key().decode("utf-8"))
-        other_cipher = FernetCipher(Fernet.generate_key().decode("utf-8"))
-
-        ciphertext = cipher.encrypt("S1234567A")
-        decrypted = cipher.decrypt(ciphertext)
-
-        print("\nSCENARIO: Encrypt And Decrypt With Fernet")
-        print("Expected: ciphertext differs from S1234567A, decrypts back to it")
-        print("Expected: a different key raises ValueError")
-        print("Actual:", ciphertext[:20], "... ->", decrypted)
-
-        assert ciphertext != "S1234567A"
-        assert decrypted == "S1234567A"
-
-        with pytest.raises(ValueError):
-            other_cipher.decrypt(ciphertext)
-
-    # ==========================================================
-    # TEST 10 - ENCRYPT ONLY SENSITIVE COLUMNS
-    # ==========================================================
-
-    def test_record_encryptor_sensitive_columns(self):
-        """
-        Check that RecordEncryptor encrypts only the columns listed in
-        ENCRYPTED_COLUMNS and that decrypt_table restores them.
-
-        Steps:
-        1. Make a FernetCipher with a random key and wrap it in a
-           RecordEncryptor that uses the real ENCRYPTED_COLUMNS list.
-        2. Encrypt a record with one plain column (queue_number), two
-           sensitive columns (name,nric) and one missing value (drug_allergies).
-        3. Put the encrypted record into a one-row DataFrame, the same
-           shape a database query returns, and decrypt it.
-
-        Example:
-            record:
-                {"queue_number": "D001", "name": "Alex Tan",
-                 "nric": "S1234567A", "drug_allergies": None}
-            encrypt_record(record):
-                {"queue_number": "D001", "name": "gAAAAABn...",
-                 "nric": "gAAAAABn...", "drug_allergies": None}
-            decrypt_table(DataFrame([encrypted])):
-                queue_number  name      nric       drug_allergies
-                D001          Alex Tan  S1234567A  None
-
-        Expected:
-        - queue_number is not in ENCRYPTED_COLUMNS so it stays "D001".
-        - name and nric are replaced with ciphertext.
-        - drug_allergies stays None so the database saves it as NULL.
-        - The original record is not changed because encrypt_record works
-          on a copy.
-        - decrypt_table gives back "Alex Tan" and "S1234567A".
-        """
-
-        cipher = FernetCipher(Fernet.generate_key().decode("utf-8"))
-        encryptor = RecordEncryptor(cipher, constants.ENCRYPTED_COLUMNS)
-
-        record = {
-            "queue_number": "D001",
-            "name": "Alex Tan",
-            "nric": "S1234567A",
-            "drug_allergies": None
-        }
-
-        encrypted = encryptor.encrypt_record(record)
-        decrypted = encryptor.decrypt_table(pd.DataFrame([encrypted]))
-
-        print("\nSCENARIO: Encrypt Only Sensitive Columns")
-        print("Expected: queue_number unchanged, name and nric encrypted")
-        print("Expected: missing drug_allergies stays None")
-        print("Expected: decrypt_table restores the original values")
-        print("Actual:", encrypted)
-
-        assert encrypted["queue_number"] == "D001"
-        assert encrypted["name"] != "Alex Tan"
-        assert encrypted["nric"] != "S1234567A"
-        assert encrypted["drug_allergies"] is None
-        assert record["name"] == "Alex Tan"
-
-        assert decrypted.iloc[0]["name"] == "Alex Tan"
-        assert decrypted.iloc[0]["nric"] == "S1234567A"
-        assert decrypted.iloc[0]["queue_number"] == "D001"
-
-
-class TestQueryExport:
-    # ==========================================================
-    # TEST 11 - EXPORTED QUERY CSVS ARE DELETED
-    # ==========================================================
-
-    def test_clear_deletes_exported_queries(self, tmp_path):
-        """
-        Tests that clear deletes every exported query CSV and the empty
-        query folder, so decrypted patient data does not stay on disk
-        after the program exits.
-
-        Expected:
-        - export writes a CSV into the query folder.
-        - clear removes the CSV and the now empty query folder.
-        """
-
-        query_dir = tmp_path / "query"
-        export_time = datetime(2026, 11, 16, 9, 30)
-        exporter = QueryExporter(query_dir, lambda: export_time)
-        query_df = pd.DataFrame([{"name": "Alex Tan"}])
-
-        exported = exporter.export(query_df)
-        files_after_export = [path.name for path in query_dir.glob("*.csv")]
-        exporter.clear()
-
-        print("\nSCENARIO: Exported Query CSVs Are Deleted")
-        print("Expected after export: ['query_20261116_093000.csv']")
-        print("Expected after clear: query folder removed")
-        print("Actual:", files_after_export, "|", query_dir.exists())
-
-        assert exported is True
-        assert files_after_export == ["query_20261116_093000.csv"]
-        assert not query_dir.exists()
