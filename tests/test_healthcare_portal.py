@@ -6,6 +6,7 @@ sys.path.append(str(Path(__file__).resolve().parent.parent))
 
 from app import constants
 from app.portal import CurrentPatientQuery, PastPatientQuery
+from app.queries import PatientQueryHandler
 from app_test_factory import AppTestFactory
 from fakes import FakeConsole, FakeDatabase
 from io_manager import constants as io_constants
@@ -16,13 +17,13 @@ class TestHealthcarePortal:
     SCOPE_OPTIONS = 2
 
     @staticmethod
-    def __query_handler(console, database):
+    def __query_handler(console: FakeConsole, database: FakeDatabase) -> PatientQueryHandler:
         io = AppTestFactory.create_io(console)
         data = AppTestFactory.create_data_manager(database)
 
         return AppTestFactory.create_query_handler(io, data)
 
-    def __clock(self):
+    def __clock(self) -> datetime:
         return datetime.fromisoformat(self.TODAY)
 
     def test_current_patient_found(self):

@@ -1,7 +1,9 @@
 import sys
 from pathlib import Path
+from typing import NoReturn
 
 import psycopg
+import pytest
 
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 
@@ -14,9 +16,9 @@ class TestPostgresDatabase:
     # TEST 1 - DATABASE CANNOT BE REACHED
     # ==========================================================
 
-    def test_database_down(self, monkeypatch):
+    def test_database_down(self, monkeypatch: pytest.MonkeyPatch):
 
-        def fake_connect(url):
+        def fake_connect(url: str) -> NoReturn:
             raise psycopg.OperationalError("connection refused")
 
         monkeypatch.setattr(

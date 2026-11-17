@@ -14,7 +14,7 @@ class TestQueryExport:
     # TEST 1 - EXPORTED QUERY CSVS ARE DELETED
     # ==========================================================
 
-    def test_clear_deletes_exported_queries(self, tmp_path):
+    def test_clear_deletes_exported_queries(self, tmp_path: Path):
         """
         Tests that clear deletes every exported query CSV and the empty
         query folder, so decrypted patient data does not stay on disk

@@ -2,6 +2,8 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
+import pytest
+
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 
 from app import constants
@@ -14,10 +16,10 @@ class TestMainMenu:
     TODAY = "2026-10-14"
     MAIN_MENU_OPTIONS = 3
 
-    def __clock(self):
+    def __clock(self) -> datetime:
         return datetime.fromisoformat(self.TODAY)
 
-    def test_successful_patient_registration(self, monkeypatch):
+    def test_successful_patient_registration(self, monkeypatch: pytest.MonkeyPatch):
 
         patient = {
             "consent": "Y",

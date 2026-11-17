@@ -51,7 +51,7 @@ class MedicineClassifier:
 
         return Classification.least_restrictive(found)
 
-    def __matches(self, target: str, drug_name, ingredient) -> bool:
+    def __matches(self, target: str, drug_name: object, ingredient: object) -> bool:
         """
         Return True if the medicine appears in the drug name or the active ingredients of a row.
         """
@@ -64,7 +64,7 @@ class MedicineClassifier:
         return in_drug_name or in_ingredient
 
     @staticmethod
-    def __to_text(value) -> str:
+    def __to_text(value: object) -> str:
         if pd.isna(value):
             return ""
         return str(value)

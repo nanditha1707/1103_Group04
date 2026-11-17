@@ -8,6 +8,7 @@ from app import constants as app_constants
 from fakes import FakeConsole
 from io_manager import IOManagerFactory, constants
 from io_manager.form import RegistrationFactory
+from typedefs import Answer
 
 
 class TestRegistration:
@@ -18,15 +19,15 @@ class TestRegistration:
     SYMPTOM_TERMS = ("SORE THROAT",)
     TODAY = date(2026, 10, 14)
 
-    def __clock(self):
+    def __clock(self) -> datetime:
         return datetime(self.TODAY.year, self.TODAY.month, self.TODAY.day, tzinfo=app_constants.TIMEZONE)
 
-    def __register(self, console):
+    def __register(self, console: FakeConsole) -> dict[str, Answer] | None:
         io = IOManagerFactory.create(self.SYMPTOM_TERMS, RegistrationFactory(self.__clock), console)
 
         return io.collect_registration()
 
-    def __birthdate_for_age(self, age):
+    def __birthdate_for_age(self, age: int) -> str:
         return date(self.TODAY.year - age, 1, 1).isoformat()
 
     def test_normal_female_registration(self):
