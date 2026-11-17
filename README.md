@@ -382,6 +382,20 @@ There are 49 automated tests across 12 files in the `tests/` folder.
 - `test_reports_database_down`: if the database cannot be reached, every report returns nothing instead of crashing.
 
 
+## CI/CD Workflow
+
+The pipeline is defined in `.github/workflows/cicd.yml` and runs on GitHub Actions.
+
+- **Triggers:** it runs on every push to `main` or any `feature/**` branch and on every pull request into `main`. Feature branches get feedback before a pull request is even opened.
+- **Setup and linting:** it checks out the code, installs Python 3.14.7 (the same version as the Docker image) and `requirements.txt`, then runs Pylint on the root `.py` files. The job fails on any error or a score below 5. This is 
+to ensure broken code or poorly written code is alerted so changes can be 
+made.
+- **Docker test run:** it builds the Docker image and runs the container once for each `.txt` file in `tests/`. `tests/docker_test_input.txt` walks through a full patient registration so the job fails if the app crashes inside the real image. This ensures the app always works with docker run and we will be
+notified if the code breaks that.
+- **GitHub Secrets:** the container needs a database URL, an encryption key and AI API keys. These are stored as Github repository secrets (`POSTGRESQL_CLOUD_DATABASE_URL`, `PATIENT_DATA_ENCRYPTION_KEY`, `GEMINI_API_KEY`, `ANTHROPIC_API_KEY`) and passed into `docker run` with `-e`. They never appear in the code and README as exposing sensitive keys publicly is bad practice. The docker run writes patient record data to a separate `patient_records_test` table on the Neon cloud database so CI never touches real patient records.
+- **Pull requests and branch rules:** `main` is protected by GitHub rules. Changes must go through a pull request and cannot be merged until the CICD check passes.
+
+
 ## GitHub Link
 
 https://github.com/nanditha1707/1103_Group04
