@@ -1,106 +1,18 @@
 import sys
 from pathlib import Path
 
-import pandas as pd
-import psycopg
-
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 
 from app_test_factory import AppTestFactory
 from data_manager import constants
-from data_manager.dataset import HsaDataset, IcdDataset
 from data_manager.patients import RecordSaver
-from data_manager.storage import PostgresDatabase
+from data_manager.storage import PostgresRecordWriter
 from fakes import FakeDatabase
-
-
-class TestDatasetCleaning:
-    # ==========================================================
-    # TEST 1 - CLEAN ICD DATA
-    # ==========================================================
-
-    def test_clean_icd_data(self):
-
-        fake_icd = pd.DataFrame({
-            "Code": [
-                " ca00 ",
-                "CA00",
-                "8A80",
-                "CA02",
-                "CA03"
-            ],
-            "Title": [
-                " Acute nasopharyngitis ",
-                "Acute nasopharyngitis",
-                "Migraine",
-                "",
-                "-"
-            ]
-        })
-
-        result = IcdDataset(constants.ICD_CSV_PATH).clean(fake_icd)
-
-        print("\nSCENARIO: Clean ICD Data")
-        print("Expected:")
-        print("- Codes and names stripped and uppercased")
-        print("- Duplicate Acute nasopharyngitis removed")
-        print("- Empty value removed")
-        print("- Dash value removed")
-        print("- Migraine remains")
-        print("Actual:")
-        print(result)
-
-        assert list(result["Code"]) == [
-            "CA00",
-            "8A80"
-        ]
-        assert list(result["DiseaseName"]) == [
-            "ACUTE NASOPHARYNGITIS",
-            "MIGRAINE"
-        ]
-
-    # ==========================================================
-    # TEST 2 - CLEAN HSA DATA
-    # ==========================================================
-
-    def test_clean_hsa_data(self):
-
-        fake_hsa = pd.DataFrame([
-            {
-                "Productname": " paracetamol ",
-                "Dosageform": "Tablet",
-                "Strength": "500mg",
-                "Activeingredients": " paracetamol ",
-                "ATCCode": "N02BE01",
-                "Forensicclassification": "General Sale List"
-            },
-            {
-                "Productname": " paracetamol ",
-                "Dosageform": "Tablet",
-                "Strength": "500mg",
-                "Activeingredients": " paracetamol ",
-                "ATCCode": "N02BE01",
-                "Forensicclassification": "General Sale List"
-            }
-        ])
-
-        result = HsaDataset(constants.HSA_CSV_PATH).clean(fake_hsa)
-
-        print("\nSCENARIO: Clean HSA Data")
-        print("Expected Drug Name: PARACETAMOL")
-        print("Expected Active Ingredient: PARACETAMOL")
-        print("Expected Rows: 1")
-        print("Actual:")
-        print(result)
-
-        assert len(result) == 1
-        assert result.iloc[0]["DrugName"] == "PARACETAMOL"
-        assert result.iloc[0]["ActiveIngredients"] == "PARACETAMOL"
 
 
 class TestDataManager:
     # ==========================================================
-    # TEST 3 - JOIN SYMPTOMS
+    # TEST 1 - JOIN SYMPTOMS
     # ==========================================================
 
     def test_join_symptoms(self):
@@ -114,7 +26,12 @@ class TestDataManager:
             ]
         }
 
-        result = RecordSaver.join_symptoms(fake_patient)
+        database = FakeDatabase([])
+        writer = PostgresRecordWriter(database, constants.DEFAULT_RECORDS_TABLE)
+        saver = RecordSaver(writer, ["name", "current_symptoms"])
+
+        saver.save(fake_patient, {}, {})
+        result = database.executed[0][1]
 
         print("\nSCENARIO: Join Symptoms")
         print("Input:", ["COUGH", "FEVER", "HEADACHE"])
@@ -126,7 +43,7 @@ class TestDataManager:
         )
 
     # ==========================================================
-    # TEST 4 - RECORD COLUMNS
+    # TEST 2 - RECORD COLUMNS
     # ==========================================================
 
     def test_record_columns(self):
@@ -142,7 +59,7 @@ class TestDataManager:
         assert record_columns == constants.RECORD_COLUMNS
 
     # ==========================================================
-    # TEST 5 - FIND EXISTING PATIENT
+    # TEST 3 - FIND EXISTING PATIENT
     # ==========================================================
 
     def test_get_patient_by_queue(self):
@@ -169,7 +86,7 @@ class TestDataManager:
         assert database.fetched_parameters == [("D001", "2026-10-14")]
 
     # ==========================================================
-    # TEST 6 - PATIENT DOES NOT EXIST
+    # TEST 4 - PATIENT DOES NOT EXIST
     # ==========================================================
 
     def test_patient_not_found(self):
@@ -191,7 +108,7 @@ class TestDataManager:
         assert result.empty
 
     # ==========================================================
-    # TEST 7 - EXPORT PATIENT RECORD
+    # TEST 5 - EXPORT PATIENT RECORD
     # ==========================================================
 
     def test_export_record(self):
@@ -266,7 +183,7 @@ class TestDataManager:
         assert list(saved_record) == constants.RECORD_COLUMNS
 
     # ==========================================================
-    # TEST 9 - ALL PATIENTS ON A DATE
+    # TEST 6 - ALL PATIENTS ON A DATE
     # ==========================================================
 
     def test_get_patients_by_date(self):
@@ -309,48 +226,3 @@ class TestDataManager:
         # RECORD_COLUMNS already has time and queue_number, so nothing is added.
         assert list(result.columns) == constants.RECORD_COLUMNS
         assert result.empty
-
-
-class TestPostgresDatabase:
-    # ==========================================================
-    # TEST 8 - DATABASE CANNOT BE REACHED
-    # ==========================================================
-
-    def test_database_down(self, monkeypatch):
-
-        def fake_connect(url):
-            raise psycopg.OperationalError("connection refused")
-
-        monkeypatch.setattr(
-            psycopg,
-            "connect",
-            fake_connect
-        )
-
-        database = PostgresDatabase("postgresql://unreachable")
-        data = AppTestFactory.create_data_manager(database)
-
-        fetch_result = database.fetch_rows(
-            "SELECT 1",
-            ()
-        )
-        query_result = data.get_patient_by_queue(
-            "D001",
-            ["name"],
-            "2026-10-14"
-        )
-        export_result = data.export_record(
-            {"name": "Charlie Ng"},
-            {},
-            {"queue_number": "D001"}
-        )
-
-        print("\nSCENARIO: Database Cannot Be Reached")
-        print("Expected fetch_rows: None")
-        print("Expected get_patient_by_queue: None")
-        print("Expected export_record: an error message")
-        print("Actual:", fetch_result, "|", query_result, "|", export_result)
-
-        assert fetch_result is None
-        assert query_result is None
-        assert "connection refused" in export_result

@@ -4,26 +4,31 @@ from pathlib import Path
 
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 
+from app import constants as app_constants
 from fakes import FakeConsole
 from io_manager import IOManagerFactory, constants
 from io_manager.form import RegistrationFactory
+from typedefs import Answer
 
 
 class TestRegistration:
     CONFIRM_ALL_INPUTS = "17"
-    MINIMUM_AGE = RegistrationFactory.MINIMUM_SELF_REGISTRATION_AGE
+    EDIT_GENDER = "4"
+    EDIT_PREGNANCY = "7"
+    MINIMUM_AGE = 18
     SYMPTOM_TERMS = ("SORE THROAT",)
+    TODAY = date(2026, 10, 14)
 
-    def __register(self, console):
-        io = IOManagerFactory.create(self.SYMPTOM_TERMS, console)
+    def __clock(self) -> datetime:
+        return datetime(self.TODAY.year, self.TODAY.month, self.TODAY.day, tzinfo=app_constants.TIMEZONE)
+
+    def __register(self, console: FakeConsole) -> dict[str, Answer] | None:
+        io = IOManagerFactory.create(self.SYMPTOM_TERMS, RegistrationFactory(self.__clock), console)
 
         return io.collect_registration()
 
-    @staticmethod
-    def __birthdate_for_age(age):
-        today = datetime.now(RegistrationFactory.TIMEZONE).date()
-
-        return date(today.year - age, 1, 1).isoformat()
+    def __birthdate_for_age(self, age: int) -> str:
+        return date(self.TODAY.year - age, 1, 1).isoformat()
 
     def test_normal_female_registration(self):
 
@@ -106,6 +111,59 @@ class TestRegistration:
         assert result["pregnancy"] is None
         assert result["current_symptoms"] == ["FLU"]
         assert constants.PREGNANCY_PROMPT not in console.prompts
+
+    def test_gender_changed_to_female_needs_pregnancy_answer(self):
+        """
+        A male patient changes gender to F on the confirmation screen.
+        Pregnancy now applies but has no answer, so Confirm All Inputs is
+        blocked until the patient answers it.
+        """
+
+        console = FakeConsole([
+            "Y",
+            "ALEX TAN",
+            "S0012345B",
+            "M",
+            self.__birthdate_for_age(25),
+            "+65 91234567",
+            # Pregnancy is skipped here.
+            "N",                # Chest pain
+            "N",                # Breathing difficulties
+            "N",                # Signs of stroke
+            "N",                # Self-harm
+            "2",                # Flu
+            "7",                # Done
+            "3",                # 3 days
+            "N",
+            "N",
+            "N",
+            self.EDIT_GENDER,
+            "F",
+            self.CONFIRM_ALL_INPUTS,
+            self.EDIT_PREGNANCY,
+            "N",
+            self.CONFIRM_ALL_INPUTS
+        ])
+
+        result = self.__register(console)
+
+        unanswered_message = constants.UNANSWERED_QUESTION.format(
+            prompt=constants.PREGNANCY_PROMPT.strip()
+        )
+
+        print("\nSCENARIO: Gender Changed From M To F On Confirmation Screen")
+        print("Expected: confirming is blocked with:", unanswered_message)
+        print("Expected: after answering pregnancy, registration completes")
+        print("Expected Gender: F, Pregnancy: N")
+        print("Actual:")
+        print(result)
+
+        assert unanswered_message in console.shown
+        assert console.prompts.count(constants.PREGNANCY_PROMPT) == 1
+        assert result is not None
+        assert result["gender"] == "F"
+        assert result["pregnancy"] == "N"
+        assert console.shown[-1] == constants.CONFIRMED_MESSAGE
 
     def test_no_consent(self):
 

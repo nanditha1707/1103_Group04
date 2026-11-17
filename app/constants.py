@@ -1,10 +1,19 @@
+from zoneinfo import ZoneInfo
+
+# Docker runs by default use UTC so this is used to make Docker use SGT.
+# This matters for time and date generation for patient records.
+TIMEZONE = ZoneInfo("Asia/Singapore")
+
 MAIN_MENU_HEADER = "Main Menu"
 REGISTRATION_LABEL = "Patient Registration"
 HEALTHCARE_PORTAL_LABEL = "Healthcare Professional Portal"
 EXIT_LABEL = "Exit"
 
-ADMIN_PASSWORD = "Password"
-EXIT_CODE_PROMPT = "Enter the exit code here: "
+ADMIN_PASSWORD_ENV_VAR = "ADMIN_PASSWORD"
+ADMIN_PASSWORD_PROMPT = "Enter the admin password here (or input quit): "
+ADMIN_PASSWORD_MISSING_MESSAGE = ("The program could not start: no admin password is set.\n"
+                                  "Please set ADMIN_PASSWORD in the .env file.")
+EXIT_CODE_PROMPT = "Enter the exit code here (or input quit): "
 MENU_EXIT_MESSAGE = "Admin Password Inputted, Exiting Program Now!"
 WRONG_PASSWORD_MESSAGE = "This is not the right password!"
 
@@ -18,7 +27,7 @@ STARTUP_FAILED_MESSAGE = ("The program could not start: {error}\n"
 CURRENT_PATIENT_QUERY_LABEL = "Query Current Patient Information"
 PAST_PATIENT_QUERY_LABEL = "Query Past Patient Information"
 REPORTS_LABEL = "Reports"
-DATE_PROMPT = "Enter the Date here. (YYYY-MM-DD): "
+DATE_PROMPT = "Enter the Date here. (YYYY-MM-DD, or input quit): "
 DATABASE_ERROR_MESSAGE = "The patient records database could not be reached, please try again later!"
 
 PATIENT_INFO_FILTER_LABEL = "Patient Information"
@@ -64,7 +73,7 @@ AI_OUTPUT_COLUMNS = [
 # Asked after the filter: look up one patient, or every patient on the date.
 SINGLE_PATIENT_LABEL = "One Patient (by Queue Number)"
 ALL_PATIENTS_LABEL = "All Patients on This Date"
-QUEUE_NUMBER_PROMPT = "Enter the Patient's Queue Number here: "
+QUEUE_NUMBER_PROMPT = "Enter the Patient's Queue Number here (or input quit): "
 PATIENT_NOT_FOUND_MESSAGE = "There is no such patient, please enter a valid queue number!"
 NO_PATIENTS_ON_DATE_MESSAGE = "There are no patient records for this date!"
 EXPORT_FAILED_MESSAGE = "The query results could not be exported!"
@@ -76,5 +85,5 @@ PATIENT_TYPE_BREAKDOWN_LABEL = "Patient Type Breakdown"
 MEDICINE_COUNT_HEADER = ""
 MEDICINE_BREAKDOWN_HEADER = "Medicine Breakdown Report"
 PATIENT_TYPE_BREAKDOWN_HEADER = "Patient Type Breakdown Report"
-MEDICINE_PROMPT = "Enter a medicine name: "
+MEDICINE_PROMPT = "Enter a medicine name (or input quit): "
 NO_MATCHING_RECORDS_MESSAGE = "There is no matching records for the given date!"

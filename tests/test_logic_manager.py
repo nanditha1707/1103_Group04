@@ -1,4 +1,5 @@
 import sys
+from datetime import datetime
 from pathlib import Path
 
 import pandas as pd
@@ -13,11 +14,13 @@ from logic_manager import LogicManagerFactory
 
 class TestLogicManager:
     HIGHEST_QUEUE_NUMBER = 7
+    NOW = datetime(2026, 10, 14, 9, 30)
 
-    def setup_method(self):
+    def setup_method(self) -> None:
         self.__logic = LogicManagerFactory.create(
             self.__fake_hsa_data(),
-            FakeQueueNumberSource(self.HIGHEST_QUEUE_NUMBER)
+            FakeQueueNumberSource(self.HIGHEST_QUEUE_NUMBER),
+            lambda: self.NOW
         )
 
     # ==========================================================
@@ -26,7 +29,7 @@ class TestLogicManager:
     # This replaces the need to use live external data during testing.
 
     @staticmethod
-    def __fake_hsa_data():
+    def __fake_hsa_data() -> pd.DataFrame:
 
         return pd.DataFrame([
             {

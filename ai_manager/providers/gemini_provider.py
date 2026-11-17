@@ -13,19 +13,19 @@ class GeminiProvider(AIProvider):
     """Sends requests to the Gemini API and classifies its errors."""
 
     # Environment variable, set from the .env file, that holds the key.
-    _API_KEY_VARIABLE = "GEMINI_API_KEY"
+    __API_KEY_VARIABLE = "GEMINI_API_KEY"
 
     # Gemini raises raw httpx / httpx2 errors for timeout and connection
     # errors.
-    _TIMEOUT_ERRORS = (httpx.TimeoutException, httpx2.TimeoutException)
-    _CONNECTION_ERRORS = (httpx.TransportError, httpx2.TransportError)
+    __TIMEOUT_ERRORS = (httpx.TimeoutException, httpx2.TimeoutException)
+    __CONNECTION_ERRORS = (httpx.TransportError, httpx2.TransportError)
 
     # IMPORTANT: Different model providers have different error codes
     # so this has to be defined in each model provider instead of being shared
     # What to do for each Gemini HTTP status code. A code that is not
     # listed is unexpected, so classify_error returns None and the request
     # fails.
-    _STATUS_ACTIONS = {
+    __STATUS_ACTIONS = {
         # Request is too large. Resending the same request will hit the
         # same size limit.
         413: Action.FAIL,
@@ -100,15 +100,15 @@ class GeminiProvider(AIProvider):
         it is not a Gemini error."""
         # The model needed more time than the request timeout allows, and
         # retrying with the same timeout will likely time out again.
-        if isinstance(error, self._TIMEOUT_ERRORS):
+        if isinstance(error, self.__TIMEOUT_ERRORS):
             return Action.SWITCH_MODEL
 
         # The connection dropped, which is likely transient.
-        if isinstance(error, self._CONNECTION_ERRORS):
+        if isinstance(error, self.__CONNECTION_ERRORS):
             return Action.RETRY_SAME_MODEL
 
         if isinstance(error, genai_errors.APIError):
-            return self._STATUS_ACTIONS.get(error.code)
+            return self.__STATUS_ACTIONS.get(error.code)
 
         return None
 
@@ -132,7 +132,7 @@ class GeminiProvider(AIProvider):
         """
         if self.__client is None:
             self.__client = genai.Client(
-                api_key=self._read_api_key(self._API_KEY_VARIABLE),
+                api_key=self._read_api_key(self.__API_KEY_VARIABLE),
                 http_options={
                     "timeout": self.__request_timeout * 1000,
                     "retry_options": {"attempts": 1},

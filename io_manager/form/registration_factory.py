@@ -1,5 +1,5 @@
-from datetime import date
-from zoneinfo import ZoneInfo
+from collections.abc import Callable
+from datetime import date, datetime
 
 from io_manager import constants
 from io_manager.derived import AgeFromBirthdate
@@ -48,28 +48,40 @@ class RegistrationFactory:
     """
 
     # Earliest birthdate for a patient to be considered real.
-    EARLIEST_BIRTHDATE = date(1900, 1, 1)
-    TIMEZONE = ZoneInfo("Asia/Singapore")
-    MAXIMUM_ONSET_DAYS = 365
+    _EARLIEST_BIRTHDATE = date(1900, 1, 1)
+    _MAXIMUM_ONSET_DAYS = 365
     # Patients under this age cannot self register. 
     # This is clinic policy, separate from the birthdate validator's range of
-    # EARLIEST_BIRTHDATE to today, which only rejects birthdates that cannot be real.
-    MINIMUM_SELF_REGISTRATION_AGE = 18
+    # _EARLIEST_BIRTHDATE to today, which only rejects birthdates that cannot be real.
+    _MINIMUM_SELF_REGISTRATION_AGE = 18
     # Regex pattern to ensure a name starts with a letter,
     # and may only contain letters, spaces, hyphens and apostrophes.
-    NAME_PATTERN = r"[A-Z][A-Z' \-]*"
+    _NAME_PATTERN = r"[A-Z][A-Z' \-]*"
     # Regex pattern to ensure NRIC/FIN is valid. 
     # The first letter must be one of S, T, F, G or M, followed by 7 digits and a final letter. 
     # E.G. S1234567D
-    NRIC_PATTERN = r"[STFGM][0-9]{7}[A-Z]"
+    _NRIC_PATTERN = r"[STFGM][0-9]{7}[A-Z]"
     # List of keys for questions that require immediate attention and stop registration,
     # if the user replies Y.
-    EMERGENCY_KEYS = (
+    _EMERGENCY_KEYS = (
         "chest_pain",
         "breathing_difficulties",
         "signs_of_stroke",
         "self_harm",
     )
+
+    def __init__(
+        self, clock: Callable[[], datetime]
+    ) -> None:
+        self.__clock = clock
+
+    @property
+    def _clock(self) -> Callable[[], datetime]:
+        """
+        The clinic's clock, used to work out today's date for the
+        birthdate check and the patient's age.
+        """
+        return self.__clock
 
     def build_form(
         self, catalogue: SymptomCatalogue, renderer: BoxRenderer
@@ -111,12 +123,12 @@ class RegistrationFactory:
             TextQuestion(
                 "name",
                 constants.NAME_PROMPT,
-                RegexValidator(self.NAME_PATTERN, constants.NAME_ERROR),
+                RegexValidator(self._NAME_PATTERN, constants.NAME_ERROR),
             ),
             TextQuestion(
                 "nric",
                 constants.NRIC_PROMPT,
-                RegexValidator(self.NRIC_PATTERN, constants.NRIC_ERROR),
+                RegexValidator(self._NRIC_PATTERN, constants.NRIC_ERROR),
             ),
             TextQuestion(
                 "gender",
@@ -130,7 +142,7 @@ class RegistrationFactory:
             TextQuestion(
                 "birthdate",
                 constants.BIRTHDATE_PROMPT,
-                BirthdateValidator(self.EARLIEST_BIRTHDATE, self.TIMEZONE),
+                BirthdateValidator(self._EARLIEST_BIRTHDATE, self._clock),
             ),
             TextQuestion("phone_number", constants.PHONE_PROMPT, PhoneNumberValidator()),
             TextQuestion(
@@ -165,9 +177,9 @@ class RegistrationFactory:
                 constants.ONSET_PROMPT,
                 NonNegativeIntegerValidator(
                     minimum=0,
-                    maximum=self.MAXIMUM_ONSET_DAYS,
+                    maximum=self._MAXIMUM_ONSET_DAYS,
                     error=constants.ONSET_DAYS_ERROR.format(
-                        maximum=self.MAXIMUM_ONSET_DAYS
+                        maximum=self._MAXIMUM_ONSET_DAYS
                     ),
                 ),
                 share_with_ai=True,
@@ -186,7 +198,7 @@ class RegistrationFactory:
             ),
         ],
         [
-            AgeFromBirthdate("age", "birthdate", self.TIMEZONE, share_with_ai=True),
+            AgeFromBirthdate("age", "birthdate", self._clock, share_with_ai=True),
         ])
 
     def build_stop_rule(self) -> StopRule:
@@ -199,6 +211,6 @@ class RegistrationFactory:
         """
         return ChainStopRule([
             ConsentRequiredRule("consent"),
-            EmergencyAnswerRule(self.EMERGENCY_KEYS),
-            MinimumAgeRule("age", self.MINIMUM_SELF_REGISTRATION_AGE),
+            EmergencyAnswerRule(self._EMERGENCY_KEYS),
+            MinimumAgeRule("age", self._MINIMUM_SELF_REGISTRATION_AGE),
         ])

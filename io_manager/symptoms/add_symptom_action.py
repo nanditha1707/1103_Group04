@@ -1,4 +1,4 @@
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 from typing import override
 
 from io_manager import constants
@@ -6,7 +6,7 @@ from io_manager.console import Console
 from .symptom_menu_action import SymptomMenuAction
 
 
-class AddSymptomAction(SymptomMenuAction, ABC):
+class AddSymptomAction(SymptomMenuAction):
     """
     Abstract subclass for actions that add a symptom to the list.
 
@@ -31,6 +31,7 @@ class AddSymptomAction(SymptomMenuAction, ABC):
         """
         Returns the symptom to add, or None if no symptom was selected.
         """
+        pass
 
     @staticmethod
     def __add_unique(console: Console, symptoms: list[str], symptom: str) -> None:

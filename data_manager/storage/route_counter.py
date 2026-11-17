@@ -10,3 +10,4 @@ class RouteCounter(ABC):
     def count_each_route(self, date: str) -> dict[str, int] | None:
         """Return how many patients took each route on the date,
         or None if the records could not be read."""
+        pass

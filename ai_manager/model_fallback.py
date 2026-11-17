@@ -47,6 +47,10 @@ class ModelFallback:
         the reply is not acceptable. That error is classified like an API
         error.
         """
+
+        # deadline refers to time limit that all requests can take 
+        # before it can no longer send another AI request. 
+        # Typical response time from AI takes around 10s to 15s.
         deadline = time.monotonic() + self.__total_timeout
         model_index = 0
         retries = 0

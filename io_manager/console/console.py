@@ -16,6 +16,7 @@ class Console(ABC):
         The callers are responsible for any normalization they want to do on the text.
         Use ask_normalised() for the standard normalisation.
         """
+        pass
 
     def ask_normalised(self, prompt: str) -> str:
         """
@@ -31,6 +32,7 @@ class Console(ABC):
         This is the only way to show text to the user. 
         It works akin to a normal print() call.
         """
+        pass
 
     @abstractmethod
     def width(self) -> int:
@@ -38,3 +40,4 @@ class Console(ABC):
         Return how many characters fit on one line of the screen.
         Used to check whether a table fits or must be exported instead.
         """
+        pass

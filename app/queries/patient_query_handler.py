@@ -18,14 +18,20 @@ class PatientQueryHandler:
         self.__presenter = presenter
 
     def handle(self, date: str) -> str | None:
-        query_filter = self.__prompt.choose(self.__filters)
+        query_filter = self.__prompt.choose(self.__filters, quittable=True)
         if query_filter is None:
             return None
 
         # Both options query the database directly, so patients
         # registered by other users are found too.
-        scope = self.__prompt.choose(self.__scopes)
+        scope = self.__prompt.choose(self.__scopes, quittable=True)
         if scope is None:
             return None
 
-        return self.__presenter.show(scope.fetch(query_filter.columns, date), scope.not_found_error)
+        detail = ""
+        if scope.detail_prompt is not None:
+            detail = self.__prompt.ask_or_quit(scope.detail_prompt)
+            if detail is None:
+                return None
+
+        return self.__presenter.show(scope.fetch(query_filter.columns, date, detail), scope.not_found_error)

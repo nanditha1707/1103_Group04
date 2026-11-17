@@ -4,8 +4,9 @@ from data_manager.storage import RecordReader
 
 
 class PatientQuery:
-    """Finds a patient in the saved records, chooses how to show the
-    result and saves it to CSV."""
+    """Finds patients in the saved records for the healthcare portal,
+    either one patient by queue number or every patient on a date.
+    The records are read through a RecordReader, which decrypts them."""
 
     def __init__(
         self, reader: RecordReader, identifier_columns: list[str]
@@ -22,10 +23,14 @@ class PatientQuery:
         """Find the patient with the given queue number on the given
         date. Return a DataFrame of their record with only the
         filter_columns, which is empty if no patient matches, or None if
-        there are no records."""
+        the database could not be reached."""
         return self.__reader.find_by_queue(queue_number, filter_columns, date)
 
     def find_by_date(self, filter_columns: list[str], date: str) -> pd.DataFrame | None:
+        """Find every patient registered on the given date, earliest
+        first. Return a DataFrame with one row per patient, which is empty
+        if there were no patients, or None if the database could not be
+        reached."""
         # Each patient gets their own row, so the time and queue number
         # are added in front to tell the rows apart, unless the filter
         # already has them.

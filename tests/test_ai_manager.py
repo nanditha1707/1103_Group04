@@ -20,7 +20,7 @@ class TestAIManager:
     ANSWERS = {"gender": "F", "age": "20", "current_symptoms": ["COUGH"]}
 
     @staticmethod
-    def __reply():
+    def __reply() -> str:
         return json.dumps({
             "primary_diagnosis_ICD11_Title": "common cold",
             "primary_diagnosis_ICD11_Code": "ca00",
@@ -35,7 +35,7 @@ class TestAIManager:
             "ai_confidence_score": 90
         })
 
-    def __manager(self, models):
+    def __manager(self, models: list[AIModel]) -> AIManager:
         return AIManager(
             PromptBuilder("System context", {"type": "object"}),
             ReplyParser(),

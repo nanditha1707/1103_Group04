@@ -38,3 +38,29 @@ class QueryExporter:
             return False
 
         return True
+
+    def clear(self) -> None:
+        """Delete every exported query CSV and the query folder if it is
+        then empty. Called when the program exits so decrypted patient
+        data does not stay on disk, and again at startup to remove files
+        left behind if the program was closed without exiting normally.
+        A file that cannot be deleted (e.g. still open in Excel) is left
+        and removed on the next run."""
+        # is_dir() checks the query folder exists. If nothing was exported yet there is nothing to delete.
+        if not self.__query_dir.is_dir():
+            return
+        # glob() finds every file in the folder whose name matches query_*.csv
+        # so only the exported query files are deleted.
+        for query_csv_path in self.__query_dir.glob("query_*.csv"):
+            try:
+                # unlink() deletes the file.
+                query_csv_path.unlink()
+            # The file is open in another program (e.g. Excel) and cannot be deleted yet.
+            except OSError:
+                pass
+        try:
+            # rmdir() deletes the query folder. It only works if the folder is empty.
+            self.__query_dir.rmdir()
+        # The folder still has a file in it or is mounted by Docker.
+        except OSError:
+            pass

@@ -12,7 +12,7 @@ class RemoveSymptomAction(SymptomMenuAction):
     """
 
     # Sets what the user can type to remove all symptoms at once.
-    REMOVE_ALL = "ALL"
+    __REMOVE_ALL = "ALL"
 
     def __init__(
         self
@@ -31,7 +31,7 @@ class RemoveSymptomAction(SymptomMenuAction):
         message = constants.CURRENT_SYMPTOMS.format(symptoms=symptom_list)
         console.show(message)
         # Prompts the user to input a symptom to remove, or ALL to remove all symptoms.
-        prompt = constants.REMOVE_SYMPTOM_PROMPT.format(remove_all=self.REMOVE_ALL)
+        prompt = constants.REMOVE_SYMPTOM_PROMPT.format(remove_all=self.__REMOVE_ALL)
         target = console.ask_normalised(prompt)
 
         # Check if the user input is empty,
@@ -40,7 +40,7 @@ class RemoveSymptomAction(SymptomMenuAction):
             console.show(constants.EMPTY_INPUT_ERROR)
         # Check if the user wants to remove all symptoms, 
         # and clear the list if so.
-        elif target == self.REMOVE_ALL:
+        elif target == self.__REMOVE_ALL:
             symptoms.clear()
             console.show(constants.ALL_SYMPTOMS_REMOVED)
         # Check if the user input is in the list of symptoms,

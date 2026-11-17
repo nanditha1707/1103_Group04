@@ -2,21 +2,23 @@ import os
 from collections.abc import Callable
 from datetime import datetime
 
-from dotenv import load_dotenv
-
 from data_manager import constants
 from data_manager.dataset import HsaDataset, IcdDataset, SymptomDataset
 from data_manager.manager import DataManager
 from data_manager.patients import PatientQuery, QueryExporter, RecordSaver
 from data_manager.reports import ReportGenerator
-from data_manager.security import Cipher, EncryptionKeyError, FernetCipher, KeyCheckStore, KeyVerifier
+from data_manager.security import Cipher, EncryptionKeyError, FernetCipher, KeyCheckStore, KeyVerifier, RecordEncryptor
 from data_manager.storage import (
     Database,
     EncryptedRecordCounter,
-    EncryptedRecordStore,
+    EncryptedRecordReader,
+    EncryptedRecordWriter,
     PostgresDatabase,
     PostgresKeyCheckStore,
-    PostgresRecordStore,
+    PostgresQueueNumberSource,
+    PostgresRecordReader,
+    PostgresRecordWriter,
+    PostgresRouteCounter,
 )
 
 
@@ -30,16 +32,11 @@ class DataManagerFactory:
 
     @staticmethod
     def create(
-        database: Database | None = None, clock: Callable[[], datetime] | None = None, cipher: Cipher | None = None, key_check_store: KeyCheckStore | None = None
+        clock: Callable[[], datetime], database: Database | None = None, cipher: Cipher | None = None, key_check_store: KeyCheckStore | None = None
     ) -> DataManager:
-        # Both the database URL and the encryption key are in the .env file.
-        load_dotenv(override=True)
         if database is None:
             database_url = os.getenv(constants.DATABASE_URL_ENV_VAR)
             database = PostgresDatabase(database_url)
-
-        if clock is None:
-            clock = DataManagerFactory.__now_in_sgt
 
         if cipher is None:
             encryption_key = os.getenv(constants.ENCRYPTION_KEY_ENV_VAR)
@@ -63,34 +60,33 @@ class DataManagerFactory:
             raise EncryptionKeyError(key_error)
 
         table_name = os.getenv(constants.RECORDS_TABLE_ENV_VAR) or constants.DEFAULT_RECORDS_TABLE
-        record_store = PostgresRecordStore(database, table_name)
+        encryptor = RecordEncryptor(cipher, constants.ENCRYPTED_COLUMNS)
 
-        # Saving and patient queries go through the encrypted store.
-        # Queue numbers only use columns that are not encrypted, so they keep using the plain record store.
-        encrypted_store = EncryptedRecordStore(
-            record_store,
-            cipher,
-            constants.ENCRYPTED_COLUMNS
+        # Saving and patient queries go through the encrypted record writer and reader.
+        record_writer = EncryptedRecordWriter(
+            PostgresRecordWriter(database, table_name),
+            encryptor
+        )
+        record_reader = EncryptedRecordReader(
+            PostgresRecordReader(database, table_name),
+            encryptor
         )
 
         # The medicine reports count the decrypted medicines in Python.
-        # Route counts still come from the plain record store.
+        # Routes are not encrypted so the database counts them directly.
         encrypted_counter = EncryptedRecordCounter(
-            encrypted_store,
-            record_store,
+            record_reader,
+            PostgresRouteCounter(database, table_name),
             constants.MEDICINE_COLUMNS
         )
 
+        # Queue numbers only use columns that are not encrypted so they are read straight from the database.
         return DataManager(
             IcdDataset(constants.ICD_CSV_PATH),
             HsaDataset(constants.HSA_CSV_PATH),
-            RecordSaver(encrypted_store, constants.RECORD_COLUMNS),
-            PatientQuery(encrypted_store, constants.IDENTIFIER_COLUMNS),
+            RecordSaver(record_writer, constants.RECORD_COLUMNS),
+            PatientQuery(record_reader, constants.IDENTIFIER_COLUMNS),
             QueryExporter(constants.QUERY_DIR, clock),
             ReportGenerator(encrypted_counter, constants.ROUTE_LABELS),
-            record_store,
+            PostgresQueueNumberSource(database, table_name),
             clock)
-
-    @staticmethod
-    def __now_in_sgt() -> datetime:
-        return datetime.now(constants.SGT)

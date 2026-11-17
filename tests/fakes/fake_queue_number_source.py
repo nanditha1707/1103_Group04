@@ -1,6 +1,6 @@
 from typing import override
 
-from logic_manager import QueueNumberSource
+from typedefs import QueueNumberSource
 
 
 class FakeQueueNumberSource(QueueNumberSource):
@@ -10,9 +10,6 @@ class FakeQueueNumberSource(QueueNumberSource):
         self.__highest_number = highest_number
         self.__requests: list[tuple[str, str]] = []
 
-    @property
-    def requests(self) -> list[tuple[str, str]]:
-        return list(self.__requests)
 
     @override
     def get_highest_queue_number(self, prefix: str, date: str) -> int | None:

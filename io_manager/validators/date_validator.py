@@ -23,13 +23,13 @@ class DateValidator(Validator):
     with their own message.
     """
 
-    PATTERN = r"[0-9]{4}-[0-9]{2}-[0-9]{2}"
-    DATE_FORMAT = "%Y-%m-%d"
+    __PATTERN = r"[0-9]{4}-[0-9]{2}-[0-9]{2}"
+    __DATE_FORMAT = "%Y-%m-%d"
 
     def __init__(
         self, error: str = constants.DATE_ERROR
     ) -> None:
-        self.__format_validator = RegexValidator(self.PATTERN, error)
+        self.__format_validator = RegexValidator(self.__PATTERN, error)
         self.__error = error
 
     @override
@@ -40,7 +40,7 @@ class DateValidator(Validator):
 
         # strptime raises ValueError for dates that do not exist.
         try:
-            datetime.strptime(answer, self.DATE_FORMAT)
+            datetime.strptime(answer, self.__DATE_FORMAT)
         except ValueError:
             return self.__error
 

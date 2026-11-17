@@ -1,6 +1,6 @@
 from enum import Enum
 
-class Route(str, Enum):
+class Route(Enum):
     """
     Where a patient can be sent after triage.
     """

@@ -10,17 +10,17 @@ class ClaudeProvider(AIProvider):
     """Sends requests to the Claude API and classifies its errors."""
 
     # Upper limit on the reply length. Required parameter for Claude API.
-    _MAX_TOKENS = 8000
+    __MAX_TOKENS = 8000
 
     # Environment variable, set from the .env file, that holds the key.
-    _API_KEY_VARIABLE = "ANTHROPIC_API_KEY"
+    __API_KEY_VARIABLE = "ANTHROPIC_API_KEY"
 
     # IMPORTANT: Different model providers have different error codes
     # so this has to be defined in each model provider instead of being shared
     # What to do for each Claude HTTP status code. A code that is not
     # listed is unexpected, so classify_error returns None and the request
     # fails.
-    _STATUS_ACTIONS = {
+    __STATUS_ACTIONS = {
         # Request is too large. Resending the same request will hit the
         # same size limit.
         413: Action.FAIL,
@@ -87,7 +87,7 @@ class ClaudeProvider(AIProvider):
         """Send the request to Claude API and return its JSON reply as text."""
         response = self.__get_client().messages.create(
             model=model,
-            max_tokens=self._MAX_TOKENS,
+            max_tokens=self.__MAX_TOKENS,
             system=request.context,
             messages=[
                 {"role": "user", "content": request.prompt}
@@ -130,7 +130,7 @@ class ClaudeProvider(AIProvider):
             return Action.RETRY_SAME_MODEL
 
         if isinstance(error, anthropic.APIStatusError):
-            return self._STATUS_ACTIONS.get(error.status_code)
+            return self.__STATUS_ACTIONS.get(error.status_code)
 
         return None
 
@@ -147,7 +147,7 @@ class ClaudeProvider(AIProvider):
         """
         if self.__client is None:
             self.__client = anthropic.Anthropic(
-                api_key=self._read_api_key(self._API_KEY_VARIABLE),
+                api_key=self._read_api_key(self.__API_KEY_VARIABLE),
                 timeout=self.__request_timeout,
                 max_retries=0
             )

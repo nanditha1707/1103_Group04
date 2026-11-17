@@ -11,7 +11,7 @@ from .reply_parser import ReplyParser
 
 
 class AIManagerFactory:
-    """Builds the AIManager that main.py uses.
+    """Builds the AIManager that ApplicationFactory uses.
 
     This is the only class that creates the concrete providers, such as
     ClaudeProvider and GeminiProvider, and the only one that reads the

@@ -17,5 +17,5 @@ class AllPatientsScope(QueryScope):
         self.__records = records
 
     @override
-    def fetch(self, filter_columns: list[str], date: str) -> pd.DataFrame | None:
+    def fetch(self, filter_columns: list[str], date: str, detail: str) -> pd.DataFrame | None:
         return self.__records.get_patients_by_date(filter_columns, date)

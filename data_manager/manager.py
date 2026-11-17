@@ -7,7 +7,7 @@ from data_manager import constants
 from data_manager.patients import PatientQuery, QueryExporter, RecordSaver
 from data_manager.dataset import Dataset
 from data_manager.reports import ReportGenerator
-from data_manager.storage import QueueNumberSource
+from typedefs import QueueNumberSource
 
 
 class DataManager(QueueNumberSource):
@@ -79,6 +79,11 @@ class DataManager(QueueNumberSource):
         folder. Return True if saved, False if the file could not be
         written."""
         return self.__query_exporter.export(query_df)
+
+    def clear_exports(self) -> None:
+        """Delete every exported query CSV so decrypted patient data
+        does not stay on disk after the program stops."""
+        self.__query_exporter.clear()
 
     def get_medicine_count(self, medicine: str, date: str) -> dict[str, int] | None:
         """Return a dict with how many times a specific medicine was

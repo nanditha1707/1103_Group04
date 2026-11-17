@@ -25,19 +25,16 @@ class IOManagerFactory:
 
     @staticmethod
     def create(
-        symptom_terms: Iterable[str], console: Console | None = None, registration_factory: RegistrationFactory | None = None
+        symptom_terms: Iterable[str], registration_factory: RegistrationFactory, console: Console | None = None
     ) -> IOManager:
         """
-        Return an IOManager whose symptom menu offers the given symptom terms.
+        Return an IOManager whose symptom menu offers the given symptom terms
+        and whose questions come from registration_factory.
 
-        console defaults to a TerminalConsole and registration_factory
-        defaults to the standard RegistrationFactory.
+        console defaults to a TerminalConsole.
         """
         if console is None:
             console = TerminalConsole()
-
-        if registration_factory is None:
-            registration_factory = RegistrationFactory()
 
         box_renderer = BoxRenderer()
         form = registration_factory.build_form(SymptomCatalogue(symptom_terms), box_renderer)

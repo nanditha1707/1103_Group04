@@ -17,12 +17,11 @@ class MedicineClassifier:
         Return the HSA classification of a medicine. 
         If the medicine matches several rows, the least restrictive classification is returned, 
         because if the same medicine is available at a retail store, 
-        they can be routed to a pharmacist for assessmentcrather then seeing the doctor.
+        they can be routed to a pharmacist for assessment rather than seeing the doctor.
         Returns None if the medicine is not in the HSA dataset.
         """
 
-        # Compare in lower case so "paracetamol" matches "Paracetamol".
-        target = self._to_text(medicine)
+        target = self.__to_text(medicine)
 
         # An empty medicine name would match every row, so skip it.
         if not target:
@@ -39,7 +38,7 @@ class MedicineClassifier:
             self.__hsa_df["ActiveIngredients"],
             self.__hsa_df["Classification"]
         ):
-            if not self._matches(target, drug_name, ingredient):
+            if not self.__matches(target, drug_name, ingredient):
                 continue
 
             classification = Classification.from_text(classification_text)
@@ -52,12 +51,12 @@ class MedicineClassifier:
 
         return Classification.least_restrictive(found)
 
-    def _matches(self, target: str, drug_name, ingredient) -> bool:
+    def __matches(self, target: str, drug_name: object, ingredient: object) -> bool:
         """
         Return True if the medicine appears in the drug name or the active ingredients of a row.
         """
-        drug_name_text = self._to_text(drug_name)
-        ingredient_text = self._to_text(ingredient)
+        drug_name_text = self.__to_text(drug_name)
+        ingredient_text = self.__to_text(ingredient)
 
         in_drug_name = target in drug_name_text
         in_ingredient = target in ingredient_text
@@ -65,7 +64,7 @@ class MedicineClassifier:
         return in_drug_name or in_ingredient
 
     @staticmethod
-    def _to_text(value) -> str:
+    def __to_text(value: object) -> str:
         if pd.isna(value):
             return ""
         return str(value)

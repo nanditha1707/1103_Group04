@@ -9,7 +9,7 @@ class RecordSaver:
         self.__columns = columns
 
     @staticmethod
-    def join_symptoms(patient_record: dict) -> dict:
+    def __join_symptoms(patient_record: dict) -> dict:
         """Join the symptoms list into one string, since the database
         column holds text, not a list."""
 
@@ -33,7 +33,7 @@ class RecordSaver:
         all_patient_information.update(logic_result)
 
         # Step 2: Turn the symptoms list into one string,
-        all_patient_information = self.join_symptoms(all_patient_information)
+        all_patient_information = self.__join_symptoms(all_patient_information)
 
         # Step 3: Build the record to save, one entry per column.
         # Only columns in RECORD_COLUMNS are kept, so extra keys like

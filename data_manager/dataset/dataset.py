@@ -6,7 +6,7 @@ import pandas as pd
 
 
 class Dataset(ABC):
-    """A dataset (ICD-11 or HSA) can be loaded from a CSV
+    """A dataset (ICD-11, HSA or symptoms) can be loaded from a CSV
     and cleaned. Each subclass says which columns to keep and how to
     clean them."""
 
@@ -45,16 +45,16 @@ class Dataset(ABC):
         pass
 
     def clean(self, dataset_df: pd.DataFrame) -> pd.DataFrame:
-        dataset_df = self._keep_columns(dataset_df, self._columns_to_keep)
-        dataset_df = self.replace_blank_values(dataset_df)
-        dataset_df = self._drop_incomplete_rows(dataset_df)
-        dataset_df = self._strip_spaces(dataset_df)
-        dataset_df = self._uppercase(dataset_df, self._columns_to_uppercase)
-        dataset_df = self._drop_duplicates(dataset_df)
+        dataset_df = self.__keep_columns(dataset_df, self._columns_to_keep)
+        dataset_df = self.__replace_blank_values(dataset_df)
+        dataset_df = self.__drop_incomplete_rows(dataset_df)
+        dataset_df = self.__strip_spaces(dataset_df)
+        dataset_df = self.__uppercase(dataset_df, self._columns_to_uppercase)
+        dataset_df = self.__drop_duplicates(dataset_df)
         return dataset_df
 
     @staticmethod
-    def replace_blank_values(dataset_df: pd.DataFrame) -> pd.DataFrame:
+    def __replace_blank_values(dataset_df: pd.DataFrame) -> pd.DataFrame:
         """Return the dataset with empty and dash values replaced by NaN,
         so they can be removed with dropna."""
 
@@ -75,33 +75,33 @@ class Dataset(ABC):
         return dataset_df
 
     @staticmethod
-    def _keep_columns(dataset_df: pd.DataFrame, column_map: dict[str, str]) -> pd.DataFrame:
+    def __keep_columns(dataset_df: pd.DataFrame, column_map: dict[str, str]) -> pd.DataFrame:
         # Keep only the required columns, then rename them.
         dataset_df = dataset_df[list(column_map)].copy()
         dataset_df = dataset_df.rename(columns=column_map)
         return dataset_df
 
     @staticmethod
-    def _drop_incomplete_rows(dataset_df: pd.DataFrame) -> pd.DataFrame:
+    def __drop_incomplete_rows(dataset_df: pd.DataFrame) -> pd.DataFrame:
         # Remove rows that are missing important information.
         dataset_df = dataset_df.dropna()
         return dataset_df
 
     @staticmethod
-    def _strip_spaces(dataset_df: pd.DataFrame) -> pd.DataFrame:
+    def __strip_spaces(dataset_df: pd.DataFrame) -> pd.DataFrame:
         for column in dataset_df.columns:
             dataset_df[column] = dataset_df[column].astype(str).str.strip()
         return dataset_df
 
     @staticmethod
-    def _uppercase(dataset_df: pd.DataFrame, columns: tuple[str, ...]) -> pd.DataFrame:
+    def __uppercase(dataset_df: pd.DataFrame, columns: tuple[str, ...]) -> pd.DataFrame:
         for column in columns:
             dataset_df[column] = dataset_df[column].str.upper()
 
         return dataset_df
 
     @staticmethod
-    def _drop_duplicates(dataset_df: pd.DataFrame) -> pd.DataFrame:
+    def __drop_duplicates(dataset_df: pd.DataFrame) -> pd.DataFrame:
         # Remove duplicate rows, then reset the index.
         dataset_df = dataset_df.drop_duplicates()
         dataset_df = dataset_df.reset_index(drop=True)

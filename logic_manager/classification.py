@@ -15,7 +15,7 @@ class Classification(Enum):
     PRESCRIPTION_ONLY = "Prescription Only"
 
     @classmethod
-    def from_text(cls, text) -> "Classification | None":
+    def from_text(cls, text: object) -> "Classification | None":
         """
         Turn text from the HSA dataset into a Classification.
         """

@@ -14,3 +14,4 @@ class SkipRule(ABC):
         """
         Return True if the question should be skipped.
         """
+        pass

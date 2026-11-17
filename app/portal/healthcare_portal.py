@@ -19,9 +19,10 @@ class HealthcarePortal(MenuAction):
 
     @override
     def run(self) -> bool:
-        action = self.__prompt.choose(self.__actions)
-        if action is not None:
-            error = action.run()
-            if error:
-                self.__prompt.show_message(error)
+        action = self.__prompt.choose(self.__actions, quittable=True)
+        if action is None:
+            return True
+        error = action.run()
+        if error:
+            self.__prompt.show_message(error)
         return True

@@ -21,14 +21,14 @@ class TriagePipeline:
         # 2. AI manager: get a diagnosis and medicines
         ai_output = self.__diagnoser.get_ai_output(answers_filtered)
 
-        # get_ai_output returns a dictionary when every AI model failed.
-        # The key is "error". The value of the key is the message telling
-        # patients to seek assistance.
+        # get_ai_output returns a dictionary with only an "error" key when
+        # every AI model failed or the ICD-11 dataset did not load.
+        # The value of the key is the message telling patients to seek assistance.
         if "error" in ai_output:
             self.__prompt.show_message(ai_output["error"])
             return
 
-        # 3. Logic manager: decide and print the route and queue number
+        # 3. Logic manager: decide the route and queue number
         logic_result = self.__router.process_result(ai_output)
 
         # 4. Data manager: save the completed record to the database.

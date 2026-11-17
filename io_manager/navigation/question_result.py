@@ -45,11 +45,11 @@ class QuestionResult:
         return cls(Navigation.INVALID, error=error)
 
     @classmethod
-    def back(cls) -> QuestionResult:
+    def __back(cls) -> QuestionResult:
         return cls(Navigation.BACK)
 
     @classmethod
-    def quit(cls) -> QuestionResult:
+    def __quit(cls) -> QuestionResult:
         return cls(Navigation.QUIT)
 
     @classmethod
@@ -77,7 +77,7 @@ class QuestionResult:
         Private, so commands are only ever checked as part of from_input.
         """
         if text == Navigation.BACK.value:
-            return cls.back()
+            return cls.__back()
         if text == Navigation.QUIT.value:
-            return cls.quit()
+            return cls.__quit()
         return None

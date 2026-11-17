@@ -20,7 +20,7 @@ class ResultView:
 
     # Long messages are wrapped to this width so the result box does not
     # get too wide.
-    WRAP_WIDTH = 70
+    __WRAP_WIDTH = 70
 
     def build_lines(
         self, logic_result: Mapping[str, str | None]
@@ -41,7 +41,7 @@ class ResultView:
             ]
 
         Example 2: result from logic manager is {"route": "Retail",
-        "queue_number": "P013"}. Retail patients go to the pharmacy.
+        "queue_number": "PR013"}. Retail patients go to the pharmacy.
         Returns:
 
             [
@@ -63,8 +63,9 @@ class ResultView:
             lines.append("")
 
         # Then add what the patient should do next for their route.
-        route_message = constants.ROUTE_MESSAGES[route]
-        lines.extend(self.__wrap(route_message))
+        if route is not None:
+            route_message = constants.ROUTE_MESSAGES[route]
+            lines.extend(self.__wrap(route_message))
 
         return lines
 
@@ -74,4 +75,4 @@ class ResultView:
         the route message so the result box does not get too wide.
         """
         # textwrap.wrap only breaks lines between words.
-        return textwrap.wrap(text, self.WRAP_WIDTH)
+        return textwrap.wrap(text, self.__WRAP_WIDTH)

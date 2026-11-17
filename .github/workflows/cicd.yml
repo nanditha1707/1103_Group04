@@ -51,6 +51,7 @@ jobs:
           PATIENT_RECORDS_TABLE: patient_records_test
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          ADMIN_PASSWORD: Password
         run: |
           for test_file in tests/*.txt; do
             echo "::group::$test_file"
@@ -60,6 +61,7 @@ jobs:
               -e POSTGRESQL_CLOUD_DATABASE_URL \
               -e PATIENT_DATA_ENCRYPTION_KEY \
               -e PATIENT_RECORDS_TABLE \
+              -e ADMIN_PASSWORD \
               group04-healthcare
             echo "::endgroup::"
           done

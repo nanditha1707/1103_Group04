@@ -16,7 +16,7 @@ class SymptomCatalogue:
 
     # How similar a typed symptom must be to suggest a close match. 
     # 0.6 is 60% similarity, which is a good balance between being too strict and too lenient.
-    MATCH_CUTOFF = 0.6
+    __MATCH_CUTOFF = 0.6
 
     # Iterable as terms are only read once, 
     # and order does not play a role in the matching process.
@@ -37,7 +37,7 @@ class SymptomCatalogue:
             return text, True
 
         close_matches = difflib.get_close_matches(
-            text, self.__terms, n=1, cutoff=self.MATCH_CUTOFF
+            text, self.__terms, n=1, cutoff=self.__MATCH_CUTOFF
         )
         if close_matches:
             return close_matches[0], False
