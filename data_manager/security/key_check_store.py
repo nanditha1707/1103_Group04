@@ -11,4 +11,3 @@ class KeyCheckStore(ABC):
     def get_check_values(self) -> list[str] | None:
         """Returns the saved check value in a list, an empty list if none is saved,
         or None if the database could not be reached."""
-        pass

@@ -36,4 +36,3 @@ class Report(MenuOption):
         Return the report for the date, which is empty if nothing matched,
         or None if the database could not be reached.
         """
-        pass
