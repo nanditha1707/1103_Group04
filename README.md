@@ -291,7 +291,7 @@ To run the automated test suite inside the Docker container, use:
 docker run --rm kevinwuyckens/group04-healthcare:latest python run_tests.py
 ```
 
-The `run_tests.py` script runs the automated test cases inside the Docker image.
+The `run_tests.py` script runs the automated test cases inside the Docker image. The CI/CD pipeline runs this same command on every push and pull request.
 
 
 ### Test Cases
@@ -392,7 +392,8 @@ The pipeline is defined in `.github/workflows/cicd.yml` and runs on GitHub Actio
 - **Setup and linting:** it checks out the code, installs Python 3.14.7 (the same version as the Docker image) and `requirements.txt`, then runs Pylint on the root `.py` files. The job fails on any error or a score below 5. This is 
 to ensure broken code or poorly written code is alerted so changes can be 
 made.
-- **Docker test run:** it builds the Docker image and runs the container once for each `.txt` file in `tests/`. `tests/docker_test_input.txt` walks through a full patient registration so the job fails if the app crashes inside the real image. This ensures the app always works with docker run and we will be
+- **Automated tests:** after building the Docker image it runs `python run_tests.py` inside the container, which runs the full pytest suite in `tests/`. The job fails if any test fails. The tests use fake databases and AI clients, so they need no secrets and run inside the same image that users pull.
+- **Docker test run:** it then runs the container once for each `.txt` file in `tests/`. `tests/docker_test_input.txt` walks through a full patient registration so the job fails if the app crashes inside the real image. This ensures the app always works with docker run and we will be
 notified if the code breaks that.
 - **GitHub Secrets:** the container needs a database URL, an encryption key and AI API keys. These are stored as Github repository secrets (`POSTGRESQL_CLOUD_DATABASE_URL`, `PATIENT_DATA_ENCRYPTION_KEY`, `GEMINI_API_KEY`, `ANTHROPIC_API_KEY`) and passed into `docker run` with `-e`. They never appear in the code and README as exposing sensitive keys publicly is bad practice. The docker run writes patient record data to a separate `patient_records_test` table on the Neon cloud database so CI never touches real patient records.
 - **Pull requests and branch rules:** `main` is protected by GitHub rules. Changes must go through a pull request and cannot be merged until the CICD check passes.
