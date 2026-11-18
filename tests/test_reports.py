@@ -102,9 +102,14 @@ class TestReports:
 
         data = AppTestFactory.create_data_manager(FakeDatabase(None))
 
+        count_result = data.get_medicine_count("PARACETAMOL", "2026-10-14")
+        medicine_result = data.get_medicine_breakdown("2026-10-14")
+        patient_type_result = data.get_patient_type_breakdown("2026-10-14")
+
         print("\nSCENARIO: Database Cannot Be Reached")
         print("Expected: None from every report")
+        print("Actual:", count_result, "|", medicine_result, "|", patient_type_result)
 
-        assert data.get_medicine_count("PARACETAMOL", "2026-10-14") is None
-        assert data.get_medicine_breakdown("2026-10-14") is None
-        assert data.get_patient_type_breakdown("2026-10-14") is None
+        assert count_result is None
+        assert medicine_result is None
+        assert patient_type_result is None

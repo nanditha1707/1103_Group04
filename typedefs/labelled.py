@@ -17,4 +17,3 @@ class Labelled(Protocol):
         Return the text shown next to the option's number in the menu,
         e.g. "Patient Registration" for the line "1. Patient Registration".
         """
-        pass

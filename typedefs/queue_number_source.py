@@ -19,4 +19,3 @@ class QueueNumberSource(Protocol):
         Return 0 if the queue has no numbers yet, or None if the records
         could not be read.
         """
-        pass

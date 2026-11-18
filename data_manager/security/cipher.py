@@ -13,9 +13,7 @@ class Cipher(ABC):
     @abstractmethod
     def encrypt(self, plaintext: str) -> str:
         """Return the encrypted text."""
-        pass
 
     @abstractmethod
     def decrypt(self, ciphertext: str) -> str:
         """Return the original text. Raise ValueError if the value cannot be decrypted."""
-        pass

@@ -39,4 +39,3 @@ class DerivedAnswer(ABC):
         Return the derived answer or None if the answers it comes from
         have not been given yet.
         """
-        pass

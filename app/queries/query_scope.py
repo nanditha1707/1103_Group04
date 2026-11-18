@@ -38,4 +38,3 @@ class QueryScope(MenuOption):
         Return the matching records with only the filter_columns, which is empty if none match,
         or None if the database could not be reached.
         """
-        pass

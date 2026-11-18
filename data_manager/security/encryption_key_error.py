@@ -8,4 +8,3 @@ class EncryptionKeyError(Exception):
     This ensures no patient record is ever saved or read with the wrong key, 
     or a missing key.
     """
-    pass

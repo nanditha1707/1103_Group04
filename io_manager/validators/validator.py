@@ -19,4 +19,3 @@ class Validator(ABC):
         """
         Return None if the answer is valid, else the error message.
         """
-        pass

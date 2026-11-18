@@ -15,4 +15,3 @@ class StopRule(ABC):
         Returns the stop message to show if registration must stop,
         otherwise it returns None.
         """
-        pass
