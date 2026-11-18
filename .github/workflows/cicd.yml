@@ -41,7 +41,11 @@ jobs:
       - name: Build Docker image
         run: |
           docker build -t group04-healthcare .
-          
+
+
+      - name: Run automated tests in Docker
+        run: docker run --rm group04-healthcare python run_tests.py
+
 
       # Runs the container once per .txt file in tests/
       - name: Run Docker container with each test input
